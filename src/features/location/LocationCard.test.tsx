@@ -1,0 +1,168 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
+import type { Profile } from "@/content/types";
+import { LocationCard } from "./LocationCard";
+
+function fixture(
+  overrides: Partial<Profile["location"]> = {},
+): Profile["location"] {
+  return {
+    city: "Batangas",
+    country: "PH",
+    timeZone: "Asia/Manila",
+    utcLabel: "GMT+8",
+    mapTexture: {
+      alt: "Map of Batangas, Philippines",
+      placeholder: {
+        kind: "pattern",
+        seed: "batangas-ph",
+        from: "#161622",
+        to: "#0a0a0f",
+      },
+    },
+    ...overrides,
+  };
+}
+
+describe("LocationCard", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-15T10:40:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("renders inside the 'place' bento area", () => {
+    const { container } = render(<LocationCard location={fixture()} />);
+    expect(container.querySelector('[data-bento-area="place"]')).not.toBeNull();
+  });
+
+  it("renders city and country", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByText("Batangas, PH")).toBeInTheDocument();
+  });
+
+  it("renders the UTC label alongside a 'Local time' caption", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByText("GMT+8 · Local time")).toBeInTheDocument();
+  });
+
+  it("renders the live local time for the given zone", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:40");
+  });
+
+  it("updates the displayed clock as fake time advances", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:40");
+
+    act(() => {
+      vi.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:41");
+
+    act(() => {
+      vi.advanceTimersByTime(3 * 60_000);
+    });
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:44");
+  });
+
+  it("renders a status dot", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByTestId("location-status-dot")).toBeInTheDocument();
+  });
+
+  describe("mapTexture placeholder", () => {
+    it("renders no <img> at all when mapTexture.src is undefined (the v1 state)", () => {
+      const { container } = render(<LocationCard location={fixture()} />);
+
+      expect(container.querySelector("img")).toBeNull();
+      expect(screen.queryByRole("img")).toBeNull();
+    });
+
+    it("paints the placeholder's from/to colors as a CSS gradient", () => {
+      const { container } = render(<LocationCard location={fixture()} />);
+      const layer = container.querySelector<HTMLElement>(
+        '[data-testid="map-placeholder"]',
+      );
+
+      expect(layer).not.toBeNull();
+      // jsdom normalises hex colors to rgb() when reparsing the style value,
+      // so match on the parsed form of #161622 / #0a0a0f.
+      expect(layer?.style.backgroundImage).toMatch(/gradient\(/);
+      expect(layer?.style.backgroundImage).toContain("rgb(22, 22, 34)");
+      expect(layer?.style.backgroundImage).toContain("rgb(10, 10, 15)");
+    });
+
+    it("still renders the placeholder when the src is an empty string", () => {
+      const location = fixture();
+      location.mapTexture.src = "";
+      const { container } = render(<LocationCard location={location} />);
+
+      expect(container.querySelector("img")).toBeNull();
+      expect(screen.getByTestId("map-placeholder")).toBeInTheDocument();
+    });
+
+    it("exposes the placeholder decoratively (aria-hidden), not as content", () => {
+      render(<LocationCard location={fixture()} />);
+      expect(screen.getByTestId("map-placeholder")).toHaveAttribute(
+        "aria-hidden",
+        "true",
+      );
+    });
+  });
+
+  describe("edge cases", () => {
+    it("falls back to UTC for an invalid time zone without throwing", () => {
+      expect(() =>
+        render(<LocationCard location={fixture({ timeZone: "Not/AZone" })} />),
+      ).not.toThrow();
+      expect(screen.getByTestId("local-clock")).toHaveTextContent("10:40");
+    });
+
+    it("renders long city names without crashing", () => {
+      render(
+        <LocationCard
+          location={fixture({ city: "Llanfairpwllgwyngyllgogerychwyrndrobwll" })}
+        />,
+      );
+      expect(
+        screen.getByText("Llanfairpwllgwyngyllgogerychwyrndrobwll, PH"),
+      ).toBeInTheDocument();
+    });
+
+    it("renders empty city/country strings as a bare separator, not a crash", () => {
+      expect(() =>
+        render(<LocationCard location={fixture({ city: "", country: "" })} />),
+      ).not.toThrow();
+    });
+  });
+
+  describe("cleanup", () => {
+    it("clears the clock interval on unmount", () => {
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+      const { unmount } = render(<LocationCard location={fixture()} />);
+
+      expect(vi.getTimerCount()).toBe(1);
+      unmount();
+
+      expect(clearIntervalSpy).toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("logs no state-update-after-unmount warning when time advances post-unmount", () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      const { unmount } = render(<LocationCard location={fixture()} />);
+
+      unmount();
+      act(() => {
+        vi.advanceTimersByTime(600_000);
+      });
+
+      expect(errorSpy).not.toHaveBeenCalled();
+    });
+  });
+});
