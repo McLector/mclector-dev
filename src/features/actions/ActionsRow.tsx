@@ -1,6 +1,6 @@
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
-import { Button } from "@/components/ui/Button";
+import { Button, buttonClasses } from "@/components/ui/Button";
 
 /**
  * Owned by Stream A. Frozen contract (docs/contracts.md):
@@ -30,15 +30,10 @@ export function ActionsRow({
         </Button>
 
         {cvReady ? (
-          // `Button` renders a <button> only and has no `as`/`asChild` escape
-          // hatch, so a real navigation has to be an <a> styled to match the
-          // secondary variant locally. See the note in the Stream A report.
-          <a
-            href={cv.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-[var(--color-text-primary)] ring-1 ring-white/15 transition-colors hover:bg-white/15"
-          >
+          // A real navigation has to be an <a>, which <button> cannot
+          // semantically be — buttonClasses() keeps it visually identical
+          // to Button's secondary variant without duplicating the class list.
+          <a href={cv.href} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
             {cv.label}
           </a>
         ) : (
