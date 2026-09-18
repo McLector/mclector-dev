@@ -1,19 +1,83 @@
+import { motion } from "motion/react";
 import type { Project } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { useHashRoute } from "@/lib/useHashRoute";
+import { projectLayoutId, statusLabel, thumbnailStyle } from "./thumbnail";
 
 /**
- * PLACEHOLDER — owned by Stream E. Frozen contract: <ProjectsCard projects={Project[]} />
- * Renders only `featured` projects as rows; clicking a row opens
- * <ProjectOverlay> (also Stream E) via the shared #/project/:id hash route
- * (src/lib/useHashRoute.ts). Rendered inside the "work" grid area.
+ * The "work" card: a launcher, not a detail view. A row's only job is to
+ * write `#/project/:id`; <ProjectOverlay> (mounted separately in App.tsx)
+ * is what reacts to that. Going through the hash rather than a callback is
+ * what makes every project detail a shareable, back-button-able URL.
+ *
+ * Only `featured` projects are listed — the rest stay overlay-reachable by
+ * direct link (see src/content/projects.ts).
  */
 export function ProjectsCard({ projects }: { projects: Project[] }) {
-  const featured = projects.filter((p) => p.featured);
+  const { openProject } = useHashRoute();
+  const featured = projects.filter((project) => project.featured);
+
   return (
-    <BentoCard area="work">
-      <p className="text-xs text-[var(--color-text-muted)]">
-        Stream E — {featured.length} featured projects
-      </p>
+    <BentoCard area="work" as="section">
+      <div className="flex h-full flex-col gap-4">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold tracking-wide text-[var(--color-text-primary)]">
+            Latest projects
+          </h2>
+          {featured.length > 0 && (
+            <span className="text-xs text-[var(--color-text-muted)]">
+              {featured.length} featured
+            </span>
+          )}
+        </div>
+
+        {featured.length === 0 ? (
+          <p
+            data-testid="projects-empty"
+            className="rounded-[var(--radius-card)] border border-dashed border-white/12 p-4 text-xs text-[var(--color-text-muted)]"
+          >
+            Projects are being written up — check back soon.
+          </p>
+        ) : (
+          <ul
+            data-testid="projects-list"
+            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+          >
+            {featured.map((project) => (
+              <li key={project.id}>
+                <button
+                  type="button"
+                  data-testid={`project-row-${project.id}`}
+                  data-project-row={project.id}
+                  aria-haspopup="dialog"
+                  onClick={() => openProject(project.id)}
+                  className="group flex w-full items-center gap-3 rounded-xl p-2 text-left transition-colors hover:bg-white/6 focus-visible:bg-white/6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                >
+                  <motion.span
+                    layoutId={projectLayoutId(project.id)}
+                    data-layout-id={projectLayoutId(project.id)}
+                    data-testid={`project-thumb-${project.id}`}
+                    aria-hidden="true"
+                    style={thumbnailStyle(project.thumbnail)}
+                    className="size-11 shrink-0 rounded-xl ring-1 ring-white/12"
+                  />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
+                      {project.title}
+                    </span>
+                    <span className="truncate text-xs text-[var(--color-text-muted)]">
+                      {project.subtitle}
+                    </span>
+                  </span>
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                    {statusLabel(project.status)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </BentoCard>
   );
 }
