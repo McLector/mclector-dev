@@ -3,7 +3,7 @@ import {
   hasTooManyLinks,
   isTimeTrapped,
   toFieldErrors,
-} from "../src/lib/contactSchema";
+} from "../src/lib/contactSchema.js";
 
 /**
  * Stream F — `POST /api/contact`, a Vercel Function.
