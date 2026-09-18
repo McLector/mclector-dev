@@ -23,7 +23,7 @@ export function IntroCard({ profile }: { profile: Profile }) {
           className="font-[family-name:var(--font-display)] text-3xl leading-[1.02] font-bold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-4xl lg:text-5xl"
           style={{ overflowWrap: "anywhere" }}
         >
-          <span className="block bg-gradient-to-br from-white to-white/70 bg-clip-text text-transparent">
+          <span className="block text-white">
             {headlineTop}
           </span>
           <span className="block">{headlineBottom}</span>

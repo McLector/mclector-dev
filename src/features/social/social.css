@@ -94,9 +94,17 @@
 .hexgrid__link:focus-visible {
   background: color-mix(in oklab, var(--color-accent-blue) 34%, var(--color-surface-raised));
   color: var(--color-text-primary);
-  /* A box-shadow here would be eaten by the clip-path; the glow lives on the
-     unclipped .hexgrid__ring sibling below instead. */
-  transform: translateY(-2px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hexgrid__link:hover,
+  .hexgrid__link:focus-visible {
+    transform: translateY(-2px);
+  }
+}
+
+.hexgrid__link:active {
+  transform: scale(0.95);
 }
 
 /* Soft accent halo on hover, via the unclipped ring sibling (a box-shadow on
@@ -122,23 +130,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  opacity: 0;
-  transform: translateY(2px);
+  opacity: 1;
+  transform: none;
   transition:
     opacity 140ms ease-out,
     transform 140ms ease-out;
 }
 
-/* Revealed on hover AND on keyboard focus — never hover-only. */
-.hexgrid__link:hover .hexgrid__label,
-.hexgrid__link:focus-visible .hexgrid__label {
-  opacity: 1;
-  transform: translateY(0);
+@media (hover: hover) and (pointer: fine) {
+  .hexgrid__label {
+    opacity: 0;
+    transform: translateY(2px);
+  }
+
+  .hexgrid__link:hover .hexgrid__label,
+  .hexgrid__link:focus-visible .hexgrid__label {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.hexgrid__link:hover .hexgrid__icon,
-.hexgrid__link:focus-visible .hexgrid__icon {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .hexgrid__link:hover .hexgrid__icon,
+  .hexgrid__link:focus-visible .hexgrid__icon {
+    transform: translateY(-1px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

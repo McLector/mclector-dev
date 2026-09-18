@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
 import { content } from "@/content";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -31,6 +32,25 @@ import {
  * in particular 503, where the whole point is to hand the visitor a
  * `mailto:` link so the message they just wrote is not lost.
  */
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+  });
+
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const query = window.matchMedia(REDUCED_MOTION_QUERY);
+    const onChange = () => setReduced(query.matches);
+    query.addEventListener?.("change", onChange);
+    return () => query.removeEventListener?.("change", onChange);
+  }, []);
+
+  return reduced;
+}
 
 /** How long the success message stays up before the dialog closes itself. */
 const SUCCESS_CLOSE_DELAY_MS = 2_500;
@@ -64,6 +84,7 @@ export function ContactDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const reducedMotion = usePrefersReducedMotion();
   const baseId = useId();
   const ids = {
     title: `${baseId}-title`,
@@ -181,8 +202,6 @@ export function ContactDialog({
     void send();
   };
 
-  if (!open) return null;
-
   const submitting = phase.kind === "submitting";
 
   const fieldProps = (key: "name" | "email" | "message") => {
@@ -213,8 +232,19 @@ export function ContactDialog({
   );
   const labelClass = "text-xs text-[var(--color-text-secondary)]";
 
+  if (typeof document === "undefined") return null;
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="contact-dialog"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reducedMotion ? 0.12 : 0.18 }}
+        >
       <div
         data-testid="contact-backdrop"
         aria-hidden="true"
@@ -222,11 +252,15 @@ export function ContactDialog({
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
       />
 
-      <div
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby={ids.title}
         data-testid="contact-dialog"
+        initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
+        animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+        exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+        transition={{ duration: reducedMotion ? 0.12 : 0.2, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           "relative z-10 w-full max-w-md rounded-3xl p-6",
           "bg-[#12121a] shadow-2xl ring-1 ring-white/10",
@@ -244,7 +278,7 @@ export function ContactDialog({
             type="button"
             onClick={onClose}
             aria-label="Close contact form"
-            className="rounded-full px-2 py-1 text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+            className="rounded-full px-2 py-1 text-sm text-[var(--color-text-muted)] transition-transform duration-200 hover:text-[var(--color-text-primary)] active:scale-[0.97]"
           >
             ✕
           </button>
@@ -391,8 +425,10 @@ export function ContactDialog({
             ) : null}
           </div>
         </form>
-      </div>
-    </div>,
+      </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

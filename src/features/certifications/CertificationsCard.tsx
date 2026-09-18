@@ -77,7 +77,7 @@ function CertificationRow({ cert }: { cert: Certification }) {
           rel="noopener noreferrer"
           className={cn(
             rowClass,
-            "transition-colors hover:bg-white/[0.07] hover:ring-white/15",
+            "transition-[colors,transform] duration-200 hover:bg-white/[0.07] hover:ring-white/15 active:scale-[0.98]",
           )}
         >
           {inner}

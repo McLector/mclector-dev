@@ -22,8 +22,12 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
 
         {featured.length > 0 ? (
           <ul className="flex flex-wrap content-start gap-2">
-            {featured.map((skill) => (
-              <li key={skill.id}>
+            {featured.map((skill, index) => (
+              <li
+                key={skill.id}
+                className="animate-[chip-enter_0.3s_cubic-bezier(0.22,1,0.36,1)_both]"
+                style={{ animationDelay: `${index * 40}ms` }}
+              >
                 <Chip>{skill.label}</Chip>
               </li>
             ))}

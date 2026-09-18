@@ -150,7 +150,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
             <button
               type="button"
               onClick={close}
-              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-white/12 transition-colors hover:bg-white/8 hover:text-[var(--color-text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-white/12 transition-[colors,transform] duration-200 hover:bg-white/8 hover:text-[var(--color-text-primary)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
             >
               Close
             </button>
@@ -238,7 +238,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                     {...(isExternal(link.href)
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}
-                    className="inline-flex items-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-white/12 transition-colors hover:bg-white/16 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                    className="inline-flex items-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-white/12 transition-[colors,transform] duration-200 hover:bg-white/16 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                   >
                     {link.label}
                   </a>

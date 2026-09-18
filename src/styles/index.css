@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant hover-fine (@media (hover: hover) and (pointer: fine));
+
 @theme {
   /* Surfaces */
   --color-surface: oklch(0.14 0.01 280);
@@ -171,6 +173,17 @@
       radial-gradient(50% 44% at 43% 26%, color-mix(in oklab, var(--color-accent-blue) 32%, transparent) 0%, transparent 72%),
       radial-gradient(44% 42% at 60% 40%, color-mix(in oklab, var(--color-accent-purple) 26%, transparent) 0%, transparent 72%);
     animation: nebula-breathe 14s ease-in-out infinite;
+  }
+}
+
+@keyframes chip-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

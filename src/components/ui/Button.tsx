@@ -20,9 +20,9 @@ export function buttonClasses(variant: ButtonVariant = "primary", className?: st
   return cn(
     "inline-flex items-center justify-center rounded-full px-5 py-2.5",
     "text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40",
-    "transition-[transform,box-shadow,background-color] duration-200 hover:-translate-y-0.5",
+    "transition-[transform,box-shadow,background-color] duration-200 hover-fine:-translate-y-0.5 active:scale-[0.97]",
     variant === "primary" &&
-      "bg-white text-neutral-950 shadow-[0_8px_26px_-10px_rgb(255_255_255/0.45)] hover:bg-white/90 hover:shadow-[0_12px_32px_-10px_rgb(255_255_255/0.6)]",
+      "bg-white text-neutral-950 shadow-[0_8px_26px_-10px_rgb(255_255_255/0.45)] hover:bg-white/90 hover-fine:shadow-[0_12px_32px_-10px_rgb(255_255_255/0.6)]",
     variant === "secondary" &&
       "bg-white/10 text-[var(--color-text-primary)] ring-1 ring-white/15 hover:bg-white/15 hover:ring-white/25",
     className,

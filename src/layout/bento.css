@@ -68,29 +68,29 @@
 }
 
 .bento > * {
-  animation: bento-card-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: bento-card-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .bento > *:nth-child(1) {
   animation-delay: 0.04s;
 }
 .bento > *:nth-child(2) {
-  animation-delay: 0.09s;
+  animation-delay: 0.08s;
 }
 .bento > *:nth-child(3) {
-  animation-delay: 0.14s;
+  animation-delay: 0.12s;
 }
 .bento > *:nth-child(4) {
-  animation-delay: 0.19s;
+  animation-delay: 0.16s;
 }
 .bento > *:nth-child(5) {
-  animation-delay: 0.24s;
+  animation-delay: 0.2s;
 }
 .bento > *:nth-child(6) {
-  animation-delay: 0.29s;
+  animation-delay: 0.24s;
 }
 .bento > *:nth-child(7) {
-  animation-delay: 0.34s;
+  animation-delay: 0.28s;
 }
 .bento > *:nth-child(8) {
-  animation-delay: 0.39s;
+  animation-delay: 0.32s;
 }
