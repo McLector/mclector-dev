@@ -10,8 +10,16 @@ import { test, expect } from "@playwright/test";
  * baseline stays stable once Stream C lands and starts animating. Everything
  * outside that rectangle is still compared pixel-for-pixel.
  *
- * Animations are frozen (`animations: "disabled"`) so the gradient backdrop
- * pan in src/styles/index.css cannot shift the baseline either.
+ * Animations are frozen (`animations: "disabled"`) so the wallpaper drift and
+ * nebula-glow animations in src/styles/index.css cannot shift the baseline.
+ *
+ * DETERMINISM: the visual baseline runs under emulated `prefers-reduced-motion`.
+ * That resolves the capability tier to `unsupported`, so the (masked) `pass`
+ * cell renders the STATIC BadgeFallback instead of the live WebGL canvas. The
+ * canvas re-renders every frame (physics + an always-moving starfield), so the
+ * page never reaches the "two identical frames" stability `toHaveScreenshot`
+ * requires — the badge is masked out of the comparison anyway, so forcing its
+ * static twin here only buys a stable page, it does not reduce coverage.
  *
  * Baselines are captured on the desktop chromium project only; the
  * mobile-chrome project emulates a different DPR/device, which would double
@@ -34,6 +42,7 @@ const maskedRegions = (page: import("@playwright/test").Page) => [
 
 test.describe("visual baselines", () => {
   test("desktop 1440x900", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();
@@ -46,6 +55,7 @@ test.describe("visual baselines", () => {
   });
 
   test("mobile 390x844", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();

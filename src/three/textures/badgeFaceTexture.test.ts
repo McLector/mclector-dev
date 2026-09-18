@@ -19,6 +19,7 @@ import {
 function makeCtx(options: { withRoundRect?: boolean } = {}) {
   const { withRoundRect = true } = options;
   const gradients: Array<{ args: number[]; stops: Array<[number, string]> }> = [];
+  const radialGradients: Array<{ args: number[]; stops: Array<[number, string]> }> = [];
   let font = "16px sans-serif";
 
   const ctx = {
@@ -65,12 +66,23 @@ function makeCtx(options: { withRoundRect?: boolean } = {}) {
         }),
       };
     }),
+    createRadialGradient: vi.fn(
+      (x0: number, y0: number, r0: number, x1: number, y1: number, r1: number) => {
+        const entry = { args: [x0, y0, r0, x1, y1, r1], stops: [] as Array<[number, string]> };
+        radialGradients.push(entry);
+        return {
+          addColorStop: vi.fn((offset: number, color: string) => {
+            entry.stops.push([offset, color]);
+          }),
+        };
+      },
+    ),
     // Present-but-undefined when disabled, so the fallback path is what is
     // exercised rather than a missing-property type hole.
     roundRect: withRoundRect ? vi.fn() : undefined,
   };
 
-  return Object.assign(ctx, { __gradients: gradients });
+  return Object.assign(ctx, { __gradients: gradients, __radialGradients: radialGradients });
 }
 
 function parsePx(font: string): number {
@@ -185,9 +197,31 @@ describe("drawBadgeFace", () => {
   it("builds its background from the supplied accent colours", () => {
     const ctx = makeCtx();
     drawBadgeFace(ctx, data({ accentFrom: "#112233", accentTo: "#445566" }));
-    const stops = ctx.__gradients.flatMap((g) => g.stops.map(([, color]) => color));
+    const stops = [...ctx.__gradients, ...ctx.__radialGradients].flatMap((g) =>
+      g.stops.map(([, color]) => color),
+    );
     expect(stops).toContain("#112233");
     expect(stops).toContain("#445566");
+  });
+
+  it("layers several gradients so the face reads as deep, not flat", () => {
+    // A premium ID face is built from multiple light layers (base wash, a
+    // radial accent glow, a directional sheen), not a single flat fill.
+    const ctx = makeCtx();
+    drawBadgeFace(ctx, data());
+    const total = ctx.__gradients.length + ctx.__radialGradients.length;
+    expect(total).toBeGreaterThanOrEqual(3);
+  });
+
+  it("blooms an accent glow behind the portrait with a radial gradient", () => {
+    const ctx = makeCtx();
+    drawBadgeFace(ctx, data({ accentFrom: "#112233", accentTo: "#445566" }));
+    expect(ctx.createRadialGradient).toHaveBeenCalled();
+    const radialStops = ctx.__radialGradients.flatMap((g) =>
+      g.stops.map(([, color]) => color),
+    );
+    // The glow is tinted by an accent colour, not a neutral grey.
+    expect(radialStops.some((c) => c === "#112233" || c === "#445566")).toBe(true);
   });
 
   it("draws the title, subtitle, id label and caption", () => {

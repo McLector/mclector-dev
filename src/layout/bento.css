@@ -4,10 +4,26 @@
  * See docs/contracts.md.
  */
 
+/* Staggered entrance: each card fades and lifts into place on load. Frozen at
+   its end state under prefers-reduced-motion (global rule in index.css) and by
+   Playwright's `animations: "disabled"`, so it never shifts a visual baseline. */
+@keyframes bento-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .bento {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr;
+  /* On mobile the grid provides its own gutter inside the edge-to-edge window. */
+  padding: 1rem;
   grid-template-areas:
     "intro"
     "pass"
@@ -19,10 +35,17 @@
     "actions";
 }
 
+@media (min-width: 640px) {
+  .bento {
+    padding: 1.5rem;
+  }
+}
+
 @media (min-width: 1024px) {
   .bento {
-    height: 100dvh;
-    padding: 1.25rem;
+    /* Fill the inset app window, which owns the viewport height. */
+    height: 100%;
+    padding: 1.5rem;
     grid-template-columns: minmax(320px, 0.95fr) minmax(520px, 1.5fr) minmax(300px, 0.85fr);
     grid-template-rows: auto auto 1fr auto;
     grid-template-areas:
@@ -39,7 +62,35 @@
 @media (min-width: 1024px) and (max-height: 720px) {
   .bento {
     height: auto;
-    min-height: 100dvh;
+    min-height: 100%;
     overflow: visible;
   }
+}
+
+.bento > * {
+  animation: bento-card-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bento > *:nth-child(1) {
+  animation-delay: 0.04s;
+}
+.bento > *:nth-child(2) {
+  animation-delay: 0.09s;
+}
+.bento > *:nth-child(3) {
+  animation-delay: 0.14s;
+}
+.bento > *:nth-child(4) {
+  animation-delay: 0.19s;
+}
+.bento > *:nth-child(5) {
+  animation-delay: 0.24s;
+}
+.bento > *:nth-child(6) {
+  animation-delay: 0.29s;
+}
+.bento > *:nth-child(7) {
+  animation-delay: 0.34s;
+}
+.bento > *:nth-child(8) {
+  animation-delay: 0.39s;
 }

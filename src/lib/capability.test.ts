@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveQualityTier, type CapabilitySignals } from "./capability";
+import { resolveQualityTier, TIER_CONFIG, type CapabilitySignals } from "./capability";
 
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
@@ -56,5 +56,22 @@ describe("resolveQualityTier", () => {
   it("clamps an extreme devicePixelRatio via maxDpr, never raw dpr", () => {
     const tier = resolveQualityTier(signals({ devicePixelRatio: 4 }));
     expect(tier).toBe("high"); // tier selection is independent of raw DPR
+  });
+});
+
+describe("TIER_CONFIG", () => {
+  it("enables bloom on medium and high, but never on low", () => {
+    // Bloom is the post-processing pass that makes the badge glow. It is the
+    // most expensive per-frame effect, so the weakest tier that still renders
+    // WebGL must skip it — same policy as `starfield`.
+    expect(TIER_CONFIG.low.bloom).toBe(false);
+    expect(TIER_CONFIG.medium.bloom).toBe(true);
+    expect(TIER_CONFIG.high.bloom).toBe(true);
+  });
+
+  it("keeps bloom aligned with the other cost knobs (off exactly when starfield is off)", () => {
+    for (const tier of Object.values(TIER_CONFIG)) {
+      expect(tier.bloom).toBe(tier.starfield);
+    }
   });
 });

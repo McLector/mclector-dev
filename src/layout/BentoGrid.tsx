@@ -23,7 +23,7 @@ export function BentoGrid({
   onContact: () => void;
 }) {
   return (
-    <div className="bento mx-auto w-full max-w-[1600px]">
+    <div className="bento w-full">
       <IntroCard profile={content.profile} />
       <SkillsCard skills={content.skills} />
       <PassCard profile={content.profile} />

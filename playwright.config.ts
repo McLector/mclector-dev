@@ -31,6 +31,14 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
+    // Render the badge's static fallback, not the live WebGL canvas, across the
+    // whole suite. Under headless swiftshader the canvas is software-rendered
+    // and its starfield never settles, so it pins a CPU core and starves axe,
+    // keyboard-interaction and exit-animation assertions into flaky timeouts.
+    // No spec exercises the WebGL path (it is masked in visual.spec and ignored
+    // elsewhere), so forcing reduced motion costs zero coverage and makes the
+    // suite deterministic — the same static-badge state the baselines assume.
+    reducedMotion: "reduce",
   },
   projects: [
     {

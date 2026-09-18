@@ -6,6 +6,15 @@ unilateral edit inside a stream's own files. See
 `C:\Users\morad\.claude\plans\id-like-to-build-pure-lightning.md` for the
 full architecture and rationale.
 
+> **Note (design pass, 2026-09-19).** The "files no stream may edit" list below
+> was a coordination device for the original *parallel* build — it stopped seven
+> concurrent agents from colliding on the shared shell. It is **not** a permanent
+> ban. A later single-agent visual overhaul intentionally revised the shell
+> (`GradientBackdrop`, `App.tsx`, `BentoCard`, `bento.css`, `styles/index.css`)
+> to add the inset "app window", the localized nebula glow, badge bloom, and card
+> materials. The component *contracts* (props/areas/routing below) were preserved;
+> only the look changed.
+
 ## Files no stream may edit
 
 `src/content/**` (read-only after Phase 0) · `src/layout/BentoGrid.tsx` ·

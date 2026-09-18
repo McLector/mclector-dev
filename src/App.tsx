@@ -16,8 +16,12 @@ export default function App() {
   return (
     <>
       <GradientBackdrop />
-      <main className="min-h-dvh px-4 py-6 sm:px-6 lg:p-0">
-        <BentoGrid content={content} onContact={() => setContactOpen(true)} />
+      {/* The wallpaper shows through this padding on desktop as a colored frame;
+          on mobile the window goes edge-to-edge so the content stays usable. */}
+      <main className="flex min-h-dvh w-full justify-center p-0 lg:p-5 xl:p-6">
+        <div className="app-window w-full max-w-[1680px] min-h-dvh rounded-none lg:h-[calc(100dvh-2.5rem)] lg:min-h-0 lg:rounded-[var(--radius-window)] xl:h-[calc(100dvh-3rem)]">
+          <BentoGrid content={content} onContact={() => setContactOpen(true)} />
+        </div>
       </main>
       <ProjectOverlay projects={content.projects} />
       <ContactDialog open={contactOpen} onClose={() => setContactOpen(false)} />

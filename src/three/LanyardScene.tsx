@@ -14,6 +14,7 @@ import {
   type RapierRigidBody,
 } from "@react-three/rapier";
 import { MeshLineGeometry, MeshLineMaterial } from "meshline";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import type { Profile } from "@/content/types";
 import { TIER_CONFIG, type TierConfig } from "@/lib/capability";
 import { E2E_FREEZE_STEPS, isE2EMode } from "./e2eMode";
@@ -106,6 +107,10 @@ function Band({ profile, config, frozen, onRestChange }: BandProps) {
   );
 
   const segmentDamping = frozen ? E2E_DAMPING : null;
+
+  // The accent that lights the badge's halo — the cool end of the profile's
+  // placeholder gradient, so it sits inside the window's blue/green nebula.
+  const glowColor = profile.avatar.placeholder.from;
 
   const curve = useMemo(() => {
     const c = new THREE.CatmullRomCurve3([
@@ -412,16 +417,34 @@ function Band({ profile, config, frozen, onRestChange }: BandProps) {
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
           >
-            {/* The plastic body. No map: RoundedBox is an ExtrudeGeometry, and
-                its front-face UVs are in shape units rather than normalised 0..1,
-                so a texture applied here lands squashed into a corner. */}
+            {/* Accent glow halo behind the badge. Additive + toneMapped={false}
+                so its pixels stay above the bloom threshold and bleed a soft
+                rim of light — the single biggest "premium" cue, and it works
+                even on tiers where the bloom pass is switched off. */}
+            <mesh position={[0, 0, -0.06]} scale={[1.35, 1.24, 1]}>
+              <planeGeometry args={[1.6, 2.25]} />
+              <meshBasicMaterial
+                color={glowColor}
+                transparent
+                opacity={0.16}
+                toneMapped={false}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+              />
+            </mesh>
+
+            {/* The plastic body — dark smoked plastic with a strong clearcoat,
+                so it reads as glossy in the dark rather than a bright white
+                rectangle. No map: RoundedBox is an ExtrudeGeometry whose
+                front-face UVs are in shape units, not normalised 0..1, so a
+                texture applied here would land squashed into a corner. */}
             <RoundedBox args={[1.6, 2.25, 0.02]} radius={0.06} smoothness={4} castShadow>
               <meshPhysicalMaterial
-                color="#e9eaf2"
+                color="#14141c"
                 clearcoat={1}
-                clearcoatRoughness={0.15}
-                roughness={0.35}
-                metalness={0.05}
+                clearcoatRoughness={0.1}
+                roughness={0.4}
+                metalness={0.1}
                 reflectivity={0.6}
               />
             </RoundedBox>
@@ -441,14 +464,20 @@ function Band({ profile, config, frozen, onRestChange }: BandProps) {
                     reflectivity={0.6}
                   />
                 </mesh>
+                {/* The back is an iridescent, holographic sheet — a rainbow
+                    sheen that shifts with the viewing angle, like the reference
+                    badge's underside. No map: the iridescence IS the artwork. */}
                 <mesh position={[0, 0, -0.0115]} rotation={[0, Math.PI, 0]}>
                   <planeGeometry args={[1.54, 2.19]} />
                   <meshPhysicalMaterial
-                    map={faceTexture}
+                    color="#0b0b12"
+                    metalness={0.85}
+                    roughness={0.22}
                     clearcoat={1}
-                    clearcoatRoughness={0.2}
-                    roughness={0.45}
-                    metalness={0.05}
+                    clearcoatRoughness={0.12}
+                    iridescence={1}
+                    iridescenceIOR={1.3}
+                    iridescenceThicknessRange={[120, 820]}
                   />
                 </mesh>
               </>
@@ -568,6 +597,25 @@ export default function LanyardScene({
         <Lightformer intensity={3} color="#e4a0ff" position={[1, 1, 1]} rotation={[0, 0, Math.PI / 3]} scale={[100, 0.1, 1]} />
         <Lightformer intensity={10} color="white" position={[-10, 0, 14]} rotation={[0, Math.PI / 2, Math.PI / 3]} scale={[100, 10, 1]} />
       </Environment>
+
+      {/*
+        The bloom pass is what turns the accent halo and specular highlights
+        into real, soft glow — the "made in Spline" look. Gated by tier
+        (config.bloom) so weak GPUs skip the most expensive per-frame effect.
+        The canvas is alpha:true and the badge occupies the masked pass cell, so
+        bloom never touches the deterministic ?e2e=1 visual baseline.
+      */}
+      {config.bloom ? (
+        <EffectComposer enableNormalPass={false}>
+          <Bloom
+            mipmapBlur
+            intensity={0.7}
+            luminanceThreshold={0.6}
+            luminanceSmoothing={0.3}
+            radius={0.75}
+          />
+        </EffectComposer>
+      ) : null}
     </>
   );
 }

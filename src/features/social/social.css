@@ -51,12 +51,15 @@
   inset: calc(var(--hex-ring) * -1);
   background: var(--color-accent-blue);
   opacity: 0;
-  transition: opacity 120ms ease-out;
+  transition:
+    opacity 120ms ease-out,
+    filter 120ms ease-out;
   pointer-events: none;
 }
 
 .hexgrid__cell:has(.hexgrid__link:focus-visible) .hexgrid__ring {
   opacity: 1;
+  filter: none;
 }
 
 /* Fallback for engines without :has() — an inset ring is clipped with the
@@ -89,8 +92,18 @@
 
 .hexgrid__link:hover,
 .hexgrid__link:focus-visible {
-  background: color-mix(in oklab, var(--color-accent-blue) 30%, var(--color-surface-raised));
+  background: color-mix(in oklab, var(--color-accent-blue) 34%, var(--color-surface-raised));
   color: var(--color-text-primary);
+  /* A box-shadow here would be eaten by the clip-path; the glow lives on the
+     unclipped .hexgrid__ring sibling below instead. */
+  transform: translateY(-2px);
+}
+
+/* Soft accent halo on hover, via the unclipped ring sibling (a box-shadow on
+   the clipped link itself is invisible). Focus keeps its crisp ring below. */
+.hexgrid__cell:has(.hexgrid__link:hover) .hexgrid__ring {
+  opacity: 0.5;
+  filter: blur(7px);
 }
 
 .hexgrid__icon {

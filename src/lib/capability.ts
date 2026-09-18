@@ -22,13 +22,16 @@ export type TierConfig = {
   maxDpr: number;
   antialias: boolean;
   starfield: boolean;
+  /** The post-processing bloom pass — what makes the badge glow. Off on the
+   *  weakest WebGL tier because it is the most expensive per-frame effect. */
+  bloom: boolean;
   physicsSubsteps: number;
 };
 
 export const TIER_CONFIG: Record<Exclude<QualityTier, "unsupported">, TierConfig> = {
-  low: { maxDpr: 1, antialias: false, starfield: false, physicsSubsteps: 1 },
-  medium: { maxDpr: 1.5, antialias: true, starfield: true, physicsSubsteps: 1 },
-  high: { maxDpr: 2, antialias: true, starfield: true, physicsSubsteps: 2 },
+  low: { maxDpr: 1, antialias: false, starfield: false, bloom: false, physicsSubsteps: 1 },
+  medium: { maxDpr: 1.5, antialias: true, starfield: true, bloom: true, physicsSubsteps: 1 },
+  high: { maxDpr: 2, antialias: true, starfield: true, bloom: true, physicsSubsteps: 2 },
 };
 
 export function resolveQualityTier(signals: CapabilitySignals): QualityTier {

@@ -33,15 +33,27 @@ export function BentoCard({
   padded = true,
   as: Component = "div",
 }: BentoCardProps) {
+  // The badge cell is not a solid card: it stays near-transparent so the
+  // window's nebula glow and dot-grid read behind the hanging badge, exactly
+  // like the reference's open center column.
+  const bare = area === "pass";
+
   return (
     <Component
       data-bento-area={area}
       style={{ gridArea: area }}
       className={cn(
         "relative overflow-hidden rounded-[var(--radius-card)]",
-        "bg-neutral-950/85 ring-1 ring-white/10",
-        "shadow-[0_24px_60px_-20px_rgb(0_0_0/0.7)]",
-        "backdrop-blur-xl",
+        bare
+          ? // Faint hairline only — the badge floats in the window's own glow.
+            "shadow-[inset_0_0_0_1px_oklch(1_0_0/0.05)]"
+          : // A raised glass surface floating in the dark: translucent so the
+            // interior glow bleeds through, a bright top edge, a hairline
+            // border, and a deep drop shadow for real separation.
+            cn(
+              "bg-[oklch(0.155_0.011_285_/_0.72)] backdrop-blur-xl",
+              "shadow-[0_24px_60px_-26px_oklch(0_0_0/0.8),inset_0_1px_0_0_oklch(1_0_0/0.08),inset_0_0_0_1px_oklch(1_0_0/0.06)]",
+            ),
         padded && "p-5 sm:p-6",
         className,
       )}

@@ -52,7 +52,7 @@ export function LocationCard({ location }: LocationCardProps) {
             className={cn(
               "inline-block size-2 shrink-0 rounded-full",
               "bg-[var(--color-accent-blue)]",
-              "shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent-blue)_25%,transparent)]",
+              "animate-[status-pulse_2.6s_ease-in-out_infinite]",
             )}
           />
           <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">

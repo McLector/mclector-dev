@@ -16,8 +16,17 @@
   --color-accent-purple: oklch(0.55 0.22 305);
   --color-accent-magenta: oklch(0.6 0.24 340);
   --color-accent-orange: oklch(0.72 0.17 48);
+  /* The nebula glow behind the badge in the reference reads green→cyan. */
+  --color-accent-green: oklch(0.78 0.17 165);
+
+  /* The deep near-black interior of the inset "app window" — the badge and
+     cards float in this, lit by the localized nebula glow, not on a loud
+     full-screen gradient. */
+  --color-window: oklch(0.11 0.008 285);
+  --color-window-edge: oklch(0.22 0.012 285);
 
   --radius-card: 1.75rem;
+  --radius-window: 2rem;
 
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -50,6 +59,118 @@
   }
   50% {
     background-position: 100% 50%;
+  }
+}
+
+/* A very slow drift of the wallpaper behind the window — enough to feel alive
+   at the visible margins, never enough to distract. */
+@keyframes wallpaper-drift {
+  0%,
+  100% {
+    transform: scale(1.06) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.12) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+/* A soft "live" pulse for the location status dot. */
+@keyframes status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent-blue) 45%, transparent);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--color-accent-blue) 0%, transparent);
+  }
+}
+
+/* A slow breathing of the nebula glow behind the badge. */
+@keyframes nebula-breathe {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate3d(0, -1.5%, 0) scale(1.05);
+  }
+}
+
+@layer components {
+  /*
+   * The vivid gradient wallpaper. It is the OUTER surface: the app window sits
+   * on top of it with a margin, so this is only ever seen as a colored frame
+   * around the near-black interior — not behind the cards.
+   */
+  .wallpaper {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    background-color: oklch(0.09 0.02 285);
+  }
+
+  .wallpaper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(60% 60% at 12% 8%, var(--color-accent-blue) 0%, transparent 55%),
+      radial-gradient(60% 60% at 88% 14%, var(--color-accent-purple) 0%, transparent 55%),
+      radial-gradient(70% 65% at 82% 96%, var(--color-accent-magenta) 0%, transparent 58%),
+      radial-gradient(60% 60% at 14% 92%, var(--color-accent-orange) 0%, transparent 60%);
+    transform: scale(1.06);
+    animation: wallpaper-drift 28s ease-in-out infinite;
+  }
+
+  /* A soft darkening so the wallpaper frames rather than shouts. */
+  .wallpaper::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(120% 120% at 50% 50%, transparent 30%, oklch(0.06 0.02 285 / 0.55) 100%);
+  }
+
+  /*
+   * The inset "app window": a large near-black rounded panel the whole
+   * portfolio lives inside. The badge and cards float in here.
+   */
+  .app-window {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background-color: var(--color-window);
+    box-shadow:
+      0 40px 120px -30px oklch(0 0 0 / 0.8),
+      inset 0 1px 0 0 oklch(1 0 0 / 0.06);
+  }
+
+  /* Faint technical dot-grid, faded toward the edges so it never boxes in. */
+  .app-window::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background-image: radial-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1.6px);
+    background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(130% 100% at 50% 38%, black 35%, transparent 88%);
+    mask-image: radial-gradient(130% 100% at 50% 38%, black 35%, transparent 88%);
+  }
+
+  /* Localized nebula glow, biased to the center-top where the badge hangs. */
+  .app-window::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(38% 34% at 50% 30%, color-mix(in oklab, var(--color-accent-green) 42%, transparent) 0%, transparent 70%),
+      radial-gradient(50% 44% at 43% 26%, color-mix(in oklab, var(--color-accent-blue) 32%, transparent) 0%, transparent 72%),
+      radial-gradient(44% 42% at 60% 40%, color-mix(in oklab, var(--color-accent-purple) 26%, transparent) 0%, transparent 72%);
+    animation: nebula-breathe 14s ease-in-out infinite;
   }
 }
 

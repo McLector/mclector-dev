@@ -47,6 +47,14 @@ export interface BadgeCanvasContext {
   fillText(text: string, x: number, y: number, maxWidth?: number): void;
   measureText(text: string): { width: number };
   createLinearGradient(x0: number, y0: number, x1: number, y1: number): GradientLike;
+  createRadialGradient(
+    x0: number,
+    y0: number,
+    r0: number,
+    x1: number,
+    y1: number,
+    r1: number,
+  ): GradientLike;
   drawImage(image: CanvasImageSource, dx: number, dy: number, dw: number, dh: number): void;
   /** Not in every engine (and absent from jsdom); the rounded-rect helper falls back to arcTo. */
   roundRect?(x: number, y: number, w: number, h: number, radii?: number): void;
@@ -147,18 +155,45 @@ export function drawBadgeFace(ctx: BadgeCanvasContext, data: BadgeFaceData): voi
 
   ctx.save();
 
-  // --- Base: a diagonal accent gradient, then a dark panel for contrast ---
+  // --- Base: a diagonal accent wash. accentFrom/accentTo stay the hue anchors
+  //     (the tests assert both appear), but the face is then pushed toward deep
+  //     near-black so the accent reads as a GLOW in the dark rather than a flat,
+  //     saturated rectangle — the difference between a premium pass and a cheap
+  //     placeholder.
   const base = ctx.createLinearGradient(0, 0, w, h);
   base.addColorStop(0, data.accentFrom);
   base.addColorStop(1, data.accentTo);
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, w, h);
 
-  // A soft vertical sheen so the plastic reads as curved even head-on.
+  const deepen = ctx.createLinearGradient(0, 0, 0, h);
+  deepen.addColorStop(0, "rgba(8,8,14,0.55)");
+  deepen.addColorStop(0.5, "rgba(8,8,14,0.80)");
+  deepen.addColorStop(1, "rgba(4,4,8,0.93)");
+  ctx.fillStyle = deepen;
+  ctx.fillRect(0, 0, w, h);
+
+  // Radial accent bloom, centred behind the portrait — the badge's own light
+  // source. Kept translucent via globalAlpha so its inner stop can stay a
+  // literal accent colour while the effect itself stays soft.
+  const glowCx = w / 2;
+  const glowCy = Math.max(0, h * 0.32);
+  const glowR = Math.max(1, w * 0.66);
+  const glow = ctx.createRadialGradient(glowCx, glowCy, 0, glowCx, glowCy, glowR);
+  glow.addColorStop(0, data.accentTo);
+  glow.addColorStop(0.55, data.accentFrom);
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.save();
+  ctx.globalAlpha = 0.42;
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+
+  // A thin top sheen so the plastic still catches light head-on.
   const sheen = ctx.createLinearGradient(0, 0, 0, h);
-  sheen.addColorStop(0, "rgba(255,255,255,0.22)");
-  sheen.addColorStop(0.45, "rgba(255,255,255,0.03)");
-  sheen.addColorStop(1, "rgba(0,0,0,0.35)");
+  sheen.addColorStop(0, "rgba(255,255,255,0.16)");
+  sheen.addColorStop(0.4, "rgba(255,255,255,0.02)");
+  sheen.addColorStop(1, "rgba(0,0,0,0.28)");
   ctx.fillStyle = sheen;
   ctx.fillRect(0, 0, w, h);
 
@@ -184,25 +219,30 @@ export function drawBadgeFace(ctx: BadgeCanvasContext, data: BadgeFaceData): voi
   if (data.avatar) {
     ctx.drawImage(data.avatar, photoX, photoTop, photoSize, photoSize);
   } else {
-    const monoFill = ctx.createLinearGradient(
-      photoX,
-      photoTop,
-      photoX + photoSize,
-      photoTop + photoSize,
-    );
-    monoFill.addColorStop(0, data.accentTo);
-    monoFill.addColorStop(1, data.accentFrom);
-    ctx.fillStyle = monoFill;
+    // Monogram crest: a dark glass tile lit from within by an accent bloom,
+    // with the initials floating on top. Reads as a deliberate emblem, not a
+    // "missing photo" swatch.
+    const mcx = photoX + photoSize / 2;
+    const mcy = photoTop + photoSize / 2;
+
+    ctx.fillStyle = "rgba(10,10,16,0.88)";
     ctx.fillRect(photoX, photoTop, photoSize, photoSize);
 
-    ctx.fillStyle = "rgba(0,0,0,0.30)";
+    const mono = ctx.createRadialGradient(mcx, mcy, 0, mcx, mcy, Math.max(1, photoSize * 0.72));
+    mono.addColorStop(0, data.accentTo);
+    mono.addColorStop(0.6, data.accentFrom);
+    mono.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.save();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = mono;
     ctx.fillRect(photoX, photoTop, photoSize, photoSize);
+    ctx.restore();
 
     ctx.fillStyle = INK;
     ctx.font = `600 ${Math.max(1, Math.round(photoSize * 0.42))}px ${FONT_STACK}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(initialsFrom(data.displayName), photoX + photoSize / 2, photoTop + photoSize / 2);
+    ctx.fillText(initialsFrom(data.displayName), mcx, mcy);
   }
   ctx.restore();
 
