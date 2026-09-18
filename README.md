@@ -1,4 +1,4 @@
-# Portu-Folio
+# mclector-dev
 
 Myre Lector's interactive 3D web portfolio — a single-screen bento grid with
 a physics-driven lanyard badge, built with Vite, React, react-three-fiber,

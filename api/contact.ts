@@ -163,7 +163,7 @@ export async function POST(request: Request): Promise<Response> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `Portu-Folio Contact <${FROM_EMAIL}>`,
+        from: `mclector-dev Contact <${FROM_EMAIL}>`,
         to: [TO_EMAIL],
         reply_to: safeEmail,
         subject: `Portfolio message from ${safeName}`,
