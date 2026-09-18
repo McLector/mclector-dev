@@ -1,9 +1,17 @@
 # Session 001 — Build and Deploy the 3D Bento Portfolio
 
 **Date:** 2026-09-18
-**Repo:** `C:\Project\portolio-projects\Portu-Folio`
+**Repo:** `C:\Project\portolio-projects\mclector-dev` — https://github.com/McLector/mclector-dev
 **Final commit at session end:** `9973dd0` (master)
-**Live URL:** https://portu-folio.vercel.app
+**Live URL:** https://mclector-dev.vercel.app
+
+> **Renamed after this session.** During the session the project was called
+> `Portu-Folio` (folder, `portu-folio` on Vercel, `portu-folio.vercel.app`).
+> Afterwards it was renamed to `mclector-dev` everywhere, pushed to a new
+> public GitHub repo, and its local `master` branch became `main`. The body
+> below is left as written, so where it says `master`, "no git remote", or
+> shows the old name, that was true at the time; the header above and the
+> references to the live project use the current names.
 
 This is a record of what happened in this session, not a task handover — there
 is no pending work assigned here for a future session to pick up. It exists so
@@ -301,7 +309,8 @@ integration pass exists to catch.
 ## 7. Deployment
 
 Deployed via the Vercel CLI (`npx vercel`, since the CLI is a devDependency
-but wasn't installed globally). Linked as `myres-projects/portu-folio`.
+but wasn't installed globally). Linked as `myres-projects/mclector-dev` (originally `portu-folio`, renamed
+after the session).
 
 **CLI login required a detour.** The CLI (initially v42, later upgraded by
 the user to v59.23.1) had switched to an OAuth 2.0 Device Flow login — a
@@ -352,13 +361,13 @@ created Name.com account showed zero domains. `mclector.dev` was confirmed
 never registered anywhere. It's available at Name.com for $14.99/first year
 through *direct* signup, or should be $0 for the first year through the
 proper GitHub-linked redemption flow (not yet attempted). The user chose to
-stop here and keep `portu-folio.vercel.app` for now; nothing was purchased,
+stop here and keep the default `*.vercel.app` URL for now; nothing was purchased,
 and the domain was removed from the Vercel project again after being
 attached mid-investigation, so the project's domain list is clean.
 
 ## 8. State at the end of this session
 
-- **Live production URL**: https://portu-folio.vercel.app
+- **Live production URL**: https://mclector-dev.vercel.app
 - **Repo**: 18 commits on `master`, clean working tree, all seven feature
   branches (`stream-a-intro` through `stream-g-certifications`) merged and
   still present as local branches (not deleted, not pushed anywhere — there
