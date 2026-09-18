@@ -1,0 +1,138 @@
+/*
+ * Stream D — honeycomb social grid.
+ *
+ * The one rule that shapes this whole file: `clip-path` clips a focus
+ * `outline` too, so a hexagon that draws its own focus ring draws an
+ * invisible one. Every cell therefore renders an UNCLIPPED-by-the-anchor
+ * sibling (`[data-hex-focus-ring]`) that sits slightly outside the hex and
+ * is revealed by `:has(a:focus-visible)`. The anchor's own outline is
+ * suppressed precisely because it cannot be trusted to show.
+ */
+
+.hexgrid {
+  --hex-w: clamp(54px, 15vw, 78px);
+  --hex-h: calc(var(--hex-w) * 1.1547); /* pointy-top: 2/√3 */
+  --hex-gap: 6px;
+  --hex-ring: 3px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-block: var(--hex-ring);
+}
+
+.hexgrid__row {
+  display: flex;
+  justify-content: center;
+  gap: var(--hex-gap);
+}
+
+.hexgrid__row + .hexgrid__row {
+  /* Interlock rows: the vertical step of a pointy-top hex is 0.75 × height. */
+  margin-top: calc(var(--hex-gap) - var(--hex-h) * 0.25);
+}
+
+.hexgrid__cell {
+  position: relative;
+  width: var(--hex-w);
+  height: var(--hex-h);
+}
+
+.hexgrid__ring,
+.hexgrid__link {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* The focus ring: a larger hexagon behind the cell. It is a SIBLING of the
+   anchor, so the anchor's clip-path cannot eat it. */
+.hexgrid__ring {
+  position: absolute;
+  inset: calc(var(--hex-ring) * -1);
+  background: var(--color-accent-blue);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  pointer-events: none;
+}
+
+.hexgrid__cell:has(.hexgrid__link:focus-visible) .hexgrid__ring {
+  opacity: 1;
+}
+
+/* Fallback for engines without :has() — an inset ring is clipped with the
+   hex, but a thick one still reads as a focus indicator. */
+@supports not selector(:has(*)) {
+  .hexgrid__link:focus-visible {
+    box-shadow: inset 0 0 0 3px var(--color-accent-blue);
+  }
+}
+
+.hexgrid__link {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  background: color-mix(in oklab, var(--color-surface-raised) 88%, white);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out,
+    transform 140ms ease-out;
+  /* Deliberate: this element is clipped, so its outline would be invisible.
+     The visible indicator is .hexgrid__ring above. */
+  outline: none;
+}
+
+.hexgrid__link:hover,
+.hexgrid__link:focus-visible {
+  background: color-mix(in oklab, var(--color-accent-blue) 30%, var(--color-surface-raised));
+  color: var(--color-text-primary);
+}
+
+.hexgrid__icon {
+  width: 40%;
+  max-width: 24px;
+  height: auto;
+  transition: transform 140ms ease-out;
+}
+
+.hexgrid__label {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-width: 88%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2px);
+  transition:
+    opacity 140ms ease-out,
+    transform 140ms ease-out;
+}
+
+/* Revealed on hover AND on keyboard focus — never hover-only. */
+.hexgrid__link:hover .hexgrid__label,
+.hexgrid__link:focus-visible .hexgrid__label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hexgrid__link:hover .hexgrid__icon,
+.hexgrid__link:focus-visible .hexgrid__icon {
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hexgrid__link,
+  .hexgrid__label,
+  .hexgrid__icon,
+  .hexgrid__ring {
+    transition: none;
+  }
+}
