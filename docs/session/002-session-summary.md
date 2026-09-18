@@ -159,9 +159,12 @@ webhook verification — safe to ignore or squash.
 
 - **Deleted** the old `portu-folio` Vercel project (the pre-rename leftover) via
   `vercel project rm`.
-- **`mclector-dev-8nne` still exists** — the accidental duplicate from the
-  dashboard git-import in §6.2. It is redundant (and may double-deploy on push)
-  and should be deleted; left in place pending explicit owner confirmation.
+- **Deleted `mclector-dev-8nne`** — the accidental duplicate from the dashboard
+  git-import in §6.2 (removed by the owner in the Vercel dashboard). Verified
+  afterward that the real `mclector-dev` project was unaffected: it is still the
+  only `mclector-*` project, still aliased to `mclector-dev.vercel.app`, and a
+  push (`e0ca5e2`) still auto-deployed to it — so the git connection survived the
+  deletion.
 
 ## 8. State at the end of this session
 
@@ -175,7 +178,6 @@ webhook verification — safe to ignore or squash.
   `Myre Lector <maljamore007@gmail.com>` (`git config --local`). Change if
   another address is preferred.
 - **Known, deliberately unaddressed:**
-  - `mclector-dev-8nne` duplicate project (see §7).
   - Still **no real assets** — photo, CV PDF, project screenshots. Each is a
     one-line swap in `src/content/*.ts`; that is the single biggest remaining
     upgrade. The badge halo is also still slightly card-shaped and could be
