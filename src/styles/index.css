@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  /* Surfaces */
+  --color-surface: oklch(0.14 0.01 280);
+  --color-surface-raised: oklch(0.18 0.015 280);
+
+  /* Text — kept ≥ 4.5:1 against --color-surface at /85 opacity over the
+     gradient backdrop; enforced by src/lib/contrast.test.ts (Phase 0). */
+  --color-text-primary: oklch(0.97 0.005 280);
+  --color-text-secondary: oklch(0.82 0.01 280);
+  --color-text-muted: oklch(0.65 0.015 280);
+
+  /* Accent gradient stops, matched to the reference's blue→purple→magenta→orange sweep */
+  --color-accent-blue: oklch(0.62 0.19 264);
+  --color-accent-purple: oklch(0.55 0.22 305);
+  --color-accent-magenta: oklch(0.6 0.24 340);
+  --color-accent-orange: oklch(0.72 0.17 48);
+
+  --radius-card: 1.75rem;
+
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent-blue);
+    outline-offset: 2px;
+  }
+}
+
+@keyframes bento-gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@layer utilities {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

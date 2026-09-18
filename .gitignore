@@ -1,0 +1,17 @@
+Reference/
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+.env
+.env.local
+.env.*.local
+coverage/
+playwright-report/
+test-results/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tsbuildinfo
+.vite/

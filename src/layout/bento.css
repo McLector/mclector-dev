@@ -1,0 +1,45 @@
+/*
+ * Grid-area contract for the bento layout. Streams never edit this file —
+ * a card lands in its area purely by rendering <BentoCard area="...">.
+ * See docs/contracts.md.
+ */
+
+.bento {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "intro"
+    "pass"
+    "skills"
+    "place"
+    "social"
+    "work"
+    "certifications"
+    "actions";
+}
+
+@media (min-width: 1024px) {
+  .bento {
+    height: 100dvh;
+    padding: 1.25rem;
+    grid-template-columns: minmax(320px, 0.95fr) minmax(520px, 1.5fr) minmax(300px, 0.85fr);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+      "intro  pass  social"
+      "skills pass  social"
+      "place  pass  work"
+      "actions pass certifications";
+    overflow: hidden;
+  }
+}
+
+/* Release the no-scroll lock on short viewports (laptops, landscape
+   tablets) so cards never get clipped. */
+@media (min-width: 1024px) and (max-height: 720px) {
+  .bento {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+}
