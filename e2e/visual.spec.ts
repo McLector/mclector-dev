@@ -25,6 +25,11 @@ test.skip(
 
 const maskedRegions = (page: import("@playwright/test").Page) => [
   page.locator('[data-bento-area="pass"]'),
+  // The live local-time clock (src/features/location/LocationCard.tsx)
+  // ticks once a second, which made this baseline non-deterministic —
+  // it wasn't masked originally because LocationCard was still a static
+  // Phase-0 placeholder when this spec was written.
+  page.locator('[data-bento-area="place"]'),
 ];
 
 test.describe("visual baselines", () => {
