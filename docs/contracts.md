@@ -35,18 +35,20 @@ props — never a deep import of `src/content/index.ts`.
 |---|---|---|---|
 | A | `IntroCard` | `{ profile: Profile }` | `src/features/intro/**` |
 | A | `SkillsCard` | `{ skills: Skill[] }` | `src/features/skills/**` |
-| A | `ActionsRow` | `{ profile: Profile; onContact: () => void }` | `src/features/actions/**` |
+| A | `ActionsRow` | `{ profile: Profile }` | `src/features/actions/**` |
 | B | `LocationCard` | `{ location: Profile["location"] }` | `src/features/location/**`, `src/lib/time.ts` |
 | C | `PassCard` | `{ profile: Profile }` | `src/three/**`, `src/features/pass/**` |
 | D | `SocialHex` | `{ socials: Social[] }` | `src/features/social/**`, `src/lib/hexNeighbors.ts` |
 | E | `ProjectsCard` | `{ projects: Project[] }` | `src/features/projects/**` |
 | E | `ProjectOverlay` | `{ projects: Project[] }` | `src/components/Overlay/**`, `src/lib/useHashRoute.ts`, `src/lib/useFocusTrap.ts` |
-| F | `ContactDialog` | `{ open: boolean; onClose: () => void }` | `src/features/contact/**`, `api/contact.ts`, `src/lib/contactSchema.ts` |
 | G | `CertificationsCard` | `{ certifications: Certification[] }` | `src/features/certifications/**` |
+| — | `ConnectSign` | `{ email: string }` | `src/features/connect/**` |
 
-`ActionsRow`'s `onContact` is the only outward call from Stream A — it does
-not implement the contact form. `App.tsx` wires it to `ContactDialog`'s
-`open` state.
+`ActionsRow` is just the centred Download CV control now — the "Contact me"
+button and the contact form/dialog were removed (Stream F is retired). Contact
+is `ConnectSign`: a neon `mailto:` link at the top of the centre column. It is
+rendered as a bare anchor, not a `BentoCard` (BentoCard is `overflow-hidden`
+and would clip its glow).
 
 ## Routing contract
 
@@ -58,33 +60,19 @@ not an error.
 ## Grid areas
 
 `grid-area` values, defined in `src/layout/bento.css`: `intro`, `skills`,
-`pass`, `social`, `place`, `work`, `certifications`, `actions`. A stream's
+`pass`, `social`, `place`, `work`, `certifications`, `actions`, `connect`. A stream's
 top-level component renders exactly one `<BentoCard area="...">` for that
 value (`SkillsCard` and `ActionsRow` are their own cards, distinct from
 `IntroCard`, despite both belonging to Stream A).
 
-## Contact form request/response shape (Stream F)
-
-Request (`POST /api/contact`, JSON): `{ name, email, message, company,
-startedAt }` — `company` is a honeypot (must arrive empty), `startedAt` is
-a client timestamp (ms) used for the time-trap spam check.
-
-Responses:
-- `200 { ok: true }`
-- `400 { ok: false, errors: Record<string, string> }` — per-field
-- `429 { ok: false, reason: 'rate-limited' }`
-- `503 { ok: false, reason: 'not-configured' }` — `RESEND_API_KEY` unset;
-  UI must reveal a `mailto:` fallback
-- `500 { ok: false, reason: 'server-error' }`
-
-`src/lib/contactSchema.ts` exports one zod schema imported by both the
-client form and `api/contact.ts` so they can never disagree.
-
 ## Testing boundaries
 
-`src/three/**` is excluded from the Vitest jsdom suite (see
-`vitest.config.ts`). Its pure math/texture helpers (e.g.
-`src/three/math/dragPlane.ts`, `src/three/textures/badgeFaceTexture.ts`)
-live inside that tree but are still unit-testable in isolation — write
-their tests first, then compose the scene from tested units. Do not attempt
-to assert simulated physics behavior in a unit test.
+`src/three/HologramScene.tsx` and `HologramCanvas.tsx` are WebGL code with no
+jsdom counterpart and are not unit-tested; they are excluded from coverage in
+`vitest.config.ts`. Everything else under `src/three/` IS tested by Vitest:
+the pure maths (`src/three/math/**`, e.g. `fitCamera`), the scene dimensions
+(`sceneDims.ts`), the texture helpers (`src/three/textures/**`) and
+`BadgeFallback` (plain DOM/CSS). Write those tests first, then compose the
+scene from tested units. The hologram's canvas mounting, sizing and centring
+are covered by `e2e/hologram.spec.ts` (the `webgl` Playwright project); its
+look is judged by eye on a real GPU.
