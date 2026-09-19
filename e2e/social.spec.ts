@@ -91,6 +91,55 @@ test.describe("social honeycomb", () => {
     expect(tabStops).toBe(1);
   });
 
+  test("the section is titled Contact & Socials", async ({ page }) => {
+    await expect(page.locator(SOCIAL).getByRole("heading", { name: "Contact & Socials" })).toBeVisible();
+    await expect(page.locator(SOCIAL)).not.toContainText("Elsewhere");
+  });
+
+  test("every hex icon sits dead-centre at rest (the label no longer takes layout space)", async ({ page }) => {
+    // Hovering is desktop-only; on touch the icon is deliberately lifted for the label.
+    test.skip(test.info().project.name !== "chromium", "rest state differs on touch");
+    const offsets = await page.locator(HEX_LINK).evaluateAll((links) =>
+      links.map((a) => {
+        const hb = a.getBoundingClientRect();
+        const ib = a.querySelector(".hexgrid__icon")!.getBoundingClientRect();
+        return [ib.x + ib.width / 2 - (hb.x + hb.width / 2), ib.y + ib.height / 2 - (hb.y + hb.height / 2)];
+      }),
+    );
+    expect(offsets).toHaveLength(7);
+    for (const [dx, dy] of offsets) {
+      expect(Math.abs(dx)).toBeLessThan(0.75);
+      expect(Math.abs(dy)).toBeLessThan(0.75);
+    }
+  });
+
+  test("hovering Instagram lifts the icon and shows the WHOLE label — no ellipsis", async ({ page }) => {
+    test.skip(test.info().project.name !== "chromium", "hover is desktop-only");
+    const link = page.locator(`${HEX_LINK}[aria-label="Instagram"]`);
+    const icon = link.locator(".hexgrid__icon");
+    const label = link.locator(".hexgrid__label");
+
+    const restY = (await icon.boundingBox())!.y;
+    await link.hover();
+    await expect(label).toHaveCSS("opacity", "1");
+    await expect.poll(async () => restY - (await icon.boundingBox())!.y).toBeGreaterThan(5);
+
+    // The label BOX is always full-width, so measure the TEXT itself.
+    const m = await label.evaluate((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return {
+        text: range.getBoundingClientRect().width,
+        hex: node.closest("a")!.getBoundingClientRect().width,
+        overflow: getComputedStyle(node).textOverflow,
+        content: node.textContent,
+      };
+    });
+    expect(m.content).toBe("Instagram");
+    expect(m.overflow).not.toBe("ellipsis");
+    expect(m.text).toBeLessThanOrEqual(m.hex * 0.92);
+  });
+
   test("the label is revealed by keyboard focus, not only by hover", async ({ page }) => {
     const label = page.locator(`${HEX_LINK} .hexgrid__label`).first();
 

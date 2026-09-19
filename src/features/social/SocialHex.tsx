@@ -96,8 +96,8 @@ export function SocialHex({ socials }: { socials: Social[] }) {
 
   return (
     <BentoCard area="social">
-      <div className="flex h-full flex-col justify-center gap-4">
-        <Eyebrow as="h2">Elsewhere</Eyebrow>
+      <div className="flex h-full flex-col justify-center gap-[14.25px]">
+        <Eyebrow as="h2">Contact &amp; Socials</Eyebrow>
 
         {ordered.length === 0 ? (
           <p className="text-xs text-[var(--color-text-muted)]">No social links yet.</p>

@@ -12,7 +12,7 @@
 .hexgrid {
   /* Fixed inside the scaled window: a viewport unit here would fight the
      scale-to-fit transform. Mobile (unscaled) gets the fluid clamp below. */
-  --hex-w: 52px;
+  --hex-w: 56px;
   --hex-h: calc(var(--hex-w) * 1.1547); /* pointy-top: 2/√3 */
   --hex-gap: 6px;
   --hex-ring: 3px;
@@ -37,8 +37,10 @@
 }
 
 .hexgrid__row + .hexgrid__row {
-  /* Interlock rows: the vertical step of a pointy-top hex is 0.75 × height. */
-  margin-top: calc(var(--hex-gap) - var(--hex-h) * 0.25);
+  /* Interlock rows: the vertical step of a pointy-top hex is 0.75 × height. The
+     extra tuck (5.05% of the hex width = 2.83px at 56px) is the approved
+     mockup's row overlap, kept proportional so the mobile clamp still nests. */
+  margin-top: calc(var(--hex-gap) - var(--hex-h) * 0.25 - var(--hex-w) * 0.0505);
 }
 
 .hexgrid__cell {
@@ -81,11 +83,9 @@
 .hexgrid__link {
   position: absolute;
   inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
+  /* Block, not a flex column: the icon and label are positioned absolutely, so
+     neither can push the other off-centre. */
+  display: block;
   background: color-mix(in oklab, var(--color-text-primary) 9%, transparent);
   color: var(--color-text-secondary);
   text-decoration: none;
@@ -114,7 +114,7 @@
   }
 
   .hexgrid__link:hover {
-    background: color-mix(in oklab, var(--arc) 55%, transparent);
+    background: color-mix(in oklab, var(--arc) 62%, transparent);
     color: #eafaff;
     transform: translateY(-2px);
   }
@@ -128,50 +128,75 @@
   transform: scale(0.95);
 }
 
+/* The icon is dead-centre of the hex at rest (inset:0 + margin:auto centres a
+   fixed-size absolute box). Sized as a fraction of the hex so the mobile clamp
+   scales it: 22px at the 56px desktop hex. */
 .hexgrid__icon {
-  width: 40%;
-  max-width: 24px;
-  height: auto;
-  transition: transform 140ms ease-out;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: calc(var(--hex-w) * 0.3929);
+  height: calc(var(--hex-w) * 0.3929);
+  transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
+/* The label is OUT OF FLOW. It used to be a flex child, so it took layout space
+   even at opacity 0 and pushed the icon off-centre — and its old max-width /
+   overflow / text-overflow:ellipsis rules are what truncated "Instagram" to
+   "instagr…". It now spans the full hex width (a pointy-top hex is at full width
+   between 25% and 75% of its height, where this sits) and is never clipped. */
 .hexgrid__label {
-  font-size: 9px;
+  position: absolute;
+  inset-inline: 0;
+  top: 60%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 8px;
   line-height: 1;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  max-width: 88%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 700;
+  letter-spacing: 0;
   white-space: nowrap;
+  transition:
+    opacity 160ms ease-out,
+    transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* No hover (touch): there is nothing to reveal the name, so it is always shown
+   and the icon sits lifted to make room — navigation is never mystery-meat. */
+.hexgrid__icon {
+  transform: translateY(-8px);
+}
+.hexgrid__label {
   opacity: 1;
   transform: none;
-  transition:
-    opacity 140ms ease-out,
-    transform 140ms ease-out;
 }
 
+/* Fine pointer: icon centred and label hidden at rest; on hover OR keyboard
+   focus the icon lifts and the name fades in beneath it. */
 @media (hover: hover) and (pointer: fine) {
+  .hexgrid__icon {
+    transform: none;
+  }
   .hexgrid__label {
     opacity: 0;
-    transform: translateY(2px);
+    transform: translateY(4px);
+  }
+
+  .hexgrid__link:hover .hexgrid__icon,
+  .hexgrid__link:focus-visible .hexgrid__icon {
+    transform: translateY(-8px);
   }
 
   .hexgrid__link:hover .hexgrid__label,
   .hexgrid__link:focus-visible .hexgrid__label {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .hexgrid__link:hover .hexgrid__icon,
-  .hexgrid__link:focus-visible .hexgrid__icon {
-    transform: translateY(-1px);
-  }
-}
-
-/* Reduced motion keeps the colour and the glow, drops the lift. */
+/* Reduced motion keeps the colour and the glow and drops the animation. The
+   icon still moves aside for the label — that is layout, not decoration, so it
+   just happens instantly (transition: none) rather than being cancelled. */
 @media (prefers-reduced-motion: reduce) {
   .hexgrid__cell,
   .hexgrid__link,
@@ -181,8 +206,7 @@
     transition: none;
   }
 
-  .hexgrid__link:hover,
-  .hexgrid__link:hover .hexgrid__icon {
+  .hexgrid__link:hover {
     transform: none;
   }
 }
