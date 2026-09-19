@@ -21,8 +21,10 @@ export function ThemeToggle({ className }: { className?: string }) {
       data-testid="theme-toggle"
       className={[
         "group relative grid size-10 place-items-center overflow-hidden rounded-full",
-        "bg-[var(--glass-bg)] text-[var(--color-text-secondary)] backdrop-blur-md",
-        "ring-1 ring-[var(--glass-border)] shadow-[var(--glass-shadow)]",
+        // The window-panel surface (as in the approved mockup): at dusk --glass-bg is
+        // now a near-white .9 that would read as a bright disc on the sky.
+        "bg-[var(--panel)] text-[var(--color-text-secondary)] backdrop-blur-md",
+        "ring-1 ring-[var(--panel-edge)] shadow-[var(--glass-shadow)]",
         "transition-[transform,color] duration-200 active:scale-[0.92]",
         "hover-fine:text-[var(--color-text-primary)]",
         "focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]",

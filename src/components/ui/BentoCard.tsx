@@ -61,6 +61,10 @@ export function BentoCard({
             cn(
               "bg-[var(--glass-bg)] backdrop-blur-xl",
               "shadow-[var(--glass-shadow),inset_0_1px_0_0_var(--glass-highlight),inset_0_0_0_1px_var(--glass-border)]",
+              // The arc blue at real size: a lit top edge on every glass card
+              // (strength is a theme token — subtle at night, strong at dusk).
+              "before:pointer-events-none before:absolute before:inset-x-4 before:top-0 before:h-0.5 before:rounded-b-[2px] before:content-['']",
+              "before:bg-[linear-gradient(90deg,transparent,var(--arc)_50%,transparent)] before:opacity-[var(--card-accent)]",
             ),
         padded && "p-[clamp(1rem,0.7rem+1vw,1.5rem)]",
         className,

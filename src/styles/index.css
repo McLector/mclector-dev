@@ -71,37 +71,79 @@
     --arc-soft: rgba(94, 200, 255, 0.9);
     --rain: rgba(90, 200, 255, 0.5);
 
-    /* Modal scrim behind the project overlay and contact dialog. */
+    /* Modal scrim behind the project overlay. */
     --scrim: oklch(0 0 0 / 0.75);
+
+    --window-shadow: 0 40px 120px -30px oklch(0 0 0 / 0.7);
+    --green: oklch(0.78 0.17 165);
+    --green-ink: oklch(0.86 0.15 165);
+
+    /* Approved revamp mockup: a lit arc-blue top edge on every card, tile
+       surfaces, the hologram stage bay, and the Download CV placeholder. */
+    --card-accent: 0.28;
+    --tile-bg: color-mix(in oklab, var(--color-text-primary) 7%, transparent);
+    --tile-ring: var(--glass-border);
+    --btn-bg: var(--color-text-primary);
+    --btn-ink: oklch(0.13 0.018 275);
+    --stage-bg:
+      radial-gradient(56% 40% at 50% 30%, rgba(94, 200, 255, 0.1), transparent 70%),
+      radial-gradient(60% 40% at 50% 76%, rgba(60, 140, 255, 0.18), transparent 74%);
+    --stage-edge: transparent;
+    --stage-caption: var(--color-text-muted);
+    --cv-bg: color-mix(in oklab, var(--color-text-primary) 10%, transparent);
+    --cv-fg: var(--color-text-primary);
+    --cv-dis: 0.42;
   }
 
+  /* Twilight — a "deepened" dusk with a real value ladder: a saturated mid-tone
+     sky, a deeper indigo window, and bright cards floating off it. Values are
+     the approved mockup's (docs/reference/2026-09-19-revamp-mockup.html). Contrast
+     is enforced by contrast.test.ts against the hand-synced table in contrast.ts. */
   :root[data-theme="light"] {
-    /* Twilight galaxy: a soft lilac/periwinkle dusk sky (the approved mockup),
-       with a slightly deeper arc-reactor blue so accents hold on light glass. */
-    --sky-top: #b9c6ef;
-    --sky-mid: #cdbfe8;
-    --sky-bottom: #e8dcef;
-    --star-color: rgba(60, 70, 120, 0.55);
-    --star-opacity: 0.35;
-    --nebula-strength: 0.4;
-    --grid-color: oklch(0.3 0.03 270 / 0.06);
+    --sky-top: #6f80d3;
+    --sky-mid: #9887d8;
+    --sky-bottom: #dcc3e8;
+    --star-color: rgba(255, 255, 255, 0.92);
+    --star-opacity: 0.6;
+    --nebula-strength: 0.6;
+    --grid-color: rgba(255, 255, 255, 0.1);
 
     --color-surface: oklch(0.96 0.01 265);
     --color-surface-raised: oklch(0.99 0.005 265);
-    --color-text-primary: oklch(0.24 0.03 272);
-    --color-text-secondary: oklch(0.38 0.03 272);
-    --color-text-muted: oklch(0.5 0.03 272);
+    --color-text-primary: oklch(0.22 0.035 272);
+    --color-text-secondary: oklch(0.35 0.035 272);
+    --color-text-muted: oklch(0.44 0.035 272);
 
-    --glass-bg: oklch(1 0 0 / 0.62);
-    --glass-border: oklch(0.35 0.04 272 / 0.16);
-    --glass-highlight: oklch(1 0 0 / 0.85);
-    --glass-shadow: 0 20px 50px -30px oklch(0.35 0.06 272 / 0.42);
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(48, 52, 120, 0.2);
+    --glass-highlight: rgba(255, 255, 255, 0.95);
+    --glass-shadow: 0 22px 46px -22px rgba(32, 30, 105, 0.62);
 
-    --panel: rgba(255, 255, 255, 0.55);
-    --panel-edge: rgba(40, 45, 80, 0.16);
-    --arc: #1f9bff;
+    --panel: rgba(44, 48, 128, 0.34);
+    --panel-edge: rgba(255, 255, 255, 0.42);
+    --window-shadow: 0 40px 110px -28px rgba(28, 26, 96, 0.6);
+    --arc: #1a86f5;
     --arc-soft: rgba(94, 200, 255, 0.9);
-    --rain: rgba(30, 120, 190, 0.55);
+    --rain: rgba(226, 238, 255, 0.55);
+    --green: #0f9a63;
+    --green-ink: #0b6b46;
+
+    --card-accent: 0.85;
+    --tile-bg: color-mix(in oklab, var(--arc) 12%, rgba(255, 255, 255, 0.72));
+    --tile-ring: color-mix(in oklab, var(--arc) 34%, transparent);
+    --btn-bg: oklch(0.22 0.035 272);
+    --btn-ink: #f4f6ff;
+    /* A hologram is light-emitting, so its stage stays a deep navy bay in this
+       theme — additive cyan washes out on a pale surface. */
+    --stage-bg:
+      radial-gradient(60% 42% at 50% 30%, rgba(94, 200, 255, 0.2), transparent 70%),
+      radial-gradient(70% 55% at 50% 88%, rgba(60, 140, 255, 0.34), transparent 74%),
+      linear-gradient(180deg, #0c1c50, #070f34);
+    --stage-edge: rgba(255, 255, 255, 0.14);
+    --stage-caption: #b8c8f0;
+    --cv-bg: rgba(255, 255, 255, 0.82);
+    --cv-fg: oklch(0.22 0.035 272);
+    --cv-dis: 0.66;
 
     /* A dusk-tinted scrim: black over a lilac sky reads as a hole, not a dim. */
     --scrim: oklch(0.25 0.05 272 / 0.5);
@@ -161,24 +203,6 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-text-muted);
-  }
-}
-
-/* The hologram's projection bay. Transparent in the (already dark) night theme;
-   in twilight it becomes a deep indigo pane so the additive cyan projection has
-   something to glow against instead of washing out on the pale sky. */
-@layer components {
-  .holo-stage {
-    border-radius: inherit;
-  }
-  :root[data-theme="light"] .holo-stage {
-    background:
-      radial-gradient(60% 42% at 50% 30%, rgba(94, 200, 255, 0.22), transparent 70%),
-      radial-gradient(70% 55% at 50% 82%, rgba(94, 200, 255, 0.2), transparent 74%),
-      oklch(0.2 0.06 275 / 0.92);
-    box-shadow:
-      inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -267,6 +291,19 @@
   }
 }
 
+/* The "Currently Active" ripple: expands and fades, unlike the still location dot. */
+@keyframes status-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  80%,
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
 @keyframes chip-enter {
   from {
     opacity: 0;
@@ -316,6 +353,9 @@
     inset: 0;
     background: radial-gradient(130% 120% at 50% 40%, transparent 45%, oklch(0.04 0.02 275 / 0.55) 100%);
     opacity: calc(1 - (0.7 * (1 - var(--nebula-strength))));
+  }
+  :root[data-theme="light"] .galaxy::after {
+    background: radial-gradient(130% 120% at 50% 40%, transparent 50%, rgba(40, 34, 110, 0.32) 100%);
   }
 
   /* Two twinkling star fields, hand-placed as tiled radial-gradient dots. */
@@ -437,7 +477,7 @@
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
     box-shadow:
-      0 40px 120px -30px oklch(0 0 0 / 0.7),
+      var(--window-shadow),
       inset 0 1px 0 0 var(--glass-highlight),
       inset 0 0 0 1px var(--panel-edge);
   }
