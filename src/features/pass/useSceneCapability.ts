@@ -1,57 +1,62 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   readCapabilitySignals,
-  resolveQualityTier,
+  resolveHardwareTier,
+  resolveSceneMode,
   TIER_CONFIG,
   type CapabilitySignals,
-  type QualityTier,
+  type SceneMode,
   type TierConfig,
 } from "@/lib/capability";
 
-export type FallbackReason = "no-webgl" | "reduced-motion" | "low-tier";
+/** Why the 2D fallback is shown, when it is. */
+export type FallbackReason = "no-webgl" | "low-tier" | "loading" | "offscreen";
 
 export type SceneCapability = {
-  tier: QualityTier;
-  /** null exactly when `tier === "unsupported"`. */
+  /** full = animated 3D; static = 3D but no autonomous motion; fallback = 2D. */
+  mode: SceneMode;
+  /** null exactly when `mode === "fallback"`. */
   config: TierConfig | null;
+  /** true only in `full` mode — drives whether the scene animates itself. */
+  animated: boolean;
   signals: CapabilitySignals;
-  /** null when the 3D scene should render. */
+  /** the fallback reason when `mode === "fallback"`, else null. */
   reason: FallbackReason | null;
   /** devicePixelRatio already clamped to the tier ceiling. */
   dpr: number;
 };
 
 /**
- * Why the static badge is being shown, given raw signals. Pure, so the
- * precedence (no WebGL beats reduced motion beats weak GPU) is pinned by a
- * test rather than by reading the branch order.
+ * The fallback reason for a set of signals — only a genuine inability to render
+ * (no WebGL, or an unusable GPU). Reduced motion is NOT a fallback: it renders
+ * the 3D object statically. Pure so the precedence is pinned by a test.
  */
 export function fallbackReason(signals: CapabilitySignals): FallbackReason | null {
   if (!signals.hasWebGL) return "no-webgl";
-  if (signals.prefersReducedMotion) return "reduced-motion";
-  if (resolveQualityTier(signals) === "unsupported") return "low-tier";
+  if (signals.gpuTier <= 0) return "low-tier";
   return null;
 }
 
 /**
- * Resolve the quality tier for the lanyard scene from browser signals.
+ * Resolve how the pass centre should render from browser signals.
  *
  * Deliberately does NOT import drei's `useDetectGPU`: this hook runs in the
  * *initial* bundle (PassCard decides whether to download the 3D chunk at all),
  * and drei would drag three.js in with it. `readCapabilitySignals` defaults
  * `gpuTier` to 2 — "unknown but presumed capable" — and the real GPU tier is
- * folded in later, inside the lazy chunk, by `src/three/useGpuRefinedTier.ts`.
+ * folded in later, inside the lazy chunk, by the scene's GPU gate.
  */
 export function useSceneCapability(): SceneCapability {
   const resolve = useCallback((overrides?: Partial<CapabilitySignals>): SceneCapability => {
     const signals = { ...readCapabilitySignals(), ...overrides };
-    const tier = resolveQualityTier(signals);
-    const config = tier === "unsupported" ? null : TIER_CONFIG[tier];
+    const mode = resolveSceneMode(signals);
+    const config = mode === "fallback" ? null : TIER_CONFIG[resolveHardwareTier(signals)];
     return {
-      tier,
+      mode,
       config,
+      animated: mode === "full",
       signals,
-      reason: fallbackReason(signals),
+      reason: mode === "fallback" ? fallbackReason(signals) : null,
       dpr: Math.min(signals.devicePixelRatio, config?.maxDpr ?? 1),
     };
   }, []);

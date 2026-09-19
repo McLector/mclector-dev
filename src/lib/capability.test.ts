@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveQualityTier, TIER_CONFIG, type CapabilitySignals } from "./capability";
+import { resolveQualityTier, resolveSceneMode, TIER_CONFIG, type CapabilitySignals } from "./capability";
 
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
@@ -73,5 +73,24 @@ describe("TIER_CONFIG", () => {
     for (const tier of Object.values(TIER_CONFIG)) {
       expect(tier.bloom).toBe(tier.starfield);
     }
+  });
+});
+
+describe("resolveSceneMode", () => {
+  it("renders static (not fallback) under reduced motion", () => {
+    expect(resolveSceneMode(signals({ prefersReducedMotion: true }))).toBe("static");
+  });
+
+  it("falls back only without WebGL or a usable GPU", () => {
+    expect(resolveSceneMode(signals({ hasWebGL: false }))).toBe("fallback");
+    expect(resolveSceneMode(signals({ gpuTier: 0 }))).toBe("fallback");
+  });
+
+  it("renders static on a very low-end but WebGL-capable device", () => {
+    expect(resolveSceneMode(signals({ hardwareConcurrency: 2 }))).toBe("static");
+  });
+
+  it("is full on a capable device", () => {
+    expect(resolveSceneMode(signals())).toBe("full");
   });
 });

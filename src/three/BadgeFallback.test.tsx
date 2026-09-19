@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { BadgeFallback } from "./BadgeFallback";
-import { initialsFrom } from "./textures/badgeFaceTexture";
+import { initialsFrom } from "./textures/initials";
 import type { Profile } from "@/content/types";
 
 function makeProfile(overrides: Partial<Profile> = {}): Profile {

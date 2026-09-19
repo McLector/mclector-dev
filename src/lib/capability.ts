@@ -77,3 +77,32 @@ export function readCapabilitySignals(): CapabilitySignals {
     gpuTier: 2,
   };
 }
+
+/**
+ * The scene render decision, decoupled from motion. Unlike `resolveQualityTier`
+ * (which folds reduced-motion into "unsupported"), this renders the 3D object
+ * for anyone with a working GPU — reduced-motion (or a low-end device) only
+ * downgrades it to `static` (rendered but no autonomous animation), never to
+ * the flat 2D fallback. Only a missing WebGL context or an unusable GPU
+ * (`gpuTier <= 0`) yields `fallback`.
+ */
+export type SceneMode = "full" | "static" | "fallback";
+
+/** Hardware tier ignoring motion/webgl — used to pick the TierConfig. */
+export function resolveHardwareTier(
+  signals: CapabilitySignals,
+): Exclude<QualityTier, "unsupported"> {
+  const memory = signals.deviceMemory ?? 4;
+  const cores = signals.hardwareConcurrency;
+  if (cores <= 2 || memory <= 2) return "low";
+  if (cores <= 4 || memory <= 4 || signals.gpuTier === 1) return "medium";
+  return "high";
+}
+
+export function resolveSceneMode(signals: CapabilitySignals): SceneMode {
+  if (!signals.hasWebGL) return "fallback";
+  if (signals.gpuTier <= 0) return "fallback";
+  if (signals.prefersReducedMotion) return "static";
+  if (resolveHardwareTier(signals) === "low") return "static";
+  return "full";
+}

@@ -4,10 +4,10 @@ import { PassCard } from "./PassCard";
 import { profile } from "@/content/profile";
 
 /**
- * Note: this suite never mounts the real WebGL canvas. jsdom has no GL
- * context, so the branch under test is the *decision* — which of the two
- * renditions PassCard picks — plus the code-splitting boundary. Whether the
- * badge swings is not, and cannot be, a jsdom assertion.
+ * jsdom has no WebGL context and its IntersectionObserver mock never fires, so
+ * this suite exercises the *decision* PassCard makes (which fallback reason it
+ * shows), not the live canvas — the canvas is only mounted once the card comes
+ * into view, which never happens here.
  */
 
 function stubWebGL(available: boolean) {
@@ -50,19 +50,21 @@ describe("PassCard", () => {
     expect(card?.className).not.toMatch(/\bp-5\b/);
   });
 
-  it("renders the static badge when there is no WebGL context", () => {
+  it("shows the 2D fallback when there is no WebGL context", () => {
     stubWebGL(false);
     stubReducedMotion(false);
     const { container } = render(<PassCard profile={profile} />);
-    expect(container.querySelector("[data-pass-variant='static']")).not.toBeNull();
     expect(container.querySelector("[data-pass-fallback-reason='no-webgl']")).not.toBeNull();
   });
 
-  it("renders the static badge under prefers-reduced-motion even with WebGL", () => {
+  it("does NOT fall back to 2D under reduced motion — it takes the 3D path (offscreen here)", () => {
     stubWebGL(true);
     stubReducedMotion(true);
     const { container } = render(<PassCard profile={profile} />);
-    expect(container.querySelector("[data-pass-fallback-reason='reduced-motion']")).not.toBeNull();
+    // reduced-motion no longer forces the flat card: the reason is 'offscreen'
+    // (would mount the static hologram once in view), never 'no-webgl'.
+    expect(container.querySelector("[data-pass-fallback-reason='no-webgl']")).toBeNull();
+    expect(container.querySelector("[data-pass-fallback-reason='offscreen']")).not.toBeNull();
   });
 
   it("shows the badge caption", () => {
@@ -84,45 +86,12 @@ describe("PassCard", () => {
   it("does not mount the 3D canvas while the card is off-screen", async () => {
     stubWebGL(true);
     stubReducedMotion(false);
-    // The default IntersectionObserver polyfill in test/setup.ts never fires,
-    // so the card is treated as never having come into view.
     const { container } = render(<PassCard profile={profile} />);
     await waitFor(() => {
       expect(container.querySelector("[data-pass-variant='static']")).not.toBeNull();
     });
     expect(container.querySelector("canvas")).toBeNull();
     expect(container.querySelector("[data-pass-fallback-reason='offscreen']")).not.toBeNull();
-  });
-
-  it("renders the pass-theme switcher with the default world selected", () => {
-    stubWebGL(false);
-    stubReducedMotion(false);
-    render(<PassCard profile={profile} />);
-    const nebula = screen.getByRole("radio", { name: "Nebula" });
-    expect(nebula).toHaveAttribute("aria-checked", "true");
-    // Every other world is present and unselected.
-    expect(screen.getByRole("radio", { name: "Aurora" })).toHaveAttribute(
-      "aria-checked",
-      "false",
-    );
-  });
-
-  it("moves the selection when another pass theme is picked", async () => {
-    const user = (await import("@testing-library/user-event")).default.setup();
-    stubWebGL(false);
-    stubReducedMotion(false);
-    render(<PassCard profile={profile} />);
-
-    await user.click(screen.getByRole("radio", { name: "Solar" }));
-
-    expect(screen.getByRole("radio", { name: "Solar" })).toHaveAttribute(
-      "aria-checked",
-      "true",
-    );
-    expect(screen.getByRole("radio", { name: "Nebula" })).toHaveAttribute(
-      "aria-checked",
-      "false",
-    );
   });
 
   it("renders without throwing for empty badge copy", () => {

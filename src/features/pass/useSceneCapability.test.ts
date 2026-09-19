@@ -21,21 +21,15 @@ describe("fallbackReason", () => {
   });
 
   it("reports missing WebGL before anything else", () => {
-    expect(fallbackReason(signals({ hasWebGL: false, prefersReducedMotion: true }))).toBe(
-      "no-webgl",
-    );
-  });
-
-  it("reports reduced motion", () => {
-    expect(fallbackReason(signals({ prefersReducedMotion: true }))).toBe("reduced-motion");
+    expect(fallbackReason(signals({ hasWebGL: false }))).toBe("no-webgl");
   });
 
   it("reports a GPU too weak to render the scene", () => {
     expect(fallbackReason(signals({ gpuTier: 0 }))).toBe("low-tier");
   });
 
-  it("does not fall back merely for a modest but usable device", () => {
-    expect(fallbackReason(signals({ gpuTier: 1, hardwareConcurrency: 2, deviceMemory: 2 }))).toBeNull();
+  it("does NOT fall back merely for reduced motion (renders static instead)", () => {
+    expect(fallbackReason(signals({ prefersReducedMotion: true }))).toBeNull();
   });
 });
 
@@ -72,36 +66,39 @@ describe("useSceneCapability", () => {
   it("falls back when jsdom reports no WebGL context", () => {
     stubEnvironment({ webgl: false, reducedMotion: false });
     const { result } = renderHook(() => useSceneCapability());
-    expect(result.current.tier).toBe("unsupported");
+    expect(result.current.mode).toBe("fallback");
     expect(result.current.reason).toBe("no-webgl");
     expect(result.current.config).toBeNull();
   });
 
-  it("resolves a usable tier and config when WebGL is available", () => {
+  it("renders full animated 3D on a capable device with WebGL", () => {
     stubEnvironment({ webgl: true, reducedMotion: false });
     const { result } = renderHook(() => useSceneCapability());
-    expect(result.current.tier).not.toBe("unsupported");
+    expect(result.current.mode).toBe("full");
+    expect(result.current.animated).toBe(true);
     expect(result.current.reason).toBeNull();
     expect(result.current.config?.maxDpr).toBeGreaterThan(0);
   });
 
-  it("falls back under prefers-reduced-motion even with WebGL", () => {
+  it("renders STATIC 3D (not the 2D fallback) under prefers-reduced-motion", () => {
     stubEnvironment({ webgl: true, reducedMotion: true });
     const { result } = renderHook(() => useSceneCapability());
-    expect(result.current.tier).toBe("unsupported");
-    expect(result.current.reason).toBe("reduced-motion");
+    expect(result.current.mode).toBe("static");
+    expect(result.current.animated).toBe(false);
+    expect(result.current.config).not.toBeNull();
+    expect(result.current.reason).toBeNull();
   });
 
-  it("re-resolves when the reduced-motion preference changes at runtime", () => {
+  it("re-resolves between full and static when reduced-motion changes at runtime", () => {
     stubEnvironment({ webgl: true, reducedMotion: false });
     const { result } = renderHook(() => useSceneCapability());
-    expect(result.current.reason).toBeNull();
+    expect(result.current.mode).toBe("full");
 
     act(() => {
       for (const listener of listeners) listener({ matches: true });
     });
 
-    expect(result.current.reason).toBe("reduced-motion");
+    expect(result.current.mode).toBe("static");
   });
 
   it("detaches its media listener on unmount", () => {
