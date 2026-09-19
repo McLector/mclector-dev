@@ -38,4 +38,23 @@ test.describe("accessibility", () => {
     await page.locator('[data-bento-area="certifications"]').waitFor();
     await assertNoBlockingViolations(page);
   });
+
+  test("has no serious or critical axe violations in the twilight (light) theme", async ({ page }) => {
+    // Pin the stored choice so this never depends on the OS colour scheme.
+    await page.addInitScript(() => localStorage.setItem("mclector-theme", "light"));
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.locator('[data-bento-area="certifications"]').waitFor();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await assertNoBlockingViolations(page);
+  });
+
+  test("has no serious or critical axe violations in the twilight theme at mobile", async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem("mclector-theme", "light"));
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.locator('[data-bento-area="certifications"]').waitFor();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await assertNoBlockingViolations(page);
+  });
 });

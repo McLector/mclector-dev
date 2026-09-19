@@ -31,28 +31,28 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
-    // Render the badge's static fallback, not the live WebGL canvas, across the
-    // whole suite. Under headless swiftshader the canvas is software-rendered
-    // and its starfield never settles, so it pins a CPU core and starves axe,
+    // Run with 3D APIs DISABLED, so the hologram cell settles on the static
+    // fallback card. Under headless swiftshader the live WebGL scene is
+    // software-rendered and never settles: it pins a CPU core and starves axe,
     // keyboard-interaction and exit-animation assertions into flaky timeouts.
-    // No spec exercises the WebGL path (it is masked in visual.spec and ignored
-    // elsewhere), so forcing reduced motion costs zero coverage and makes the
-    // suite deterministic — the same static-badge state the baselines assume.
+    // The WebGL path has its own project below (hologram.spec.ts), and the
+    // visual baselines mask the hologram cell either way.
     reducedMotion: "reduce",
+    launchOptions: { args: ["--disable-3d-apis"] },
   },
   projects: [
+    { name: "chromium", testIgnore: /hologram.spec.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "mobile-chrome", testIgnore: /hologram.spec.ts/, use: { ...devices["Pixel 7"] } },
     {
-      name: "chromium",
+      // The one project with WebGL: guards the reduced-motion-still-renders-3D fix.
+      name: "webgl",
+      testMatch: /hologram.spec.ts/,
       use: {
         ...devices["Desktop Chrome"],
         launchOptions: {
-          args: ["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"],
+          args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"],
         },
       },
-    },
-    {
-      name: "mobile-chrome",
-      use: { ...devices["Pixel 7"] },
     },
   ],
   webServer: {
