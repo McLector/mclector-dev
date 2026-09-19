@@ -31,14 +31,14 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
 
   return (
     <BentoCard area="skills" as="section" grow>
-      <div className="flex h-full flex-col gap-2">
+      <div className="flex h-full flex-col gap-1.5">
         <Eyebrow as="h2">Skills &amp; Tools</Eyebrow>
 
         {rows.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
             {rows.map((row) => (
-              <section key={row.label} className="flex flex-col gap-1">
-                <h3 className="mt-0.5 text-[8.5px] font-bold tracking-[0.1em] text-[color-mix(in_oklab,var(--color-text-primary)_55%,var(--arc)_30%)] uppercase">
+              <section key={row.label} className="flex flex-col gap-[3px]">
+                <h3 className="text-[8.5px] font-bold tracking-[0.1em] text-[color-mix(in_oklab,var(--color-text-primary)_62%,var(--arc)_38%)] uppercase">
                   {row.label}
                 </h3>
                 <ul className="grid grid-cols-7 gap-1">

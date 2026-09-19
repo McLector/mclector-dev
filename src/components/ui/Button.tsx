@@ -2,9 +2,12 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export type ButtonVariant = "primary" | "secondary";
+/** `slim` is the compact pill used by the framed window's action row. */
+export type ButtonSize = "regular" | "slim";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   children: ReactNode;
 };
 
@@ -16,10 +19,16 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
  * src/features/actions/ActionsRow.tsx for that case.
  */
 // eslint-disable-next-line react-refresh/only-export-components -- intentional shared helper, see docstring above
-export function buttonClasses(variant: ButtonVariant = "primary", className?: string): string {
+export function buttonClasses(
+  variant: ButtonVariant = "primary",
+  { size = "regular", className }: { size?: ButtonSize; className?: string } = {},
+): string {
   return cn(
-    "inline-flex items-center justify-center rounded-full px-5 py-2.5",
-    "text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40",
+    "inline-flex items-center justify-center rounded-full",
+    // Fixed px sizes: the window is scaled as one unit, so viewport-relative
+    // type/padding would fight the scale.
+    size === "slim" ? "px-[18px] py-2.5 text-[12.5px]" : "px-5 py-2.5 text-sm",
+    "font-semibold disabled:cursor-not-allowed disabled:opacity-40",
     "transition-[transform,box-shadow,background-color] duration-200 hover-fine:-translate-y-0.5 active:scale-[0.97]",
     // Themed: primary is the high-contrast text colour as a solid pill (near-white
     // on dark, near-black on light); secondary is a quiet glass pill. Both read
@@ -32,9 +41,15 @@ export function buttonClasses(variant: ButtonVariant = "primary", className?: st
   );
 }
 
-export function Button({ variant = "primary", className, children, ...rest }: ButtonProps) {
+export function Button({
+  variant = "primary",
+  size = "regular",
+  className,
+  children,
+  ...rest
+}: ButtonProps) {
   return (
-    <button className={buttonClasses(variant, className)} {...rest}>
+    <button className={buttonClasses(variant, { size, className })} {...rest}>
       {children}
     </button>
   );

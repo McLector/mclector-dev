@@ -30,6 +30,17 @@
   min-height: 0;
 }
 
+/* Inside the scaled window every metric is a fixed px — the card padding and
+   corner radius tokens are viewport-relative (clamp + vw), which would make
+   the cards drift against the scale. Mobile (below) keeps the fluid tokens.
+   The pass (transparent stage) and actions (bare pills) cells opt out. */
+@media (min-width: 861px) {
+  .bento__col > [data-bento-area]:not([data-bento-area="actions"]):not([data-bento-area="pass"]) {
+    padding: 16px;
+    border-radius: 18px;
+  }
+}
+
 /* Staggered entrance for the cards themselves (columns are display:flex, so
    target the cards). Frozen under reduced motion by the global rule. */
 .bento__col > * {

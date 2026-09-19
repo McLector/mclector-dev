@@ -95,14 +95,14 @@ function EmptyState() {
     <div
       data-testid="certifications-empty"
       className={cn(
-        "flex flex-1 flex-col items-center justify-center gap-2",
-        "rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-6 text-center",
+        "flex items-center gap-3",
+        "rounded-2xl border border-dashed border-[var(--glass-border)] px-3.5 py-3 text-left",
       )}
     >
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
-        className="h-6 w-6 text-[var(--color-text-muted)]"
+        className="h-6 w-6 shrink-0 text-[var(--color-text-muted)]"
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
@@ -112,12 +112,14 @@ function EmptyState() {
         <circle cx="12" cy="9" r="5" />
         <path d="M8.5 13.2 7 21l5-2.4L17 21l-1.5-7.8" />
       </svg>
-      <p className="text-sm font-medium text-[var(--color-text-secondary)]">
-        Coming soon
-      </p>
-      <p className="max-w-[28ch] text-xs text-[var(--color-text-muted)]">
-        Reserved for the credentials I'm working toward — planned, not missing.
-      </p>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <p className="text-[12.5px] font-semibold text-[var(--color-text-secondary)]">
+          Coming soon
+        </p>
+        <p className="text-[10px] leading-snug text-[var(--color-text-muted)]">
+          Reserved for the credentials I'm working toward — planned, not missing.
+        </p>
+      </div>
     </div>
   );
 }
@@ -129,7 +131,7 @@ export function CertificationsCard({
 }) {
   return (
     <BentoCard area="certifications" as="section">
-      <div className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex h-full min-h-0 flex-col gap-2.5">
         <div className="flex items-baseline justify-between gap-2">
           <Eyebrow as="h2">Certifications</Eyebrow>
           {certifications.length > 0 && (

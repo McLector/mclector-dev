@@ -26,7 +26,7 @@ export function ActionsRow({
     // Bare + unpadded: the actions are free-floating pills, not a big glass box.
     <BentoCard area="actions" as="section" bare padded={false}>
       <div className="flex h-full flex-wrap items-center gap-2.5">
-        <Button type="button" variant="primary" onClick={onContact}>
+        <Button type="button" variant="primary" size="slim" onClick={onContact}>
           Contact me
         </Button>
 
@@ -34,13 +34,14 @@ export function ActionsRow({
           // A real navigation has to be an <a>, which <button> cannot
           // semantically be — buttonClasses() keeps it visually identical
           // to Button's secondary variant without duplicating the class list.
-          <a href={cv.href} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary")}>
+          <a href={cv.href} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary", { size: "slim" })}>
             {cv.label}
           </a>
         ) : (
           <Button
             type="button"
             variant="secondary"
+            size="slim"
             disabled
             aria-disabled="true"
             title="CV coming soon"

@@ -44,18 +44,21 @@ export function PassCard({ profile }: { profile: Profile }) {
 
   return (
     <BentoCard area="pass" padded={false} grow>
+      {/* Light theme: a hologram is light-emitting, so it needs a dark ground to
+          read. In dark this is transparent (the galaxy is already dark). */}
+      <div aria-hidden="true" data-holo-stage className="holo-stage pointer-events-none absolute inset-0" />
       <div ref={attachRefs} className="relative flex h-full w-full flex-col justify-center gap-2 py-3">
         {/* Local nebula glow behind the hologram, layered over the galaxy. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-1/2 h-[clamp(360px,58vh,640px)] -translate-y-1/2"
+          className="pointer-events-none absolute inset-x-0 top-1/2 h-[600px] -translate-y-1/2 max-[860px]:h-[clamp(360px,58vh,640px)]"
           style={{
             backgroundImage:
               "radial-gradient(42% 38% at 50% 42%, rgba(94,200,255,0.28) 0%, transparent 70%), radial-gradient(38% 34% at 56% 60%, rgba(140,90,255,0.2) 0%, transparent 72%)",
           }}
         />
 
-        <div className="relative h-[clamp(340px,58vh,600px)] w-full">
+        <div className="relative h-[560px] w-full max-[860px]:h-[clamp(340px,58vh,600px)]">
           {isFallback ? (
             <BadgeFallback profile={profile} reason={reason ?? "no-webgl"} />
           ) : !load.inView ? (
@@ -76,7 +79,7 @@ export function PassCard({ profile }: { profile: Profile }) {
         {/* The static badge carries its own caption; only the canvas path adds
             one here, to avoid duplicating it in the a11y tree. */}
         {!isFallback && load.inView ? (
-          <p className="relative z-10 text-center font-[family-name:var(--font-mono)] text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase">
+          <p className="relative z-10 text-center font-[family-name:var(--font-mono)] text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase light:text-[#b8c4e6]">
             {profile.badge.caption}
           </p>
         ) : null}

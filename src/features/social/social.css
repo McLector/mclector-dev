@@ -12,7 +12,7 @@
 .hexgrid {
   /* Fixed inside the scaled window: a viewport unit here would fight the
      scale-to-fit transform. Mobile (unscaled) gets the fluid clamp below. */
-  --hex-w: 58px;
+  --hex-w: 52px;
   --hex-h: calc(var(--hex-w) * 1.1547); /* pointy-top: 2/√3 */
   --hex-gap: 6px;
   --hex-ring: 3px;
@@ -86,7 +86,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  background: color-mix(in oklab, var(--color-surface-raised) 88%, white);
+  background: color-mix(in oklab, var(--color-text-primary) 9%, transparent);
   color: var(--color-text-secondary);
   text-decoration: none;
   transition:

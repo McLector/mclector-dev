@@ -42,7 +42,7 @@ export function LocationCard({ location }: LocationCardProps) {
       <div
         aria-hidden="true"
         data-testid="map-placeholder"
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-60 light:opacity-[0.1]"
         style={mapPlaceholderStyle(location.mapTexture)}
       />
       {/* A faint accent wash so the clock reads as "alive", not a flat panel. */}
@@ -55,7 +55,7 @@ export function LocationCard({ location }: LocationCardProps) {
         }}
       />
 
-      <div className="relative flex h-full flex-col justify-between gap-4">
+      <div className="relative flex h-full flex-col justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
             data-testid="location-status-dot"
@@ -71,10 +71,10 @@ export function LocationCard({ location }: LocationCardProps) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <p
             data-testid="local-clock"
-            className="text-[clamp(2rem,1.4rem+2.6vw,3rem)] leading-none tabular-nums text-[var(--color-text-primary)]"
+            className="text-[33px] leading-none tabular-nums text-[var(--color-text-primary)]"
             style={{ fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}
           >
             {localTime}

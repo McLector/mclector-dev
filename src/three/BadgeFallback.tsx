@@ -2,13 +2,17 @@ import type { Profile } from "@/content/types";
 import { initialsFrom } from "./textures/initials";
 
 /**
- * The static badge — plain DOM and CSS, no WebGL, no physics.
+ * The static hologram card — plain DOM and CSS, no WebGL, no physics.
  *
- * ONE component serves every degraded path (see the plan doc's a11y/perf
- * budget): no WebGL, `prefers-reduced-motion: reduce`, the `unsupported`
- * capability tier, and the Suspense fallback while the 3D chunk downloads.
- * Keeping it single is deliberate — three near-identical fallbacks would
- * drift out of sync with `profile.badge` within a release.
+ * ONE component serves every degraded path: no WebGL, the Suspense fallback
+ * while the 3D chunk downloads, and the pre-load "offscreen" state. Keeping it
+ * single is deliberate — near-identical fallbacks would drift out of sync with
+ * `profile.badge` within a release. It is a flat rendition of the 3D hologram
+ * (slim arc-reactor frame, the photo, scanlines) rather than the retired
+ * lanyard badge, so the swap to the live scene doesn't change the object.
+ *
+ * It always sits on the hologram's dark projection bay (PassCard's
+ * `.holo-stage`), so its light-on-dark text is intentionally theme-independent.
  *
  * Unlike the rest of `src/three/**` this file is pure DOM and is genuinely
  * unit-testable; see BadgeFallback.test.tsx and the note in
@@ -22,7 +26,7 @@ export function BadgeFallback({
   profile: Profile;
   /** Why the 3D scene was skipped — surfaced as a data attribute for e2e. */
   reason?: "no-webgl" | "reduced-motion" | "low-tier" | "loading" | "offscreen";
-  /** Pass-theme accent override; defaults to the profile placeholder pair. */
+  /** Accent override; defaults to the profile placeholder pair. */
   accent?: { from: string; to: string };
 }) {
   const { badge, avatar, displayName } = profile;
@@ -35,93 +39,76 @@ export function BadgeFallback({
       data-pass-fallback-reason={reason}
       className="flex h-full w-full flex-col items-center justify-center gap-4 p-5"
     >
-      {/* The strap stub: enough to read as a lanyard without animating. */}
-      <div
-        aria-hidden="true"
-        className="h-9 w-2.5 rounded-full opacity-90"
-        style={{ backgroundImage: `linear-gradient(to bottom, ${from}, ${to})` }}
-      />
-
       <div
         role="img"
         aria-label={`${displayName} — ${badge.subtitle || badge.caption}`}
         data-badge-surface
-        className="relative flex w-full max-w-[15.5rem] flex-col items-center gap-3 rounded-2xl px-5 py-6 text-center ring-1 ring-white/12"
+        className="relative flex w-full max-w-[15.5rem] flex-col overflow-hidden rounded-[14px] p-2 ring-1 ring-[color-mix(in_oklab,var(--arc)_70%,transparent)]"
         style={{
-          // Deep, glossy pass: the accent gradient reads as a GLOW under a dark
-          // scrim rather than a flat coloured swatch — mirrors the 3D badge
-          // face. Both accent colours stay literally present (asserted by the
-          // fallback tests) as the glow's colour stops.
-          backgroundColor: "#0b0b12",
+          // A faint accent glow under a dark glass pane: both accent colours
+          // stay literally present as the glow's colour stops.
+          backgroundColor: "rgba(8, 14, 30, 0.86)",
           backgroundImage: [
-            "linear-gradient(180deg, rgba(8,8,14,0.5) 0%, rgba(6,6,12,0.86) 100%)",
-            `radial-gradient(120% 85% at 50% 22%, ${to} 0%, transparent 62%)`,
-            `linear-gradient(160deg, ${from} 0%, ${to} 100%)`,
+            `radial-gradient(120% 70% at 50% 0%, ${to} 0%, transparent 60%)`,
+            `linear-gradient(160deg, ${from} 0%, transparent 70%)`,
           ].join(", "),
-          aspectRatio: "1.6 / 2.25",
-          boxShadow: `0 22px 50px -20px rgb(0 0 0 / 0.85), 0 0 42px -10px ${from}, inset 0 1px 0 0 rgb(255 255 255 / 0.1)`,
+          aspectRatio: "0.8",
+          boxShadow:
+            "0 0 34px -8px var(--arc-soft), inset 0 0 0 1px rgba(94, 200, 255, 0.18)",
         }}
       >
-        {/* Iridescent top sheen — a faint rainbow catch-light. */}
-        <span
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-2xl opacity-25"
-          style={{
-            backgroundImage:
-              "linear-gradient(115deg, transparent 30%, rgba(120,200,255,0.35) 45%, rgba(200,140,255,0.35) 55%, transparent 70%)",
-          }}
-        />
-
-        {/* Punch hole */}
-        <span aria-hidden="true" className="h-1.5 w-10 rounded-full bg-black/50" />
-
-        <span
-          className="relative grid aspect-square w-[46%] place-items-center overflow-hidden rounded-xl bg-[#0a0a10] ring-1 ring-white/20"
-          style={
-            avatar.src
-              ? undefined
-              : { boxShadow: `inset 0 0 26px -4px ${to}, inset 0 0 10px -2px ${from}` }
-          }
-        >
+        {/* The projected portrait: fills the frame, cover-cropped. */}
+        <span className="relative grid min-h-0 flex-1 place-items-center overflow-hidden rounded-[9px] bg-[#0a1220]">
           {avatar.src ? (
             <img
               src={avatar.src}
               alt={avatar.alt}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover object-[48%_35%] [filter:saturate(0.55)_contrast(1.1)_brightness(1.05)_hue-rotate(160deg)]"
               loading="lazy"
               decoding="async"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="text-xl font-semibold text-white drop-shadow-[0_1px_6px_rgb(0_0_0/0.6)]"
+              className="text-3xl font-semibold text-[#eafaff] drop-shadow-[0_1px_6px_rgb(0_0_0/0.6)]"
             >
               {monogram}
             </span>
           )}
+
+          {/* Cyan wash + scanlines: the "projected light" look. */}
+          <span
+            aria-hidden="true"
+            data-badge-scanlines
+            className="pointer-events-none absolute inset-0 mix-blend-screen"
+            style={{
+              backgroundImage:
+                "linear-gradient(180deg, rgba(94,200,255,0.18), rgba(94,200,255,0.05)), repeating-linear-gradient(0deg, rgba(94,200,255,0.16) 0 1px, transparent 1px 3px)",
+            }}
+          />
         </span>
 
-        <span className="relative flex w-full flex-col gap-0.5">
+        <span className="flex w-full flex-col gap-0.5 px-1 pt-2 pb-0.5 text-center">
           <span
             data-badge-title
-            className="truncate text-sm font-bold text-white"
+            className="truncate text-sm font-bold text-[#eafaff]"
             title={badge.title}
           >
             {badge.title}
           </span>
-          <span className="truncate text-[0.625rem] font-medium text-white/75">
+          <span className="truncate text-[0.625rem] font-medium text-[#eafaff]/75">
             {badge.subtitle}
           </span>
         </span>
 
         {badge.idLabel ? (
-          <span className="relative rounded-full bg-black/50 px-2 py-0.5 font-mono text-[0.625rem] tracking-wider text-white/90 ring-1 ring-white/10">
+          <span className="mx-auto mb-0.5 rounded-full bg-black/40 px-2 py-0.5 font-mono text-[0.625rem] tracking-wider text-[#eafaff]/90 ring-1 ring-[color-mix(in_oklab,var(--arc)_40%,transparent)]">
             {badge.idLabel}
           </span>
         ) : null}
       </div>
 
-      <p className="font-mono text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase">
+      <p className="font-mono text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase light:text-[#b8c4e6]">
         {badge.caption}
       </p>
     </div>

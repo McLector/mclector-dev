@@ -20,7 +20,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
 
   return (
     <BentoCard area="work" as="section" grow>
-      <div className="flex h-full flex-col gap-4">
+      <div className="flex h-full flex-col gap-2.5">
         <div className="flex items-baseline justify-between gap-3">
           <Eyebrow as="h2">Latest projects</Eyebrow>
           {featured.length > 0 && (
@@ -38,7 +38,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
         ) : (
           <ul
             data-testid="projects-list"
-            className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+            className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto"
           >
             {featured.map((project) => (
               <li key={project.id}>
@@ -48,7 +48,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                   data-project-row={project.id}
                   aria-haspopup="dialog"
                   onClick={() => openProject(project.id)}
-                  className="group flex w-full items-center gap-3 rounded-xl p-2 text-left transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] focus-visible:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  className="group flex w-full items-center gap-2.5 rounded-xl p-1.5 text-left transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] focus-visible:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                 >
                   <motion.span
                     layoutId={projectLayoutId(project.id)}
@@ -56,17 +56,17 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                     data-testid={`project-thumb-${project.id}`}
                     aria-hidden="true"
                     style={thumbnailStyle(project.thumbnail)}
-                    className="size-11 shrink-0 rounded-xl ring-1 ring-[var(--glass-border)] transition-shadow group-hover:ring-[var(--glass-highlight)]"
+                    className="size-9 shrink-0 rounded-[9px] ring-1 ring-[var(--glass-border)] transition-shadow group-hover:ring-[var(--glass-highlight)]"
                   />
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">
+                    <span className="truncate text-[12px] font-semibold text-[var(--color-text-primary)]">
                       {project.title}
                     </span>
-                    <span className="truncate text-xs text-[var(--color-text-muted)]">
+                    <span className="truncate text-[10px] text-[var(--color-text-muted)]">
                       {project.subtitle}
                     </span>
                   </span>
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                  <span className="shrink-0 text-[8px] uppercase tracking-[0.06em] text-[var(--color-text-muted)]">
                     {statusLabel(project.status)}
                   </span>
                 </button>

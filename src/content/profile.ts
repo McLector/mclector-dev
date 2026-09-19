@@ -1,4 +1,5 @@
 import type { Profile } from "./types";
+import portraitUrl from "@/assets/portfolio-pic.jpg";
 
 export const profile: Profile = {
   handle: "@McLector",
@@ -9,6 +10,9 @@ export const profile: Profile = {
     "Most of what I build starts as a project given, a problem I actually had, or sometimes just for the fun of it. Currently open for internship.",
   avatar: {
     alt: "Myre Lector",
+    // The hero portrait — also what the 3D hologram projects. Vite emits it as a
+    // hashed asset, so this is a URL string, not bytes in the bundle.
+    src: portraitUrl,
     placeholder: {
       kind: "monogram",
       seed: "ML",

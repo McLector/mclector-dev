@@ -116,4 +116,22 @@ describe("BadgeFallback", () => {
     expect(title).not.toBeNull();
     expect(title!.className).toMatch(/truncate|line-clamp/);
   });
+
+  it("is a slim arc-reactor hologram frame, not a lanyard (no strap, no punch hole)", () => {
+    const { container } = render(<BadgeFallback profile={makeProfile()} />);
+    const surface = container.querySelector<HTMLElement>("[data-badge-surface]");
+    expect(surface).not.toBeNull();
+    expect(surface!.className).toContain("var(--arc)");
+    expect(container.querySelector("[data-badge-strap]")).toBeNull();
+    expect(container.querySelector("[data-badge-punch]")).toBeNull();
+  });
+
+  it("puts the photo inside the frame with a scanline overlay when an avatar src exists", () => {
+    const profile = makeProfile();
+    profile.avatar = { ...profile.avatar, src: "/me.png" };
+    const { container } = render(<BadgeFallback profile={profile} />);
+    const frame = container.querySelector("[data-badge-surface]")!;
+    expect(frame.querySelector("img")).toHaveAttribute("src", "/me.png");
+    expect(frame.querySelector("[data-badge-scanlines]")).not.toBeNull();
+  });
 });
