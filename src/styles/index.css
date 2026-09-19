@@ -387,3 +387,22 @@
     border-radius: 26px;
   }
 }
+
+@layer components {
+  /* Parallax wrapper for the star layers — its own transform (set from JS on
+     pointer move) composes with the inner drift animation. */
+  .galaxy-parallax {
+    position: fixed;
+    inset: 0;
+    z-index: -9;
+    pointer-events: none;
+    transition: transform 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  /* The alive-galaxy field: asteroids, comets, binary data-rain. */
+  .galaxy-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: -8;
+    pointer-events: none;
+  }
+}
