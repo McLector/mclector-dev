@@ -1,14 +1,14 @@
 /*
- * Fluid bento layout. Unlike the previous version this grid does NOT lock the
- * whole portfolio into one non-scrolling viewport — that was what forced the
- * visitor to zoom out. Rows are content-sized, spacing scales with `clamp()`,
- * and the page scrolls when it needs to.
+ * The window interior. Desktop: a three-column grid whose columns are flex
+ * stacks, so list-heavy cards grow to fill the fixed-height window. Mobile:
+ * the column wrappers dissolve (display: contents) and every card reflows into
+ * one scrolling stack, re-ordered so the hologram sits right under the intro.
  */
 
 @keyframes bento-card-enter {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
@@ -18,88 +18,49 @@
 
 .bento {
   display: grid;
-  gap: clamp(0.7rem, 0.45rem + 1vw, 1.15rem);
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "intro"
-    "pass"
-    "skills"
-    "place"
-    "social"
-    "work"
-    "certifications"
-    "actions";
+  height: 100%;
+  gap: 14px;
+  grid-template-columns: 290px minmax(0, 1fr) 300px;
 }
 
-/* Tablet: a comfortable two-column split; the badge leads. */
-@media (min-width: 700px) {
+.bento__col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 0;
+}
+
+/* Staggered entrance for the cards themselves (columns are display:flex, so
+   target the cards). Frozen under reduced motion by the global rule. */
+.bento__col > * {
+  animation: bento-card-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.bento__col:nth-child(1) > *:nth-child(1) { animation-delay: 0.04s; }
+.bento__col:nth-child(1) > *:nth-child(2) { animation-delay: 0.12s; }
+.bento__col:nth-child(1) > *:nth-child(3) { animation-delay: 0.2s; }
+.bento__col:nth-child(1) > *:nth-child(4) { animation-delay: 0.28s; }
+.bento__col--center > * { animation-delay: 0.08s; }
+.bento__col:nth-child(3) > *:nth-child(1) { animation-delay: 0.16s; }
+.bento__col:nth-child(3) > *:nth-child(2) { animation-delay: 0.24s; }
+.bento__col:nth-child(3) > *:nth-child(3) { animation-delay: 0.32s; }
+
+/* ---- Mobile: dissolve the columns, reflow into one ordered stack ---- */
+@media (max-width: 860px) {
   .bento {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      "intro   pass"
-      "skills  pass"
-      "place   pass"
-      "social  work"
-      "social  certifications"
-      "actions actions";
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    gap: 14px;
   }
-}
-
-/* Desktop: three columns — narrow identity rail, wide badge stage, feed rail.
-   Rows are auto-sized so nothing is stretched into wasted space; the badge
-   column gets its height from its own min-height, and the side rails simply
-   flow. */
-@media (min-width: 1024px) {
-  .bento {
-    grid-template-columns: minmax(280px, 0.9fr) minmax(440px, 1.35fr) minmax(300px, 0.95fr);
-    align-items: start;
-    grid-template-areas:
-      "intro  pass  social"
-      "skills pass  work"
-      "place  pass  work"
-      "actions pass certifications";
+  .bento__col {
+    display: contents;
   }
-}
-
-/* The badge stage needs room to hang without dominating the fold. It is the
-   only cell with an intrinsic height; everything else is content-sized. */
-[data-bento-area="pass"] {
-  min-height: clamp(340px, 30rem + 6vw, 600px);
-}
-
-/* On desktop the middle column stretches to the full grid height (while the
-   side cards stay content-sized via align-items:start) so the badge can centre
-   itself vertically instead of clumping at the top. */
-@media (min-width: 1024px) {
-  [data-bento-area="pass"] {
-    align-self: stretch;
-  }
-}
-
-.bento > * {
-  animation: bento-card-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.bento > *:nth-child(1) {
-  animation-delay: 0.04s;
-}
-.bento > *:nth-child(2) {
-  animation-delay: 0.09s;
-}
-.bento > *:nth-child(3) {
-  animation-delay: 0.14s;
-}
-.bento > *:nth-child(4) {
-  animation-delay: 0.19s;
-}
-.bento > *:nth-child(5) {
-  animation-delay: 0.24s;
-}
-.bento > *:nth-child(6) {
-  animation-delay: 0.29s;
-}
-.bento > *:nth-child(7) {
-  animation-delay: 0.34s;
-}
-.bento > *:nth-child(8) {
-  animation-delay: 0.39s;
+  [data-bento-area="intro"] { order: 1; }
+  [data-bento-area="pass"] { order: 2; min-height: 380px; }
+  [data-bento-area="skills"] { order: 3; }
+  [data-bento-area="place"] { order: 4; }
+  [data-bento-area="social"] { order: 5; }
+  [data-bento-area="work"] { order: 6; }
+  [data-bento-area="certifications"] { order: 7; }
+  [data-bento-area="actions"] { order: 8; }
 }

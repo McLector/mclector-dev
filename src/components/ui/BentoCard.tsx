@@ -20,6 +20,8 @@ type BentoCardProps = {
   /** Drop the glass surface entirely so the cell floats directly in the galaxy
    *  (the badge stage and the action row). Defaults to true for the pass area. */
   bare?: boolean;
+  /** Grow to fill remaining space in its flex column (skills, projects, pass). */
+  grow?: boolean;
   as?: "div" | "section" | "article";
 };
 
@@ -35,6 +37,7 @@ export function BentoCard({
   className,
   padded = true,
   bare,
+  grow,
   as: Component = "div",
 }: BentoCardProps) {
   // The badge cell is not a solid card: it stays transparent so the galaxy's
@@ -45,10 +48,10 @@ export function BentoCard({
   return (
     <Component
       data-bento-area={area}
-      style={{ gridArea: area }}
       className={cn(
         "relative overflow-hidden rounded-[var(--radius-card)]",
         "transition-[background-color,box-shadow,transform] duration-300",
+        grow && "min-h-0 flex-1",
         isBare
           ? "" // The cell floats directly in the galaxy — no surface at all.
           : // A raised glass surface floating over the stars: translucent so the

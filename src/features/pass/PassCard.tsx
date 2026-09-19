@@ -62,7 +62,7 @@ export function PassCard({ profile }: { profile: Profile }) {
   const accent = useMemo(() => resolvePassTheme(themeId), [themeId]);
 
   return (
-    <BentoCard area="pass" padded={false}>
+    <BentoCard area="pass" padded={false} grow>
       {/* The stage is a bounded height, vertically centred in the (often much
           taller) middle column, so the badge sits at the page's optical centre
           instead of clumping at the top with a void beneath it. */}

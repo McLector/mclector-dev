@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { content } from "@/content";
 import { BentoGrid } from "@/layout/BentoGrid";
+import { AppFrame } from "@/layout/AppFrame";
 import { GalaxyBackdrop } from "@/layout/GalaxyBackdrop";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ProjectOverlay } from "@/components/Overlay/ProjectOverlay";
@@ -22,11 +23,9 @@ export default function App() {
         <ThemeToggle />
       </div>
 
-      <main className="relative flex min-h-dvh w-full justify-center">
-        <div className="w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-          <BentoGrid content={content} onContact={() => setContactOpen(true)} />
-        </div>
-      </main>
+      <AppFrame>
+        <BentoGrid content={content} onContact={() => setContactOpen(true)} />
+      </AppFrame>
 
       <ProjectOverlay projects={content.projects} />
       <ContactDialog open={contactOpen} onClose={() => setContactOpen(false)} />

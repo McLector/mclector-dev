@@ -16,14 +16,14 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
   const groups = groupSkills(skills);
 
   return (
-    <BentoCard area="skills" as="section">
+    <BentoCard area="skills" as="section" grow>
       <div className="flex h-full flex-col gap-4">
         <h2 className="font-[family-name:var(--font-mono)] text-[0.7rem] font-medium tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
           Skills &amp; Tools
         </h2>
 
         {groups.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
             {groups.map((group) => (
               <section key={group.group} className="flex flex-col gap-1.5">
                 <h3 className="text-[0.66rem] font-semibold tracking-[0.06em] text-[var(--color-text-secondary)]">

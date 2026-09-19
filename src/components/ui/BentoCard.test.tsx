@@ -3,15 +3,24 @@ import { render, screen } from "@testing-library/react";
 import { BentoCard } from "./BentoCard";
 
 describe("BentoCard", () => {
-  it("maps the area prop to CSS grid-area", () => {
+  it("tags the card with its bento area", () => {
     render(
       <BentoCard area="intro">
         <p>content</p>
       </BentoCard>,
     );
     const card = screen.getByText("content").parentElement;
-    expect(card).toHaveStyle({ gridArea: "intro" });
     expect(card).toHaveAttribute("data-bento-area", "intro");
+  });
+
+  it("grows to fill its flex column when grow is set", () => {
+    render(
+      <BentoCard area="skills" grow>
+        <p>grows</p>
+      </BentoCard>,
+    );
+    const card = screen.getByText("grows").parentElement;
+    expect(card?.className).toMatch(/flex-1/);
   });
 
   it("renders as a section when as='section'", () => {

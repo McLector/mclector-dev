@@ -18,7 +18,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
   const featured = projects.filter((project) => project.featured);
 
   return (
-    <BentoCard area="work" as="section">
+    <BentoCard area="work" as="section" grow>
       <div className="flex h-full flex-col gap-4">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-sm font-semibold tracking-wide text-[var(--color-text-primary)]">

@@ -63,6 +63,13 @@
     --glass-border: oklch(1 0 0 / 0.09);
     --glass-highlight: oklch(1 0 0 / 0.1);
     --glass-shadow: 0 22px 60px -30px oklch(0 0 0 / 0.8);
+
+    /* Framed window + arc-reactor accent (Iron-Man cyan-blue) */
+    --panel: oklch(0.16 0.02 275 / 0.42);
+    --panel-edge: oklch(1 0 0 / 0.1);
+    --arc: #5ec8ff;
+    --arc-soft: rgba(94, 200, 255, 0.9);
+    --rain: rgba(90, 200, 255, 0.5);
   }
 
   :root[data-theme="light"] {
@@ -85,6 +92,12 @@
     --glass-border: oklch(0.35 0.04 272 / 0.16);
     --glass-highlight: oklch(1 0 0 / 0.85);
     --glass-shadow: 0 20px 50px -30px oklch(0.35 0.06 272 / 0.42);
+
+    --panel: oklch(1 0 0 / 0.55);
+    --panel-edge: oklch(0.35 0.04 272 / 0.16);
+    --arc: #1f8fe0;
+    --arc-soft: rgba(45, 140, 215, 0.6);
+    --rain: rgba(40, 120, 190, 0.5);
   }
 
   html,
@@ -332,5 +345,45 @@
     .comet {
       opacity: 0 !important;
     }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * The framed window (scale-to-fit on desktop). The whole portfolio lives in
+ * one panel that is scaled as a unit to fit the viewport, so it opens with no
+ * scroll. Below --mobile it becomes a normal scrolling stack.
+ * ------------------------------------------------------------------------- */
+@layer components {
+  .app-fit {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+  }
+
+  .app-window {
+    position: relative;
+    width: 1200px;
+    height: 730px;
+    padding: 18px;
+    border-radius: 30px;
+    transform-origin: center center;
+    background: var(--panel);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    box-shadow:
+      0 40px 120px -30px oklch(0 0 0 / 0.7),
+      inset 0 1px 0 0 var(--glass-highlight),
+      inset 0 0 0 1px var(--panel-edge);
+  }
+
+  .app-window--mobile {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    transform: none !important;
+    padding: 14px;
+    border-radius: 26px;
   }
 }

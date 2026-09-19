@@ -10,10 +10,12 @@ import { CertificationsCard } from "@/features/certifications/CertificationsCard
 import "./bento.css";
 
 /**
- * The grid-area contract that lets every stream land independently. This
- * file is owned by Phase 0 — no stream edits it. Each imported component
- * already targets its final path; a stream "lands" by replacing that
- * component file's contents, never by touching this composition.
+ * The window interior: three columns — an identity rail (left), the hologram
+ * stage (centre), and a feed rail (right). Columns are flex so the list-heavy
+ * cards (skills, projects) grow to fill the fixed-height window, and the
+ * centre column gives the 3D room to breathe. On mobile the columns collapse
+ * (via `display: contents` in bento.css) and each card is re-ordered into a
+ * single scrolling stack.
  */
 export function BentoGrid({
   content,
@@ -23,15 +25,23 @@ export function BentoGrid({
   onContact: () => void;
 }) {
   return (
-    <div className="bento w-full">
-      <IntroCard profile={content.profile} />
-      <SkillsCard skills={content.skills} />
-      <PassCard profile={content.profile} />
-      <SocialHex socials={content.socials} />
-      <LocationCard location={content.profile.location} />
-      <ProjectsCard projects={content.projects} />
-      <CertificationsCard certifications={content.certifications} />
-      <ActionsRow profile={content.profile} onContact={onContact} />
+    <div className="bento">
+      <div className="bento__col">
+        <IntroCard profile={content.profile} />
+        <SkillsCard skills={content.skills} />
+        <LocationCard location={content.profile.location} />
+        <ActionsRow profile={content.profile} onContact={onContact} />
+      </div>
+
+      <div className="bento__col bento__col--center">
+        <PassCard profile={content.profile} />
+      </div>
+
+      <div className="bento__col">
+        <SocialHex socials={content.socials} />
+        <ProjectsCard projects={content.projects} />
+        <CertificationsCard certifications={content.certifications} />
+      </div>
     </div>
   );
 }

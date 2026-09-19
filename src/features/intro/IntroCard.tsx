@@ -14,13 +14,13 @@ export function IntroCard({ profile }: { profile: Profile }) {
 
   return (
     <BentoCard area="intro" as="section">
-      <div className="flex h-full flex-col justify-center gap-4">
-        <p className="text-xs font-medium tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+      <div className="flex h-full flex-col justify-center gap-2.5">
+        <p className="font-[family-name:var(--font-mono)] text-[10.5px] font-medium tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
           {profile.handle}
         </p>
 
         <h1
-          className="font-[family-name:var(--font-display)] text-3xl leading-[1.02] font-bold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-4xl lg:text-5xl"
+          className="font-[family-name:var(--font-display)] text-[30px] leading-[1.03] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]"
           style={{ overflowWrap: "anywhere" }}
         >
           <span className="block text-[var(--color-text-primary)]">
@@ -29,7 +29,7 @@ export function IntroCard({ profile }: { profile: Profile }) {
           <span className="block">{headlineBottom}</span>
         </h1>
 
-        <p className="max-w-prose text-sm leading-relaxed text-[var(--color-text-muted)] sm:text-base">
+        <p className="text-[12px] leading-relaxed text-[var(--color-text-muted)]">
           <strong className="font-semibold text-[var(--color-text-secondary)]">
             {profile.bioLead}
           </strong>{" "}
