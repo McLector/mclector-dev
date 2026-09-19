@@ -1,10 +1,12 @@
-import { Suspense, lazy, useCallback, useState } from "react";
+import { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
 import { BadgeFallback } from "@/three/BadgeFallback";
 import { useDocumentVisible } from "./useDocumentVisible";
 import { useInView } from "./useInView";
 import { useSceneCapability } from "./useSceneCapability";
+import { DEFAULT_PASS_THEME_ID, PASS_THEMES, resolvePassTheme } from "./passThemes";
+import { PassThemeSwitcher } from "./PassThemeSwitcher";
 
 /**
  * The only import of the 3D tree in the whole app, and it is dynamic. Keeping
@@ -55,32 +57,60 @@ export function PassCard({ profile }: { profile: Profile }) {
   const reason = capability.reason ?? (gpuUnsupported ? "low-tier" : null);
   const canRender3D = reason === null && capability.config !== null;
 
+  // The selected pass "world" re-skins the badge and the glow behind it.
+  const [themeId, setThemeId] = useState(DEFAULT_PASS_THEME_ID);
+  const accent = useMemo(() => resolvePassTheme(themeId), [themeId]);
+
   return (
     <BentoCard area="pass" padded={false}>
-      <div ref={attachRefs} className="relative h-full w-full">
-        {!canRender3D ? (
-          <BadgeFallback profile={profile} reason={reason ?? "low-tier"} />
-        ) : !load.inView ? (
-          <BadgeFallback profile={profile} reason="offscreen" />
-        ) : (
-          <Suspense fallback={<BadgeFallback profile={profile} reason="loading" />}>
-            <LanyardCanvas
-              profile={profile}
-              config={capability.config!}
-              dpr={capability.dpr}
-              active={visible.inView && documentVisible}
-              onGpuTier={onGpuTier}
-            />
-          </Suspense>
-        )}
+      {/* The stage is a bounded height, vertically centred in the (often much
+          taller) middle column, so the badge sits at the page's optical centre
+          instead of clumping at the top with a void beneath it. */}
+      <div
+        ref={attachRefs}
+        className="relative flex h-full w-full flex-col justify-center gap-3 py-4"
+      >
+        {/* Local nebula glow behind the badge, tinted to the selected world. It
+            layers over the global galaxy nebula so the centre stage reacts to
+            the switcher. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-1/2 h-[clamp(360px,54vh,600px)] -translate-y-1/2 transition-[background-image] duration-500"
+          style={{
+            backgroundImage: `radial-gradient(42% 38% at 50% 40%, ${accent.from}59 0%, transparent 70%), radial-gradient(36% 34% at 56% 50%, ${accent.to}40 0%, transparent 72%)`,
+          }}
+        />
 
-        {/* The static badge carries its own caption; only the canvas needs an
-            overlaid one, and rendering both would duplicate it in the a11y tree. */}
-        {canRender3D && load.inView ? (
-          <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-mono text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase">
-            {profile.badge.caption}
-          </p>
-        ) : null}
+        <div className="relative h-[clamp(340px,50vh,560px)] w-full">
+          {!canRender3D ? (
+            <BadgeFallback profile={profile} reason={reason ?? "low-tier"} accent={accent} />
+          ) : !load.inView ? (
+            <BadgeFallback profile={profile} reason="offscreen" accent={accent} />
+          ) : (
+            <Suspense fallback={<BadgeFallback profile={profile} reason="loading" accent={accent} />}>
+              <LanyardCanvas
+                profile={profile}
+                config={capability.config!}
+                accent={accent}
+                dpr={capability.dpr}
+                active={visible.inView && documentVisible}
+                onGpuTier={onGpuTier}
+              />
+            </Suspense>
+          )}
+        </div>
+
+        {/* Switcher + caption, anchored below the stage. The static badge
+            carries its own caption, so only the canvas path adds one here —
+            rendering both would duplicate it in the a11y tree. */}
+        <div className="relative z-10 flex flex-col items-center gap-2 pb-3">
+          <PassThemeSwitcher themes={PASS_THEMES} value={themeId} onChange={setThemeId} />
+          {canRender3D && load.inView ? (
+            <p className="text-center font-[family-name:var(--font-mono)] text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase">
+              {profile.badge.caption}
+            </p>
+          ) : null}
+        </div>
       </div>
     </BentoCard>
   );

@@ -52,32 +52,59 @@ export function contrastRatio(colorA: string, colorB: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-const CARD_BG_WORST_CASE = "#3e2335"; // surface-raised @ 85% over the magenta gradient stop
+// DARK theme worst case: the translucent glass card sitting over the brightest
+// nebula stop the galaxy paints behind it. Hex values are the sRGB rendering of
+// the oklch tokens in src/styles/index.css and are kept in sync by hand.
+const CARD_BG_WORST_CASE = "#3e2335"; // dark glass over a bright magenta nebula stop
 const CHIP_BG_WORST_CASE = "#4d3545"; // white/8 over CARD_BG_WORST_CASE
 
+// LIGHT theme worst case: white/62 glass over the pale dawn sky (the lightest
+// the card ground gets), which dark text must still read against.
+const LIGHT_CARD_BG_WORST_CASE = "#eaf4fd";
+
 export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
+  // --- Dark theme (default) ---
   {
-    name: "text-primary on card (body text)",
-    foreground: "#f5f4f7",
+    name: "dark: text-primary on card (body text)",
+    foreground: "#f4f5f8",
     background: CARD_BG_WORST_CASE,
     minimumRatio: 7,
   },
   {
-    name: "text-secondary on card",
-    foreground: "#c9c7d1",
+    name: "dark: text-secondary on card",
+    foreground: "#c2c4cc",
     background: CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
   {
-    name: "text-muted on card",
-    foreground: "#96939f",
+    name: "dark: text-muted on card",
+    foreground: "#9a9eab",
     background: CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
   {
-    name: "chip text on white/8 chip background",
+    name: "dark: chip text on white/8 chip background",
     foreground: "#b8bcc6",
     background: CHIP_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  // --- Light theme (dawn) ---
+  {
+    name: "light: text-primary on card",
+    foreground: "#1a1e2e",
+    background: LIGHT_CARD_BG_WORST_CASE,
+    minimumRatio: 7,
+  },
+  {
+    name: "light: text-secondary on card",
+    foreground: "#3d4253",
+    background: LIGHT_CARD_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  {
+    name: "light: text-muted on card",
+    foreground: "#5d6375",
+    background: LIGHT_CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
 ];

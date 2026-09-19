@@ -2,11 +2,12 @@ import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import { TIER_CONFIG, type TierConfig } from "@/lib/capability";
-import LanyardScene from "./LanyardScene";
+import LanyardScene, { type Accent } from "./LanyardScene";
 
 export type LanyardCanvasProps = {
   profile: Profile;
   config?: TierConfig;
+  accent?: Accent;
   dpr?: number;
   /**
    * False while the card is off-screen or the tab is hidden. Drives
@@ -26,6 +27,7 @@ export type LanyardCanvasProps = {
 export default function LanyardCanvas({
   profile,
   config = TIER_CONFIG.medium,
+  accent,
   dpr = 1.5,
   active = true,
   onGpuTier,
@@ -39,7 +41,7 @@ export default function LanyardCanvas({
         gl={{ antialias: config.antialias, powerPreference: "high-performance", alpha: true }}
       >
         <Suspense fallback={null}>
-          <LanyardScene profile={profile} config={config} onGpuTier={onGpuTier} />
+          <LanyardScene profile={profile} config={config} accent={accent} onGpuTier={onGpuTier} />
         </Suspense>
       </Canvas>
     </div>

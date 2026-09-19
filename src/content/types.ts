@@ -69,8 +69,11 @@ export type Skill = {
   id: string;
   label: string;
   group: SkillGroup;
-  /** featured skills render as chips in the intro card. */
+  /** featured skills sort first within their group in the skills grid. */
   featured?: boolean;
+  /** simple-icons slug for the brand logo (e.g. "typescript"). Omit for
+   *  skills with no matching brand mark — the grid draws a lettered fallback. */
+  icon?: string;
 };
 
 export type ProjectStatus = "live" | "in-progress" | "complete" | "planning";

@@ -17,6 +17,9 @@ type BentoCardProps = {
   className?: string;
   /** Cards hosting a WebGL canvas need to bleed to their edges; padding is opt-out, not opt-in. */
   padded?: boolean;
+  /** Drop the glass surface entirely so the cell floats directly in the galaxy
+   *  (the badge stage and the action row). Defaults to true for the pass area. */
+  bare?: boolean;
   as?: "div" | "section" | "article";
 };
 
@@ -31,12 +34,13 @@ export function BentoCard({
   children,
   className,
   padded = true,
+  bare,
   as: Component = "div",
 }: BentoCardProps) {
-  // The badge cell is not a solid card: it stays near-transparent so the
-  // window's nebula glow and dot-grid read behind the hanging badge, exactly
-  // like the reference's open center column.
-  const bare = area === "pass";
+  // The badge cell is not a solid card: it stays transparent so the galaxy's
+  // nebula glow, stars and dot-grid read behind the hanging badge — the open
+  // centre stage. Other cells can opt in via the `bare` prop.
+  const isBare = bare ?? area === "pass";
 
   return (
     <Component
@@ -44,17 +48,18 @@ export function BentoCard({
       style={{ gridArea: area }}
       className={cn(
         "relative overflow-hidden rounded-[var(--radius-card)]",
-        bare
-          ? // Faint hairline only — the badge floats in the window's own glow.
-            "shadow-[inset_0_0_0_1px_oklch(1_0_0/0.05)]"
-          : // A raised glass surface floating in the dark: translucent so the
-            // interior glow bleeds through, a bright top edge, a hairline
-            // border, and a deep drop shadow for real separation.
+        "transition-[background-color,box-shadow,transform] duration-300",
+        isBare
+          ? "" // The cell floats directly in the galaxy — no surface at all.
+          : // A raised glass surface floating over the stars: translucent so the
+            // sky bleeds through, a bright top edge, a hairline border and a deep
+            // drop shadow. Every colour is a theme token, so it re-skins for
+            // light/dark automatically.
             cn(
-              "bg-[oklch(0.155_0.011_285_/_0.72)] backdrop-blur-xl",
-              "shadow-[0_24px_60px_-26px_oklch(0_0_0/0.8),inset_0_1px_0_0_oklch(1_0_0/0.08),inset_0_0_0_1px_oklch(1_0_0/0.06)]",
+              "bg-[var(--glass-bg)] backdrop-blur-xl",
+              "shadow-[var(--glass-shadow),inset_0_1px_0_0_var(--glass-highlight),inset_0_0_0_1px_var(--glass-border)]",
             ),
-        padded && "p-5 sm:p-6",
+        padded && "p-[clamp(1rem,0.7rem+1vw,1.5rem)]",
         className,
       )}
     >

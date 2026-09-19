@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
-import { formatLocalTime, useLocalClock } from "./time";
+import { formatLocalTime, formatLocalTimeWithSeconds, useLocalClock } from "./time";
 
 /**
  * Asia/Manila (the real content value) is UTC+8 year-round with no DST, so
@@ -92,6 +92,29 @@ describe("formatLocalTime", () => {
   });
 });
 
+describe("formatLocalTimeWithSeconds", () => {
+  it("emits zero-padded HH:MM:SS in the target zone", () => {
+    expect(
+      formatLocalTimeWithSeconds("Asia/Manila", new Date("2026-01-15T10:40:07Z")),
+    ).toBe("18:40:07");
+  });
+
+  it("is 24-hour and pads every field", () => {
+    expect(
+      formatLocalTimeWithSeconds("Asia/Manila", new Date("2026-01-14T20:03:09Z")),
+    ).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+    expect(
+      formatLocalTimeWithSeconds("Asia/Manila", new Date("2026-03-01T16:00:00Z")),
+    ).toBe("00:00:00");
+  });
+
+  it("falls back to UTC on a bogus zone rather than throwing", () => {
+    const instant = new Date("2026-01-15T10:40:07Z");
+    expect(() => formatLocalTimeWithSeconds("Not/AZone", instant)).not.toThrow();
+    expect(formatLocalTimeWithSeconds("Not/AZone", instant)).toBe("10:40:07");
+  });
+});
+
 describe("useLocalClock", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -152,6 +175,21 @@ describe("useLocalClock", () => {
 
     expect(vi.getTimerCount()).toBe(0);
     expect(result.current).toBe(lastValue);
+  });
+
+  it("shows seconds and re-formats them every second when asked", () => {
+    const { result } = renderHook(() => useLocalClock("Asia/Manila", true));
+    expect(result.current).toBe("18:40:00");
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(result.current).toBe("18:40:01");
+
+    act(() => {
+      vi.advanceTimersByTime(7000);
+    });
+    expect(result.current).toBe("18:40:08");
   });
 
   it("re-subscribes when the time zone prop changes", () => {

@@ -4,13 +4,35 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="dark" />
+    <meta name="color-scheme" content="dark light" />
     <meta
       name="description"
       content="Myre Lector — 4th-year CS student, React Native & TypeScript developer, open for internship. Interactive 3D portfolio."
     />
-    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="theme-color" content="#05060d" />
     <title>Myre Lector — Portfolio</title>
+    <!--
+      Anti-flash theme boot: resolve dark/light BEFORE first paint so the
+      galaxy never flashes the wrong sky. Mirrors src/lib/theme.ts exactly.
+    -->
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("mclector-theme");
+          var theme =
+            stored === "dark" || stored === "light"
+              ? stored
+              : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light";
+          var root = document.documentElement;
+          root.setAttribute("data-theme", theme);
+          root.style.colorScheme = theme;
+        } catch (e) {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

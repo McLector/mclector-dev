@@ -1,16 +1,14 @@
 /*
- * Grid-area contract for the bento layout. Streams never edit this file —
- * a card lands in its area purely by rendering <BentoCard area="...">.
- * See docs/contracts.md.
+ * Fluid bento layout. Unlike the previous version this grid does NOT lock the
+ * whole portfolio into one non-scrolling viewport — that was what forced the
+ * visitor to zoom out. Rows are content-sized, spacing scales with `clamp()`,
+ * and the page scrolls when it needs to.
  */
 
-/* Staggered entrance: each card fades and lifts into place on load. Frozen at
-   its end state under prefers-reduced-motion (global rule in index.css) and by
-   Playwright's `animations: "disabled"`, so it never shifts a visual baseline. */
 @keyframes bento-card-enter {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -20,10 +18,8 @@
 
 .bento {
   display: grid;
-  gap: 1rem;
+  gap: clamp(0.7rem, 0.45rem + 1vw, 1.15rem);
   grid-template-columns: 1fr;
-  /* On mobile the grid provides its own gutter inside the edge-to-edge window. */
-  padding: 1rem;
   grid-template-areas:
     "intro"
     "pass"
@@ -35,62 +31,75 @@
     "actions";
 }
 
-@media (min-width: 640px) {
+/* Tablet: a comfortable two-column split; the badge leads. */
+@media (min-width: 700px) {
   .bento {
-    padding: 1.5rem;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "intro   pass"
+      "skills  pass"
+      "place   pass"
+      "social  work"
+      "social  certifications"
+      "actions actions";
   }
 }
 
+/* Desktop: three columns — narrow identity rail, wide badge stage, feed rail.
+   Rows are auto-sized so nothing is stretched into wasted space; the badge
+   column gets its height from its own min-height, and the side rails simply
+   flow. */
 @media (min-width: 1024px) {
   .bento {
-    /* Fill the inset app window, which owns the viewport height. */
-    height: 100%;
-    padding: 1.5rem;
-    grid-template-columns: minmax(320px, 0.95fr) minmax(520px, 1.5fr) minmax(300px, 0.85fr);
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-columns: minmax(280px, 0.9fr) minmax(440px, 1.35fr) minmax(300px, 0.95fr);
+    align-items: start;
     grid-template-areas:
       "intro  pass  social"
-      "skills pass  social"
+      "skills pass  work"
       "place  pass  work"
       "actions pass certifications";
-    overflow: hidden;
   }
 }
 
-/* Release the no-scroll lock on short viewports (laptops, landscape
-   tablets) so cards never get clipped. */
-@media (min-width: 1024px) and (max-height: 720px) {
-  .bento {
-    height: auto;
-    min-height: 100%;
-    overflow: visible;
+/* The badge stage needs room to hang without dominating the fold. It is the
+   only cell with an intrinsic height; everything else is content-sized. */
+[data-bento-area="pass"] {
+  min-height: clamp(340px, 30rem + 6vw, 600px);
+}
+
+/* On desktop the middle column stretches to the full grid height (while the
+   side cards stay content-sized via align-items:start) so the badge can centre
+   itself vertically instead of clumping at the top. */
+@media (min-width: 1024px) {
+  [data-bento-area="pass"] {
+    align-self: stretch;
   }
 }
 
 .bento > * {
-  animation: bento-card-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: bento-card-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .bento > *:nth-child(1) {
   animation-delay: 0.04s;
 }
 .bento > *:nth-child(2) {
-  animation-delay: 0.08s;
+  animation-delay: 0.09s;
 }
 .bento > *:nth-child(3) {
-  animation-delay: 0.12s;
+  animation-delay: 0.14s;
 }
 .bento > *:nth-child(4) {
-  animation-delay: 0.16s;
+  animation-delay: 0.19s;
 }
 .bento > *:nth-child(5) {
-  animation-delay: 0.2s;
-}
-.bento > *:nth-child(6) {
   animation-delay: 0.24s;
 }
+.bento > *:nth-child(6) {
+  animation-delay: 0.29s;
+}
 .bento > *:nth-child(7) {
-  animation-delay: 0.28s;
+  animation-delay: 0.34s;
 }
 .bento > *:nth-child(8) {
-  animation-delay: 0.32s;
+  animation-delay: 0.39s;
 }

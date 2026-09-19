@@ -17,13 +17,16 @@ import { initialsFrom } from "./textures/initials";
 export function BadgeFallback({
   profile,
   reason,
+  accent,
 }: {
   profile: Profile;
   /** Why the 3D scene was skipped — surfaced as a data attribute for e2e. */
   reason?: "no-webgl" | "reduced-motion" | "low-tier" | "loading" | "offscreen";
+  /** Pass-theme accent override; defaults to the profile placeholder pair. */
+  accent?: { from: string; to: string };
 }) {
   const { badge, avatar, displayName } = profile;
-  const { from, to } = avatar.placeholder;
+  const { from, to } = accent ?? avatar.placeholder;
   const monogram = initialsFrom(displayName);
 
   return (
@@ -43,7 +46,7 @@ export function BadgeFallback({
         role="img"
         aria-label={`${displayName} — ${badge.subtitle || badge.caption}`}
         data-badge-surface
-        className="relative flex w-full max-w-[13rem] flex-col items-center gap-3 rounded-2xl px-4 py-5 text-center ring-1 ring-white/12"
+        className="relative flex w-full max-w-[15.5rem] flex-col items-center gap-3 rounded-2xl px-5 py-6 text-center ring-1 ring-white/12"
         style={{
           // Deep, glossy pass: the accent gradient reads as a GLOW under a dark
           // scrim rather than a flat coloured swatch — mirrors the 3D badge

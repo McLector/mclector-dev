@@ -94,6 +94,37 @@ describe("PassCard", () => {
     expect(container.querySelector("[data-pass-fallback-reason='offscreen']")).not.toBeNull();
   });
 
+  it("renders the pass-theme switcher with the default world selected", () => {
+    stubWebGL(false);
+    stubReducedMotion(false);
+    render(<PassCard profile={profile} />);
+    const nebula = screen.getByRole("radio", { name: "Nebula" });
+    expect(nebula).toHaveAttribute("aria-checked", "true");
+    // Every other world is present and unselected.
+    expect(screen.getByRole("radio", { name: "Aurora" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+  });
+
+  it("moves the selection when another pass theme is picked", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup();
+    stubWebGL(false);
+    stubReducedMotion(false);
+    render(<PassCard profile={profile} />);
+
+    await user.click(screen.getByRole("radio", { name: "Solar" }));
+
+    expect(screen.getByRole("radio", { name: "Solar" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("radio", { name: "Nebula" })).toHaveAttribute(
+      "aria-checked",
+      "false",
+    );
+  });
+
   it("renders without throwing for empty badge copy", () => {
     stubWebGL(false);
     stubReducedMotion(false);

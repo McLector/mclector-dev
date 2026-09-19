@@ -93,7 +93,12 @@ test.describe("social honeycomb", () => {
 
   test("the label is revealed by keyboard focus, not only by hover", async ({ page }) => {
     const label = page.locator(`${HEX_LINK} .hexgrid__label`).first();
-    await expect(label).toHaveCSS("opacity", "0");
+
+    // On fine-pointer (desktop) devices the label is hidden until hover/focus;
+    // on touch devices (no hover) it is always visible so navigation is never
+    // mystery-meat. Either way, keyboard focus must show it.
+    const isTouch = test.info().project.name !== "chromium";
+    await expect(label).toHaveCSS("opacity", isTouch ? "1" : "0");
 
     await tabIntoSocialGrid(page);
     const focusedLabel = page.locator(`${HEX_LINK}:focus .hexgrid__label`);

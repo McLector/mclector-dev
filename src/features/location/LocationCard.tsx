@@ -33,15 +33,25 @@ function mapPlaceholderStyle(
  * down on unmount.
  */
 export function LocationCard({ location }: LocationCardProps) {
-  const localTime = useLocalClock(location.timeZone);
+  // Live Philippine wall clock, ticking down to the second.
+  const localTime = useLocalClock(location.timeZone, true);
 
   return (
     <BentoCard area="place">
       <div
         aria-hidden="true"
         data-testid="map-placeholder"
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-60"
         style={mapPlaceholderStyle(location.mapTexture)}
+      />
+      {/* A faint accent wash so the clock reads as "alive", not a flat panel. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          backgroundImage:
+            "radial-gradient(120% 90% at 85% 0%, color-mix(in oklab, var(--color-accent-cyan) 26%, transparent) 0%, transparent 60%)",
+        }}
       />
 
       <div className="relative flex h-full flex-col justify-between gap-4">
@@ -51,7 +61,7 @@ export function LocationCard({ location }: LocationCardProps) {
             aria-hidden="true"
             className={cn(
               "inline-block size-2 shrink-0 rounded-full",
-              "bg-[var(--color-accent-blue)]",
+              "bg-[var(--color-accent-green)]",
               "animate-[status-pulse_2.6s_ease-in-out_infinite]",
             )}
           />
@@ -60,16 +70,16 @@ export function LocationCard({ location }: LocationCardProps) {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1.5">
           <p
             data-testid="local-clock"
-            className="text-3xl leading-none tabular-nums text-[var(--color-text-primary)] sm:text-4xl"
-            style={{ fontFamily: "var(--font-display)" }}
+            className="text-[clamp(2rem,1.4rem+2.6vw,3rem)] leading-none tabular-nums text-[var(--color-text-primary)]"
+            style={{ fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}
           >
             {localTime}
           </p>
-          <p className="text-xs text-[var(--color-text-muted)]">
-            {`${location.utcLabel} · Local time`}
+          <p className="font-[family-name:var(--font-mono)] text-[0.7rem] tracking-[0.12em] text-[var(--color-text-muted)] uppercase">
+            {`${location.utcLabel} · Manila`}
           </p>
         </div>
       </div>

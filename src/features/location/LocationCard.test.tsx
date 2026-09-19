@@ -45,14 +45,26 @@ describe("LocationCard", () => {
     expect(screen.getByText("Batangas, PH")).toBeInTheDocument();
   });
 
-  it("renders the UTC label alongside a 'Local time' caption", () => {
+  it("renders the UTC label alongside the timezone city", () => {
     render(<LocationCard location={fixture()} />);
-    expect(screen.getByText("GMT+8 · Local time")).toBeInTheDocument();
+    expect(screen.getByText("GMT+8 · Manila")).toBeInTheDocument();
   });
 
-  it("renders the live local time for the given zone", () => {
+  it("renders the live local time for the given zone, down to the second", () => {
     render(<LocationCard location={fixture()} />);
-    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:40");
+    const clock = screen.getByTestId("local-clock");
+    expect(clock).toHaveTextContent("18:40");
+    expect(clock.textContent).toMatch(/^\d{2}:\d{2}:\d{2}$/);
+  });
+
+  it("ticks the seconds every second", () => {
+    render(<LocationCard location={fixture()} />);
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:40:00");
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.getByTestId("local-clock")).toHaveTextContent("18:40:05");
   });
 
   it("updates the displayed clock as fake time advances", () => {

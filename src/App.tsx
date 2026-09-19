@@ -1,28 +1,33 @@
 import { useState } from "react";
 import { content } from "@/content";
 import { BentoGrid } from "@/layout/BentoGrid";
-import { GradientBackdrop } from "@/layout/GradientBackdrop";
+import { GalaxyBackdrop } from "@/layout/GalaxyBackdrop";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ProjectOverlay } from "@/components/Overlay/ProjectOverlay";
 import { ContactDialog } from "@/features/contact/ContactDialog";
 
 /**
- * Composition root. Owned by Phase 0 — no stream edits this file. Mounts
- * the layout, the (always-present) project overlay, and the contact
- * dialog, and wires ActionsRow's onContact callback to it.
+ * Composition root. Mounts the full-bleed galaxy, the day/night toggle, the
+ * fluid content column, the (always-present) project overlay and the contact
+ * dialog. The portfolio scrolls naturally — no fixed one-screen lock — so it
+ * scales to any viewport without the visitor reaching for browser zoom.
  */
 export default function App() {
   const [contactOpen, setContactOpen] = useState(false);
 
   return (
     <>
-      <GradientBackdrop />
-      {/* The wallpaper shows through this padding on desktop as a colored frame;
-          on mobile the window goes edge-to-edge so the content stays usable. */}
-      <main className="flex min-h-dvh w-full justify-center p-0 lg:p-5 xl:p-6">
-        <div className="app-window w-full max-w-[1680px] min-h-dvh rounded-none lg:h-[calc(100dvh-2.5rem)] lg:min-h-0 lg:rounded-[var(--radius-window)] xl:h-[calc(100dvh-3rem)]">
+      <GalaxyBackdrop />
+      <div className="fixed top-4 right-4 z-40 sm:top-5 sm:right-5">
+        <ThemeToggle />
+      </div>
+
+      <main className="relative flex min-h-dvh w-full justify-center">
+        <div className="w-full max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
           <BentoGrid content={content} onContact={() => setContactOpen(true)} />
         </div>
       </main>
+
       <ProjectOverlay projects={content.projects} />
       <ContactDialog open={contactOpen} onClose={() => setContactOpen(false)} />
     </>

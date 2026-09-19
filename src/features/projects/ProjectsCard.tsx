@@ -34,7 +34,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
         {featured.length === 0 ? (
           <p
             data-testid="projects-empty"
-            className="rounded-[var(--radius-card)] border border-dashed border-white/12 p-4 text-xs text-[var(--color-text-muted)]"
+            className="rounded-[var(--radius-card)] border border-dashed border-[var(--glass-border)] p-4 text-xs text-[var(--color-text-muted)]"
           >
             Projects are being written up — check back soon.
           </p>
@@ -51,7 +51,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                   data-project-row={project.id}
                   aria-haspopup="dialog"
                   onClick={() => openProject(project.id)}
-                  className="group flex w-full items-center gap-3 rounded-xl p-2 text-left transition-[colors,transform] duration-200 hover:bg-white/[0.07] focus-visible:bg-white/[0.07] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  className="group flex w-full items-center gap-3 rounded-xl p-2 text-left transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] focus-visible:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                 >
                   <motion.span
                     layoutId={projectLayoutId(project.id)}
@@ -59,7 +59,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                     data-testid={`project-thumb-${project.id}`}
                     aria-hidden="true"
                     style={thumbnailStyle(project.thumbnail)}
-                    className="size-11 shrink-0 rounded-xl ring-1 ring-white/12 transition-shadow group-hover:ring-white/30"
+                    className="size-11 shrink-0 rounded-xl ring-1 ring-[var(--glass-border)] transition-shadow group-hover:ring-[var(--glass-highlight)]"
                   />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-sm font-medium text-[var(--color-text-primary)]">

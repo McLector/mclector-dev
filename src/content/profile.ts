@@ -24,7 +24,7 @@ export const profile: Profile = {
   },
   location: {
     city: "Batangas",
-    country: "PH",
+    country: "Philippines",
     timeZone: "Asia/Manila",
     utcLabel: "GMT+8",
     mapTexture: {

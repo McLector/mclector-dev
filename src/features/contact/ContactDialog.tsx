@@ -225,10 +225,10 @@ export function ContactDialog({
     ) : null;
 
   const inputClass = cn(
-    "w-full rounded-xl bg-white/[0.04] px-3 py-2 text-sm",
-    "text-[var(--color-text-primary)] ring-1 ring-white/10",
+    "w-full rounded-xl bg-[color-mix(in_oklab,var(--color-text-primary)_6%,transparent)] px-3 py-2 text-sm",
+    "text-[var(--color-text-primary)] ring-1 ring-[var(--glass-border)]",
     "outline-none placeholder:text-[var(--color-text-muted)]",
-    "focus-visible:ring-2 focus-visible:ring-white/40",
+    "focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]",
   );
   const labelClass = "text-xs text-[var(--color-text-secondary)]";
 
@@ -263,7 +263,7 @@ export function ContactDialog({
         transition={{ duration: reducedMotion ? 0.12 : 0.2, ease: [0.22, 1, 0.36, 1] }}
         className={cn(
           "relative z-10 w-full max-w-md rounded-3xl p-6",
-          "bg-[#12121a] shadow-2xl ring-1 ring-white/10",
+          "bg-[var(--color-surface-raised)] shadow-2xl ring-1 ring-[var(--glass-border)]",
           "max-h-[90dvh] overflow-y-auto",
         )}
       >

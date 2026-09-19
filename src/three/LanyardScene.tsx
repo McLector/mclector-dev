@@ -66,14 +66,18 @@ const SEGMENT_PROPS = {
   linearDamping: 4,
 } as const;
 
+/** The cool/warm accent pair the pass is skinned with. */
+export type Accent = { from: string; to: string };
+
 type BandProps = {
   profile: Profile;
   config: TierConfig;
+  accent: Accent;
   frozen: boolean;
   onRestChange: (resting: boolean) => void;
 };
 
-function Band({ profile, config, frozen, onRestChange }: BandProps) {
+function Band({ profile, config, accent, frozen, onRestChange }: BandProps) {
   const fixed = useRef<RapierRigidBody>(null!);
   const j1 = useRef<RapierRigidBody>(null!);
   const j2 = useRef<RapierRigidBody>(null!);
@@ -108,9 +112,9 @@ function Band({ profile, config, frozen, onRestChange }: BandProps) {
 
   const segmentDamping = frozen ? E2E_DAMPING : null;
 
-  // The accent that lights the badge's halo — the cool end of the profile's
-  // placeholder gradient, so it sits inside the window's blue/green nebula.
-  const glowColor = profile.avatar.placeholder.from;
+  // The accent that lights the badge's halo — the cool end of the selected
+  // pass theme, so the halo matches the world the visitor picked.
+  const glowColor = accent.from;
 
   const curve = useMemo(() => {
     const c = new THREE.CatmullRomCurve3([
@@ -137,20 +141,20 @@ function Band({ profile, config, frozen, onRestChange }: BandProps) {
         subtitle: profile.badge.subtitle,
         idLabel: profile.badge.idLabel,
         caption: profile.badge.caption,
-        accentFrom: profile.avatar.placeholder.from,
-        accentTo: profile.avatar.placeholder.to,
+        accentFrom: accent.from,
+        accentTo: accent.to,
       }),
-    [profile],
+    [profile, accent],
   );
 
   const bandTexture = useMemo(
     () =>
       createBandTexture({
-        accentFrom: profile.avatar.placeholder.from,
-        accentTo: profile.avatar.placeholder.to,
+        accentFrom: accent.from,
+        accentTo: accent.to,
         label: profile.handle,
       }),
-    [profile],
+    [profile, accent],
   );
 
   useEffect(() => {
@@ -543,6 +547,8 @@ export type LanyardSceneProps = {
   profile: Profile;
   /** Tier config resolved in the initial bundle by useSceneCapability. */
   config?: TierConfig;
+  /** The pass theme's accent pair. Defaults to the profile placeholder. */
+  accent?: Accent;
   /** Called with drei's live GPU tier once detection resolves. */
   onGpuTier?: (gpuTier: number) => void;
 };
@@ -550,8 +556,13 @@ export type LanyardSceneProps = {
 export default function LanyardScene({
   profile,
   config = TIER_CONFIG.medium,
+  accent,
   onGpuTier,
 }: LanyardSceneProps) {
+  const resolvedAccent: Accent = accent ?? {
+    from: profile.avatar.placeholder.from,
+    to: profile.avatar.placeholder.to,
+  };
   const frozen = useMemo(() => isE2EMode(), []);
   const [resting, setResting] = useState(false);
 
@@ -579,7 +590,7 @@ export default function LanyardScene({
           numSolverIterations={config.physicsSubsteps > 1 ? 8 : 4}
           paused={resting && !frozen}
         >
-          <Band profile={profile} config={config} frozen={frozen} onRestChange={onRestChange} />
+          <Band profile={profile} config={config} accent={resolvedAccent} frozen={frozen} onRestChange={onRestChange} />
         </Physics>
         <GpuGate onTier={onGpuTier ?? noopTier} />
       </Suspense>

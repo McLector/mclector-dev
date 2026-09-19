@@ -1,12 +1,13 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Stream G — the responsive contract from src/layout/bento.css:
- *  - below 1024px the bento is a single stacked column and the page scrolls;
- *  - at 1024px and up it is a three-column, 100dvh, overflow:hidden grid,
- *    i.e. the page does NOT scroll (that lock is intentionally released
- *    again below 720px viewport height, so the desktop case uses a tall
- *    viewport).
+ * The responsive contract from src/layout/bento.css:
+ *  - below 700px the bento is a single stacked column;
+ *  - at 1024px and up it is a three-column grid.
+ * The layout is FLUID at every size: rows are content-sized and the page
+ * scrolls naturally when the content is taller than the viewport. There is no
+ * desktop "one-screen, overflow:hidden" lock any more — that lock is what used
+ * to force visitors to zoom out.
  *
  * Only run on the desktop chromium project: the mobile-chrome project
  * emulates a fixed device (touch, DPR, its own viewport), which makes
@@ -99,11 +100,19 @@ test.describe("responsive layout", () => {
     expect(await pageScrolls(page)).toBe(true);
   });
 
-  test("does not scroll at 1440x1000 (desktop overflow:hidden lock)", async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 1000 });
+  test("is fluid at 1440px: no overflow lock, scrolls when content is tall", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 800 });
     await page.goto("/");
     await page.locator(intro).waitFor();
-    expect(await bentoOverflowY(page)).toBe("hidden");
-    expect(await pageScrolls(page)).toBe(false);
+
+    // The desktop grid no longer traps content in one screen.
+    expect(await bentoOverflowY(page)).not.toBe("hidden");
+
+    // A tall page scrolls rather than clipping (proven with a test-only spacer,
+    // so the assertion holds regardless of how tall the real content is).
+    await page.addStyleTag({
+      content: 'body::after { content: ""; display: block; height: 1500px; }',
+    });
+    expect(await pageScrolls(page)).toBe(true);
   });
 });

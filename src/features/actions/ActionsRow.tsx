@@ -23,8 +23,9 @@ export function ActionsRow({
   const cvReady = cv.available && Boolean(cv.href);
 
   return (
-    <BentoCard area="actions" as="section">
-      <div className="flex h-full flex-wrap items-center gap-3">
+    // Bare + unpadded: the actions are free-floating pills, not a big glass box.
+    <BentoCard area="actions" as="section" bare padded={false}>
+      <div className="flex h-full flex-wrap items-center gap-2.5">
         <Button type="button" variant="primary" onClick={onContact}>
           Contact me
         </Button>

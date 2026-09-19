@@ -58,7 +58,7 @@ function RowBody({ cert }: { cert: Certification }) {
 function CertificationRow({ cert }: { cert: Certification }) {
   const rowClass = cn(
     "flex items-center gap-3 rounded-2xl px-3 py-2.5",
-    "bg-white/[0.03] ring-1 ring-white/5",
+    "bg-[color-mix(in_oklab,var(--color-text-primary)_4%,transparent)] ring-1 ring-[var(--glass-border)]",
   );
 
   const inner: ReactNode = (
@@ -77,7 +77,7 @@ function CertificationRow({ cert }: { cert: Certification }) {
           rel="noopener noreferrer"
           className={cn(
             rowClass,
-            "transition-[colors,transform] duration-200 hover:bg-white/[0.07] hover:ring-white/15 active:scale-[0.98]",
+            "transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:ring-[var(--glass-highlight)] active:scale-[0.98]",
           )}
         >
           {inner}
@@ -95,7 +95,7 @@ function EmptyState() {
       data-testid="certifications-empty"
       className={cn(
         "flex flex-1 flex-col items-center justify-center gap-2",
-        "rounded-2xl border border-dashed border-white/15 px-4 py-6 text-center",
+        "rounded-2xl border border-dashed border-[var(--glass-border)] px-4 py-6 text-center",
       )}
     >
       <svg
