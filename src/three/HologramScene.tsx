@@ -114,10 +114,12 @@ export default function HologramScene({
     });
     disposables.push(portraitTex);
 
-    const backMat = track(
-      new THREE.MeshStandardMaterial({ color: 0x0a1526, metalness: 0.5, roughness: 0.45, side: THREE.DoubleSide }),
+    // A faint smoked-glass backing so the projection has a hint of body, but
+    // stays mostly see-through — the hologram reads as light, not a photo.
+    const back = new THREE.Mesh(
+      track(new THREE.PlaneGeometry(PW + 0.18, PH + 0.18)),
+      track(new THREE.MeshBasicMaterial({ color: 0x061020, transparent: true, opacity: 0.18, side: THREE.DoubleSide })),
     );
-    const back = new THREE.Mesh(track(new THREE.PlaneGeometry(PW + 0.18, PH + 0.18)), backMat);
     back.position.z = -FZ;
     cardGroup.add(back);
 
@@ -133,21 +135,32 @@ export default function HologramScene({
           uniform sampler2D map;
           uniform float t;
           uniform vec3 tint;
+          float lum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
           void main(){
-            vec3 rgb = texture2D(map, vU).rgb;
-            // The photo is a dark twilight shot — lift shadows, add punch.
-            rgb = pow(rgb, vec3(0.8));        // gamma lift (opens up the dark subject)
-            rgb = (rgb - 0.5) * 1.22 + 0.5;   // contrast
-            rgb = clamp(rgb * 1.45 + 0.04, 0.0, 1.0); // brightness
-            float scan = 0.95 + 0.05 * sin(vU.y * 190.0 - t * 3.0);
-            float hl = smoothstep(0.09, 0.0, abs((vU.x * 0.72 + vU.y * 0.28) - fract(t * 0.045)));
-            vec3 col = mix(rgb, tint, 0.1) * scan + hl * 0.16;
-            // Cyan rim-glow at the edges — a lit hologram, not a dark fade.
+            // Chromatic-split sample for a holographic RGB fringe.
+            float off = 0.006;
+            float lr = lum(texture2D(map, vU + vec2(off, 0.0)).rgb);
+            float lc = lum(texture2D(map, vU).rgb);
+            float lb = lum(texture2D(map, vU - vec2(off, 0.0)).rgb);
+            // Lift the dark subject, then push contrast so it separates.
+            float l = pow(clamp(lc, 0.0, 1.0), 0.7);
+            l = clamp((l - 0.34) * 1.75 + 0.42, 0.0, 1.0);
+            // Cyan hologram ramp: deep blue -> tint -> white-hot.
+            vec3 holo = mix(vec3(0.04, 0.2, 0.5), tint, smoothstep(0.1, 0.6, l));
+            holo = mix(holo, vec3(0.85, 0.97, 1.0), smoothstep(0.72, 1.0, l));
+            holo.r += (lr - lc) * 0.6;
+            holo.b += (lb - lc) * 0.6;
+            // Hard scanlines + a bright scan band sweeping up + interlace flicker.
+            float sl = 0.72 + 0.28 * sin(vU.y * 168.0 - t * 3.0);
+            float band = smoothstep(0.04, 0.0, abs(fract(vU.y - t * 0.1) - 0.5) - 0.47);
+            float flick = 0.9 + 0.07 * sin(t * 34.0) + 0.05 * sin(t * 8.0);
+            vec3 col = holo * sl * flick + band * 0.6 * vec3(0.85, 0.97, 1.0);
+            // Edge rim glow — the projection is brightest at its border.
             float edge = min(min(vU.x, 1.0 - vU.x), min(vU.y, 1.0 - vU.y));
-            col += tint * smoothstep(0.14, 0.0, edge) * 0.38;
-            // Keep the face fully opaque; soften only the very edge.
-            float a = smoothstep(0.0, 0.02, edge);
-            gl_FragColor = vec4(col, 0.9 * a + 0.1);
+            col += tint * smoothstep(0.17, 0.0, edge) * 0.5;
+            // Alpha: the glowing subject is opaque, dark background see-through.
+            float a = clamp(l * 1.3 + 0.1, 0.0, 1.0) * smoothstep(0.0, 0.02, edge);
+            gl_FragColor = vec4(col * 1.15, a);
           }
         `,
       }),

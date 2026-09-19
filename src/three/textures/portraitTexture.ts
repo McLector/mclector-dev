@@ -68,7 +68,7 @@ export function fallbackAvatarTexture(): THREE.CanvasTexture {
   x.textAlign = "center";
   x.fillText("ML", 180, 179);
   const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
+  t.colorSpace = THREE.NoColorSpace;
   return t;
 }
 
@@ -100,7 +100,7 @@ export function loadPortraitTexture(
     undefined,
     () => onReady?.(fallbackAvatarTexture()),
   );
-  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.colorSpace = THREE.NoColorSpace;
   tex.anisotropy = 8;
   return tex;
 }
