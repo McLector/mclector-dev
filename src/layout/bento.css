@@ -33,11 +33,25 @@
 /* Inside the scaled window every metric is a fixed px — the card padding and
    corner radius tokens are viewport-relative (clamp + vw), which would make
    the cards drift against the scale. Mobile (below) keeps the fluid tokens.
-   The pass (transparent stage) and actions (bare pills) cells opt out. */
+   The pass (the stage), actions (a bare pill) and connect (the neon sign, not
+   a glass card) cells opt out of the glass-card metrics.
+
+   Padding reads two custom properties so a card can tune ONE axis without
+   out-specifying this rule — the approved mockup's intro, skills and place
+   cards are 15/14/13px tall-padded so the whole left column fits 770px. */
 @media (min-width: 861px) {
-  .bento__col > [data-bento-area]:not([data-bento-area="actions"]):not([data-bento-area="pass"]) {
-    padding: 16px;
+  .bento__col > [data-bento-area]:not([data-bento-area="actions"]):not([data-bento-area="pass"]):not([data-bento-area="connect"]) {
+    padding: var(--card-py, 16px) var(--card-px, 16px);
     border-radius: 18px;
+  }
+  [data-bento-area="intro"] { --card-py: 15px; }
+  [data-bento-area="skills"] { --card-py: 14px; }
+  [data-bento-area="place"] { --card-py: 13px; }
+
+  /* The stage's radius is fixed inside the window; the fluid token would drift
+     with the viewport (it is clamp + vw). */
+  .bento__col > [data-bento-area="pass"] {
+    border-radius: 22px;
   }
 }
 
@@ -49,8 +63,10 @@
 .bento__col:nth-child(1) > *:nth-child(1) { animation-delay: 0.04s; }
 .bento__col:nth-child(1) > *:nth-child(2) { animation-delay: 0.12s; }
 .bento__col:nth-child(1) > *:nth-child(3) { animation-delay: 0.2s; }
-.bento__col:nth-child(1) > *:nth-child(4) { animation-delay: 0.28s; }
-.bento__col--center > * { animation-delay: 0.08s; }
+/* Centre: the sign leads, then the stage, then the button follows it. */
+.bento__col--center > *:nth-child(1) { animation-delay: 0.04s; }
+.bento__col--center > *:nth-child(2) { animation-delay: 0.1s; }
+.bento__col--center > *:nth-child(3) { animation-delay: 0.18s; }
 .bento__col:nth-child(3) > *:nth-child(1) { animation-delay: 0.16s; }
 .bento__col:nth-child(3) > *:nth-child(2) { animation-delay: 0.24s; }
 .bento__col:nth-child(3) > *:nth-child(3) { animation-delay: 0.32s; }
@@ -66,12 +82,14 @@
   .bento__col {
     display: contents;
   }
+  /* The hologram keeps its sign above and its Download CV right under it. */
   [data-bento-area="intro"] { order: 1; }
-  [data-bento-area="pass"] { order: 2; min-height: 380px; }
-  [data-bento-area="skills"] { order: 3; }
-  [data-bento-area="place"] { order: 4; }
-  [data-bento-area="social"] { order: 5; }
-  [data-bento-area="work"] { order: 6; }
-  [data-bento-area="certifications"] { order: 7; }
-  [data-bento-area="actions"] { order: 8; }
+  [data-bento-area="connect"] { order: 2; }
+  [data-bento-area="pass"] { order: 3; min-height: clamp(400px, 66vh, 660px); }
+  [data-bento-area="actions"] { order: 4; }
+  [data-bento-area="skills"] { order: 5; }
+  [data-bento-area="place"] { order: 6; }
+  [data-bento-area="social"] { order: 7; }
+  [data-bento-area="work"] { order: 8; }
+  [data-bento-area="certifications"] { order: 9; }
 }

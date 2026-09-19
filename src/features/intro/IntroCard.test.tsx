@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import type { Profile } from "@/content/types";
 import { IntroCard } from "./IntroCard";
 
@@ -32,7 +32,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     },
     email: "test@example.com",
     cv: { label: "CV", available: false },
-    availability: "open-to-internship",
+    openTo: ["Internships", "Freelance", "Entry-level", "Remote"],
     ...overrides,
   };
 }
@@ -93,5 +93,60 @@ describe("IntroCard", () => {
   it("renders without throwing when bioRest is empty", () => {
     render(<IntroCard profile={makeProfile({ bioRest: "" })} />);
     expect(screen.getByText("Lead phrase of the bio.")).toBeInTheDocument();
+  });
+
+  describe("Currently Active status", () => {
+    it("shows the status text", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      expect(screen.getByText("Currently Active")).toBeInTheDocument();
+    });
+
+    it("sits in the same top row as the handle, not in the heading or bio", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      const status = screen.getByText("Currently Active");
+      const handle = screen.getByText("@TestHandle");
+      expect(status.parentElement).toBe(handle.parentElement);
+      expect(screen.getByRole("heading", { level: 1 })).not.toContainElement(status);
+    });
+
+    it("hides the decorative ripple dot from assistive tech", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      const dot = screen.getByText("Currently Active").querySelector("i");
+      expect(dot).not.toBeNull();
+      expect(dot).toHaveAttribute("aria-hidden", "true");
+    });
+
+    it("is not the shared Pill (it has its own ripple and tokens)", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      const cls = screen.getByText("Currently Active").className;
+      expect(cls).toContain("--green-ink");
+    });
+  });
+
+  describe("Open to chips", () => {
+    it("renders one chip per availability entry, in order", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      const list = screen.getByRole("list", { name: /open to/i });
+      const chips = within(list).getAllByRole("listitem").map((li) => li.textContent);
+      expect(chips).toEqual(["Internships", "Freelance", "Entry-level", "Remote"]);
+    });
+
+    it("shows a visible 'Open to' label", () => {
+      render(<IntroCard profile={makeProfile()} />);
+      expect(screen.getByText("Open to")).toBeInTheDocument();
+    });
+
+    it("omits the whole row when there is nothing to list", () => {
+      render(<IntroCard profile={makeProfile({ openTo: [] })} />);
+      expect(screen.queryByRole("list", { name: /open to/i })).not.toBeInTheDocument();
+      expect(screen.queryByText("Open to")).not.toBeInTheDocument();
+    });
+
+    it("renders a long list without dropping entries", () => {
+      const many = Array.from({ length: 12 }, (_, i) => `Option ${i}`);
+      render(<IntroCard profile={makeProfile({ openTo: many })} />);
+      const list = screen.getByRole("list", { name: /open to/i });
+      expect(within(list).getAllByRole("listitem")).toHaveLength(12);
+    });
   });
 });

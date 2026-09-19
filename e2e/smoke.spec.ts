@@ -19,6 +19,7 @@ test.describe("smoke", () => {
       "work",
       "certifications",
       "actions",
+      "connect",
     ];
     for (const area of areas) {
       await expect(page.locator(`[data-bento-area="${area}"]`)).toHaveCount(1);

@@ -5,6 +5,7 @@ import { ActionsRow } from "@/features/actions/ActionsRow";
 import { LocationCard } from "@/features/location/LocationCard";
 import { PassCard } from "@/features/pass/PassCard";
 import { SocialHex } from "@/features/social/SocialHex";
+import { ConnectSign } from "@/features/connect/ConnectSign";
 import { ProjectsCard } from "@/features/projects/ProjectsCard";
 import { CertificationsCard } from "@/features/certifications/CertificationsCard";
 import "./bento.css";
@@ -12,29 +13,24 @@ import "./bento.css";
 /**
  * The window interior: three columns — an identity rail (left), the hologram
  * stage (centre), and a feed rail (right). Columns are flex so the list-heavy
- * cards (skills, projects) grow to fill the fixed-height window, and the
- * centre column gives the 3D room to breathe. On mobile the columns collapse
- * (via `display: contents` in bento.css) and each card is re-ordered into a
- * single scrolling stack.
+ * cards (skills, projects) grow to fill the fixed-height window. The centre
+ * column is sign → hologram stage → Download CV, all on one vertical axis. On
+ * mobile the columns collapse (via `display: contents` in bento.css) and each
+ * card is re-ordered into a single scrolling stack.
  */
-export function BentoGrid({
-  content,
-  onContact,
-}: {
-  content: SiteContent;
-  onContact: () => void;
-}) {
+export function BentoGrid({ content }: { content: SiteContent }) {
   return (
     <div className="bento">
       <div className="bento__col">
         <IntroCard profile={content.profile} />
         <SkillsCard skills={content.skills} />
         <LocationCard location={content.profile.location} />
-        <ActionsRow profile={content.profile} onContact={onContact} />
       </div>
 
       <div className="bento__col bento__col--center">
+        <ConnectSign email={content.profile.email} />
         <PassCard profile={content.profile} />
+        <ActionsRow profile={content.profile} />
       </div>
 
       <div className="bento__col">

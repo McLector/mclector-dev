@@ -32,6 +32,7 @@ const AREAS = [
   "work",
   "certifications",
   "actions",
+  "connect",
 ];
 
 async function boxes(page: Page) {

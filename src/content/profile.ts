@@ -5,9 +5,11 @@ export const profile: Profile = {
   handle: "@McLector",
   displayName: "Myre Lector",
   headline: ["Hello!", "I'm Myre Lector"],
-  bioLead: "4th-year CS student, React Native & TypeScript developer.",
+  bioLead:
+    "4th-year CS student at De La Salle Lipa University, Software Developer — building modern web and mobile applications.",
   bioRest:
-    "Most of what I build starts as a project given, a problem I actually had, or sometimes just for the fun of it. Currently open for internship.",
+    "Most of what I build starts as a project given, a problem I actually had, or sometimes just for the fun of it.",
+  openTo: ["Internships", "Freelance", "Entry-level", "Remote"],
   avatar: {
     alt: "Myre Lector",
     // The hero portrait — also what the 3D hologram projects. Vite emits it as a
@@ -43,8 +45,7 @@ export const profile: Profile = {
   },
   email: "moradamyre@gmail.com",
   cv: {
-    label: "CV",
+    label: "Download CV",
     available: false,
   },
-  availability: "open-to-internship",
 };

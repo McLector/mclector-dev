@@ -1,11 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Stream A e2e — intro / skills / actions only. Deliberately asserts
- * nothing about the contact dialog's contents: ContactDialog is Stream F's
- * and may still be a no-op placeholder. What is asserted here is what
- * Stream A guarantees: the cards render their content and clicking
- * "Contact me" is safe (no throw, no console error).
+ * Left column e2e — intro / skills / place. (The CV action and the contact
+ * sign now live in the centre column: see centre-column.spec.ts.)
  */
 test.describe("left column", () => {
   test("renders the intro headline", async ({ page }) => {
@@ -20,7 +17,15 @@ test.describe("left column", () => {
     await page.goto("/");
     const intro = page.locator('[data-bento-area="intro"]');
     await expect(intro).toContainText("@McLector");
-    await expect(intro).toContainText("4th-year CS student");
+    await expect(intro).toContainText("4th-year CS student at De La Salle Lipa University");
+  });
+
+  test("shows the Currently Active status and the Open to chips", async ({ page }) => {
+    await page.goto("/");
+    const intro = page.locator('[data-bento-area="intro"]');
+    await expect(intro.getByText("Currently Active")).toBeVisible();
+    const chips = intro.getByRole("list", { name: /open to/i }).getByRole("listitem");
+    await expect(chips).toHaveText(["Internships", "Freelance", "Entry-level", "Remote"]);
   });
 
   test("renders featured skill chips", async ({ page }) => {
@@ -31,33 +36,13 @@ test.describe("left column", () => {
     await expect(skills).toContainText("TypeScript");
   });
 
-  test("clicking Contact me is safe and logs no console errors", async ({ page }) => {
-    const errors: string[] = [];
-    page.on("console", (msg) => {
-      if (msg.type() === "error") errors.push(msg.text());
-    });
-    page.on("pageerror", (err) => errors.push(err.message));
-
+  test("the left column holds intro, skills and place — nothing else", async ({ page }) => {
     await page.goto("/");
-    const contact = page
-      .locator('[data-bento-area="actions"]')
-      .getByRole("button", { name: "Contact me" });
-    await expect(contact).toBeEnabled();
-    await contact.click();
-
-    // The button itself survives the click; the dialog it opens is Stream F's.
-    await expect(contact).toBeVisible();
-    expect(errors, errors.join("\n")).toEqual([]);
-  });
-
-  test("the CV action is present but disabled while no CV exists", async ({ page }) => {
-    await page.goto("/");
-    const cv = page.locator('[data-bento-area="actions"]').getByRole("button", {
-      name: "CV",
-      includeHidden: true,
-    });
-    await expect(cv).toBeVisible();
-    await expect(cv).toBeDisabled();
-    await expect(cv).toHaveAttribute("aria-disabled", "true");
+    const areas = await page
+      .locator(".bento__col")
+      .first()
+      .locator("> [data-bento-area]")
+      .evaluateAll((els) => els.map((e) => e.getAttribute("data-bento-area")));
+    expect(areas).toEqual(["intro", "skills", "place"]);
   });
 });

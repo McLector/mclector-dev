@@ -11,8 +11,9 @@ import { initialsFrom } from "./textures/initials";
  * (slim arc-reactor frame, the photo, scanlines) rather than the retired
  * lanyard badge, so the swap to the live scene doesn't change the object.
  *
- * It always sits on the hologram's dark projection bay (PassCard's
- * `.holo-stage`), so its light-on-dark text is intentionally theme-independent.
+ * It always sits on the hologram's dark projection bay (the stage background
+ * PassCard draws from `--stage-bg`), so its light-on-dark text is intentionally
+ * theme-independent.
  *
  * Unlike the rest of `src/three/**` this file is pure DOM and is genuinely
  * unit-testable; see BadgeFallback.test.tsx and the note in

@@ -3,53 +3,70 @@ import { BentoCard } from "@/components/ui/BentoCard";
 import { Button, buttonClasses } from "@/components/ui/Button";
 
 /**
- * Owned by Stream A. Frozen contract (docs/contracts.md):
- *   <ActionsRow profile={Profile} onContact={() => void} />
- * `onContact` is the ONLY outward call — Stream A does not implement the
- * contact form itself; Stream F owns ContactDialog and App.tsx wires them.
+ * Frozen contract (docs/contracts.md):
+ *   <ActionsRow profile={Profile} />
+ *
+ * Now just the Download CV control, centred under the hologram's "Digital
+ * Pass" caption on the same axis as the pedestal and the contact sign. (The
+ * "Contact me" button and its dialog are gone — contact is the sign's mailto.)
  *
  * The CV action is never hidden. Until a real PDF exists it renders as a
  * visibly inert control with a reason attached, so a recruiter reads
  * "not ready yet" rather than "this person has no CV".
  */
-export function ActionsRow({
-  profile,
-  onContact,
-}: {
-  profile: Profile;
-  onContact: () => void;
-}) {
+export function ActionsRow({ profile }: { profile: Profile }) {
   const { cv } = profile;
   const cvReady = cv.available && Boolean(cv.href);
 
   return (
-    // Bare + unpadded: the actions are free-floating pills, not a big glass box.
+    // Bare + unpadded: a free-floating pill, not a big glass box.
     <BentoCard area="actions" as="section" bare padded={false}>
-      <div className="flex h-full flex-wrap items-center gap-2.5">
-        <Button type="button" variant="primary" size="slim" onClick={onContact}>
-          Contact me
-        </Button>
-
+      <div className="flex items-center justify-center">
         {cvReady ? (
           // A real navigation has to be an <a>, which <button> cannot
-          // semantically be — buttonClasses() keeps it visually identical
-          // to Button's secondary variant without duplicating the class list.
-          <a href={cv.href} target="_blank" rel="noopener noreferrer" className={buttonClasses("secondary", { size: "slim" })}>
+          // semantically be — buttonClasses() keeps it visually consistent
+          // without duplicating the class list.
+          <a
+            href={cv.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={buttonClasses("downloadReady", { size: "slim" })}
+          >
+            <DownloadIcon />
             {cv.label}
           </a>
         ) : (
           <Button
             type="button"
-            variant="secondary"
+            variant="download"
             size="slim"
             disabled
             aria-disabled="true"
             title="CV coming soon"
           >
+            <DownloadIcon />
             {cv.label}
           </Button>
         )}
       </div>
     </BentoCard>
+  );
+}
+
+/** Decorative — the label carries the accessible name. */
+function DownloadIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="size-3.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 3v12M7 10l5 5 5-5M4 20h16" />
+    </svg>
   );
 }

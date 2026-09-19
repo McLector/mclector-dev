@@ -1,8 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Profile } from "@/content/types";
 import { ActionsRow } from "./ActionsRow";
+
+const LABEL = "Download CV";
 
 function makeProfile(cv: Profile["cv"]): Profile {
   return {
@@ -11,6 +13,7 @@ function makeProfile(cv: Profile["cv"]): Profile {
     headline: ["Hello!", "I'm Test Person"],
     bioLead: "Lead.",
     bioRest: "Rest.",
+    openTo: ["Internships"],
     avatar: {
       alt: "Test Person",
       placeholder: { kind: "monogram", seed: "TP", from: "#000", to: "#fff" },
@@ -28,110 +31,118 @@ function makeProfile(cv: Profile["cv"]): Profile {
     },
     email: "test@example.com",
     cv,
-    availability: "open-to-internship",
   };
 }
 
-const unavailable = makeProfile({ label: "CV", available: false });
+const unavailable = makeProfile({ label: LABEL, available: false });
 const availableCv = makeProfile({
-  label: "CV",
+  label: LABEL,
   available: true,
   href: "/files/cv.pdf",
 });
 
 describe("ActionsRow", () => {
   it("renders inside the actions bento area", () => {
-    const { container } = render(
-      <ActionsRow profile={unavailable} onContact={() => {}} />,
-    );
+    const { container } = render(<ActionsRow profile={unavailable} />);
     expect(container.querySelectorAll('[data-bento-area="actions"]')).toHaveLength(1);
   });
 
-  it("exposes accessible names for both actions", () => {
-    render(<ActionsRow profile={availableCv} onContact={() => {}} />);
-    expect(screen.getByRole("button", { name: "Contact me" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "CV" })).toBeInTheDocument();
+  it("no longer offers a Contact me action — the CV is the only control", () => {
+    render(<ActionsRow profile={availableCv} />);
+    expect(screen.queryByRole("button", { name: /contact me/i })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
   });
 
-  it("calls onContact exactly once per click", async () => {
-    const user = userEvent.setup();
-    const onContact = vi.fn();
-    render(<ActionsRow profile={unavailable} onContact={onContact} />);
-
-    await user.click(screen.getByRole("button", { name: "Contact me" }));
-    expect(onContact).toHaveBeenCalledTimes(1);
-
-    await user.click(screen.getByRole("button", { name: "Contact me" }));
-    expect(onContact).toHaveBeenCalledTimes(2);
+  it("centres the control under the stage", () => {
+    const { container } = render(<ActionsRow profile={unavailable} />);
+    const row = container.querySelector('[data-bento-area="actions"] > div');
+    expect(row).not.toBeNull();
+    expect(row).toHaveClass("justify-center");
   });
 
-  it("does not call onContact on render", () => {
-    const onContact = vi.fn();
-    render(<ActionsRow profile={unavailable} onContact={onContact} />);
-    expect(onContact).not.toHaveBeenCalled();
+  it("draws a decorative download icon that does not change the accessible name", () => {
+    render(<ActionsRow profile={unavailable} />);
+    const cv = screen.getByRole("button", { name: LABEL });
+    const icon = cv.querySelector("svg");
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute("aria-hidden", "true");
   });
 
   describe("when the CV is unavailable", () => {
     it("still renders the CV control, visibly disabled", () => {
-      render(<ActionsRow profile={unavailable} onContact={() => {}} />);
-      const cv = screen.getByRole("button", { name: "CV" });
+      render(<ActionsRow profile={unavailable} />);
+      const cv = screen.getByRole("button", { name: LABEL });
       expect(cv).toBeDisabled();
       expect(cv).toHaveAttribute("aria-disabled", "true");
       expect(cv).toHaveAttribute("title", expect.stringMatching(/coming soon/i));
     });
 
+    it("takes its surface and dimming from the theme tokens, not hard-coded colours", () => {
+      render(<ActionsRow profile={unavailable} />);
+      const cls = screen.getByRole("button", { name: LABEL }).className;
+      expect(cls).toContain("--cv-bg");
+      expect(cls).toContain("--cv-fg");
+      expect(cls).toContain("--cv-dis");
+    });
+
     it("is not a link and has no href to navigate to", () => {
-      render(<ActionsRow profile={unavailable} onContact={() => {}} />);
-      expect(screen.queryByRole("link", { name: "CV" })).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "CV" })).not.toHaveAttribute("href");
+      render(<ActionsRow profile={unavailable} />);
+      expect(screen.queryByRole("link", { name: LABEL })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: LABEL })).not.toHaveAttribute("href");
     });
 
     it("dispatches no click and takes no focus when clicked", async () => {
       const user = userEvent.setup();
-      const onContact = vi.fn();
-      const clicks = vi.fn();
+      const clicks = { count: 0 };
       render(
-        <div onClick={clicks}>
-          <ActionsRow profile={unavailable} onContact={onContact} />
+        <div onClick={() => (clicks.count += 1)}>
+          <ActionsRow profile={unavailable} />
         </div>,
       );
 
-      const cv = screen.getByRole("button", { name: "CV" });
+      const cv = screen.getByRole("button", { name: LABEL });
       await user.click(cv);
 
-      expect(clicks).not.toHaveBeenCalled();
-      expect(onContact).not.toHaveBeenCalled();
+      expect(clicks.count).toBe(0);
       expect(cv).not.toHaveFocus();
     });
   });
 
   describe("when the CV is available", () => {
     it("renders a real link to the href", () => {
-      render(<ActionsRow profile={availableCv} onContact={() => {}} />);
-      const link = screen.getByRole("link", { name: "CV" });
+      render(<ActionsRow profile={availableCv} />);
+      const link = screen.getByRole("link", { name: LABEL });
       expect(link).toHaveAttribute("href", "/files/cv.pdf");
     });
 
     it("opens in a new tab with a safe rel", () => {
-      render(<ActionsRow profile={availableCv} onContact={() => {}} />);
-      const link = screen.getByRole("link", { name: "CV" });
+      render(<ActionsRow profile={availableCv} />);
+      const link = screen.getByRole("link", { name: LABEL });
       expect(link).toHaveAttribute("target", "_blank");
       expect(link).toHaveAttribute("rel", "noopener noreferrer");
     });
 
+    it("uses the primary look (the mockup's live preview), not the dimmed placeholder", () => {
+      render(<ActionsRow profile={availableCv} />);
+      const cls = screen.getByRole("link", { name: LABEL }).className;
+      expect(cls).toContain("--btn-bg");
+      expect(cls).not.toContain("--cv-dis");
+    });
+
     it("is not marked disabled", () => {
-      render(<ActionsRow profile={availableCv} onContact={() => {}} />);
-      expect(screen.getByRole("link", { name: "CV" })).not.toHaveAttribute(
+      render(<ActionsRow profile={availableCv} />);
+      expect(screen.getByRole("link", { name: LABEL })).not.toHaveAttribute(
         "aria-disabled",
         "true",
       );
     });
 
     it("falls back to the disabled control when href is missing", () => {
-      const noHref = makeProfile({ label: "CV", available: true });
-      render(<ActionsRow profile={noHref} onContact={() => {}} />);
-      expect(screen.queryByRole("link", { name: "CV" })).not.toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "CV" })).toBeDisabled();
+      const noHref = makeProfile({ label: LABEL, available: true });
+      render(<ActionsRow profile={noHref} />);
+      expect(screen.queryByRole("link", { name: LABEL })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: LABEL })).toBeDisabled();
     });
 
     it("uses the cv label as the accessible name", () => {
@@ -140,7 +151,7 @@ describe("ActionsRow", () => {
         available: true,
         href: "/files/cv.pdf",
       });
-      render(<ActionsRow profile={custom} onContact={() => {}} />);
+      render(<ActionsRow profile={custom} />);
       expect(screen.getByRole("link", { name: "Résumé" })).toBeInTheDocument();
     });
   });

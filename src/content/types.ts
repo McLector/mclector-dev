@@ -54,7 +54,8 @@ export type Profile = {
     /** false = button renders disabled/hidden per docs/contracts.md until a real PDF exists. */
     available: boolean;
   };
-  availability: "open-to-internship" | "busy" | "hiring-me-is-closed";
+  /** What the owner is open to — rendered as chips under the bio. Empty = row omitted. */
+  openTo: string[];
 };
 
 export type SkillGroup =

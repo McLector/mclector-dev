@@ -55,32 +55,31 @@ export function LocationCard({ location }: LocationCardProps) {
         }}
       />
 
-      <div className="relative flex h-full flex-col justify-between gap-2">
+      <div className="relative flex h-full flex-col">
         <div className="flex items-center gap-2">
+          {/* A still arc-blue dot: green + motion now belongs only to the intro
+              card's "Currently Active" status. */}
           <span
             data-testid="location-status-dot"
             aria-hidden="true"
             className={cn(
-              "inline-block size-2 shrink-0 rounded-full",
-              "bg-[var(--color-accent-green)]",
-              "animate-[status-pulse_2.6s_ease-in-out_infinite]",
+              "inline-block size-[7px] shrink-0 rounded-full",
+              "bg-[var(--arc)] shadow-[0_0_9px_var(--arc)]",
             )}
           />
-          <p className="truncate text-sm font-medium text-[var(--color-text-primary)]">
+          <p className="truncate text-[13px] leading-[normal] font-semibold text-[var(--color-text-primary)]">
             {`${location.city}, ${location.country}`}
           </p>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <p
-            data-testid="local-clock"
-            className="text-[33px] leading-none tabular-nums text-[var(--color-text-primary)]"
-            style={{ fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}
-          >
-            {localTime}
-          </p>
-          <Eyebrow as="p">{`${location.utcLabel} · Manila`}</Eyebrow>
-        </div>
+        <p
+          data-testid="local-clock"
+          className="mt-[7px] mb-[11.5px] text-[30px] leading-none tabular-nums text-[var(--color-text-primary)]"
+          style={{ fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}
+        >
+          {localTime}
+        </p>
+        <Eyebrow as="p">{`${location.utcLabel} · Manila`}</Eyebrow>
       </div>
     </BentoCard>
   );

@@ -43,22 +43,21 @@ export function PassCard({ profile }: { profile: Profile }) {
   const isFallback = mode === "fallback" || config === null;
 
   return (
-    <BentoCard area="pass" padded={false} grow>
-      {/* Light theme: a hologram is light-emitting, so it needs a dark ground to
-          read. In dark this is transparent (the galaxy is already dark). */}
-      <div aria-hidden="true" data-holo-stage className="holo-stage pointer-events-none absolute inset-0" />
-      <div ref={attachRefs} className="relative flex h-full w-full flex-col justify-center gap-2 py-3">
-        {/* Local nebula glow behind the hologram, layered over the galaxy. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-1/2 h-[600px] -translate-y-1/2 max-[860px]:h-[clamp(360px,58vh,640px)]"
-          style={{
-            backgroundImage:
-              "radial-gradient(42% 38% at 50% 42%, rgba(94,200,255,0.28) 0%, transparent 70%), radial-gradient(38% 34% at 56% 60%, rgba(140,90,255,0.2) 0%, transparent 72%)",
-          }}
-        />
-
-        <div className="relative h-[560px] w-full max-[860px]:h-[clamp(340px,58vh,600px)]">
+    // The stage: a token-driven background (deep navy bay at dusk, soft glows at
+    // night) instead of the old fixed-height wrapper + local nebula + .holo-stage.
+    <BentoCard
+      area="pass"
+      padded={false}
+      grow
+      className="bg-[image:var(--stage-bg)] shadow-[inset_0_0_0_1px_var(--stage-edge),inset_0_1px_0_0_var(--stage-edge)]"
+    >
+      {/* Fills the card (BentoCard is already `relative`) — NOT `h-full`: on mobile the
+            card's height comes only from min-height, so a percentage height would
+            collapse to 0 and leave the canvas nothing to fill. */}
+      <div ref={attachRefs} className="absolute inset-0">
+        {/* The scene fills the stage above a 34px band that holds the caption,
+            so the hologram is centred in the space ABOVE it. */}
+        <div className="absolute inset-x-0 top-0 bottom-[34px]">
           {isFallback ? (
             <BadgeFallback profile={profile} reason={reason ?? "no-webgl"} />
           ) : !load.inView ? (
@@ -79,7 +78,7 @@ export function PassCard({ profile }: { profile: Profile }) {
         {/* The static badge carries its own caption; only the canvas path adds
             one here, to avoid duplicating it in the a11y tree. */}
         {!isFallback && load.inView ? (
-          <p className="relative z-10 text-center font-[family-name:var(--font-mono)] text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase light:text-[#b8c4e6]">
+          <p className="pointer-events-none absolute inset-x-0 bottom-3 text-center font-[family-name:var(--font-mono)] text-[10px] tracking-[0.2em] text-[var(--stage-caption)] uppercase">
             {profile.badge.caption}
           </p>
         ) : null}

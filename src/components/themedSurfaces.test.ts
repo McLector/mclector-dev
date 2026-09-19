@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import overlaySrc from "./Overlay/ProjectOverlay.tsx?raw";
 import pillSrc from "./ui/Pill.tsx?raw";
 import chipSrc from "./ui/Chip.tsx?raw";
-import contactSrc from "../features/contact/ContactDialog.tsx?raw";
 
 /**
- * The project overlay, contact dialog and their small parts render through a
+ * The project overlay and its small parts render through a
  * portal, outside the themed card surfaces, so they were authored dark-only
  * (`white/8`, `neutral-950/95`, …) and looked jarring in the twilight theme.
  * Surfaces must come from tokens so both themes stay correct.
@@ -20,7 +19,6 @@ const files: Record<string, string> = {
   "ProjectOverlay.tsx": overlaySrc,
   "Pill.tsx": pillSrc,
   "Chip.tsx": chipSrc,
-  "ContactDialog.tsx": contactSrc,
 };
 
 describe("themed surfaces carry no dark-only colour literals", () => {

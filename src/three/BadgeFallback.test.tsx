@@ -33,7 +33,7 @@ function makeProfile(overrides: Partial<Profile> = {}): Profile {
     },
     email: "someone@example.com",
     cv: { label: "CV", available: false },
-    availability: "open-to-internship",
+    openTo: ["Internships"],
     ...overrides,
   };
 }
