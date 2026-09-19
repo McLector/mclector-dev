@@ -1,5 +1,6 @@
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 /**
  * Owned by Stream A. Frozen contract (docs/contracts.md):
@@ -15,9 +16,7 @@ export function IntroCard({ profile }: { profile: Profile }) {
   return (
     <BentoCard area="intro" as="section">
       <div className="flex h-full flex-col justify-center gap-2.5">
-        <p className="font-[family-name:var(--font-mono)] text-[10.5px] font-medium tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
-          {profile.handle}
-        </p>
+        <Eyebrow as="p">{profile.handle}</Eyebrow>
 
         <h1
           className="font-[family-name:var(--font-display)] text-[30px] leading-[1.03] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]"

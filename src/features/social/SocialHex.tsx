@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import type { Social } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import {
   hexNeighbor,
   hexNeighborMap,
@@ -96,9 +97,7 @@ export function SocialHex({ socials }: { socials: Social[] }) {
   return (
     <BentoCard area="social">
       <div className="flex h-full flex-col justify-center gap-4">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--color-text-muted)]">
-          Elsewhere
-        </h2>
+        <Eyebrow as="h2">Elsewhere</Eyebrow>
 
         {ordered.length === 0 ? (
           <p className="text-xs text-[var(--color-text-muted)]">No social links yet.</p>

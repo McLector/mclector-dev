@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { cn } from "@/lib/cn";
 import { useLocalClock } from "@/lib/time";
 
@@ -78,9 +79,7 @@ export function LocationCard({ location }: LocationCardProps) {
           >
             {localTime}
           </p>
-          <p className="font-[family-name:var(--font-mono)] text-[0.7rem] tracking-[0.12em] text-[var(--color-text-muted)] uppercase">
-            {`${location.utcLabel} · Manila`}
-          </p>
+          <Eyebrow as="p">{`${location.utcLabel} · Manila`}</Eyebrow>
         </div>
       </div>
     </BentoCard>

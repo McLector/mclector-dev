@@ -1,6 +1,7 @@
 import { motion } from "motion/react";
 import type { Project } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { useHashRoute } from "@/lib/useHashRoute";
 import { projectLayoutId, statusLabel, thumbnailStyle } from "./thumbnail";
 
@@ -21,13 +22,9 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
     <BentoCard area="work" as="section" grow>
       <div className="flex h-full flex-col gap-4">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-sm font-semibold tracking-wide text-[var(--color-text-primary)]">
-            Latest projects
-          </h2>
+          <Eyebrow as="h2">Latest projects</Eyebrow>
           {featured.length > 0 && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {featured.length} featured
-            </span>
+            <span className="count font-mono">{featured.length} featured</span>
           )}
         </div>
 

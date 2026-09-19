@@ -1,6 +1,7 @@
 import { useState, type CSSProperties, type PointerEvent } from "react";
 import type { Skill } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { VisuallyHidden } from "@/components/ui/VisuallyHidden";
 import { brandAccents } from "./brandAccent";
 import { getSkillIcon } from "./skillIcons";
@@ -31,9 +32,7 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
   return (
     <BentoCard area="skills" as="section" grow>
       <div className="flex h-full flex-col gap-2">
-        <h2 className="eyebrow font-[family-name:var(--font-mono)]">
-          Skills &amp; Tools
-        </h2>
+        <Eyebrow as="h2">Skills &amp; Tools</Eyebrow>
 
         {rows.length > 0 ? (
           <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">

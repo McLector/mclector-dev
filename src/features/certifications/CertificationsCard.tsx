@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { Certification, CertificationStatus } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Pill } from "@/components/ui/Pill";
 import { VisuallyHidden } from "@/components/ui/VisuallyHidden";
 import { cn } from "@/lib/cn";
@@ -130,13 +131,9 @@ export function CertificationsCard({
     <BentoCard area="certifications" as="section">
       <div className="flex h-full min-h-0 flex-col gap-3">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="font-[var(--font-display)] text-sm font-semibold tracking-wide text-[var(--color-text-primary)]">
-            Certifications
-          </h2>
+          <Eyebrow as="h2">Certifications</Eyebrow>
           {certifications.length > 0 && (
-            <span className="text-xs text-[var(--color-text-muted)]">
-              {certifications.length}
-            </span>
+            <span className="count font-mono">{certifications.length}</span>
           )}
         </div>
 
