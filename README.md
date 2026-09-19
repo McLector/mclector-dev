@@ -41,5 +41,4 @@ architecture, rationale, and parallelization map.
   suite; see `vitest.config.ts` and `docs/contracts.md`).
 - `src/components/ui/` — shared visual primitives (`BentoCard`, `Chip`,
   `Button`, `Pill`).
-- `api/` — Vercel Functions (contact form).
 - `e2e/` — Playwright specs.

@@ -1,8 +1,7 @@
-# Vercel's zero-config Functions feature treats every file directly under
-# /api as its own route — including api/contact.test.ts, which has no HTTP
-# handler shape and was being deployed live at /api/contact.test. Excluding
-# test files from the upload is what stops that; it does not affect local
-# development or `npm test` (Vitest reads the working tree, not this file).
+# Test files are not needed on the build/runtime machine. (This once also kept
+# api/contact.test.ts from being deployed as a live Vercel Function route; the
+# api/ directory is gone, but the exclusion is still correct.) It does not affect
+# local development or `npm test` — Vitest reads the working tree, not this file.
 **/*.test.ts
 **/*.test.tsx
 
