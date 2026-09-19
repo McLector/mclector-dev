@@ -249,7 +249,7 @@ export function ContactDialog({
         data-testid="contact-backdrop"
         aria-hidden="true"
         onClick={onClose}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-[var(--scrim)] backdrop-blur-sm"
       />
 
       <motion.div

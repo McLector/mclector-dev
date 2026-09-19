@@ -70,16 +70,20 @@
     --arc: #5ec8ff;
     --arc-soft: rgba(94, 200, 255, 0.9);
     --rain: rgba(90, 200, 255, 0.5);
+
+    /* Modal scrim behind the project overlay and contact dialog. */
+    --scrim: oklch(0 0 0 / 0.75);
   }
 
   :root[data-theme="light"] {
-    /* Dawn sky: pale periwinkle fading to a warm horizon. */
-    --sky-top: oklch(0.82 0.07 255);
-    --sky-mid: oklch(0.9 0.045 250);
-    --sky-bottom: oklch(0.95 0.03 90);
-    --star-color: oklch(0.55 0.08 265);
-    --star-opacity: 0.16;
-    --nebula-strength: 0.28;
+    /* Twilight galaxy: a soft lilac/periwinkle dusk sky (the approved mockup),
+       with a slightly deeper arc-reactor blue so accents hold on light glass. */
+    --sky-top: #b9c6ef;
+    --sky-mid: #cdbfe8;
+    --sky-bottom: #e8dcef;
+    --star-color: rgba(60, 70, 120, 0.55);
+    --star-opacity: 0.35;
+    --nebula-strength: 0.4;
     --grid-color: oklch(0.3 0.03 270 / 0.06);
 
     --color-surface: oklch(0.96 0.01 265);
@@ -93,11 +97,14 @@
     --glass-highlight: oklch(1 0 0 / 0.85);
     --glass-shadow: 0 20px 50px -30px oklch(0.35 0.06 272 / 0.42);
 
-    --panel: oklch(1 0 0 / 0.55);
-    --panel-edge: oklch(0.35 0.04 272 / 0.16);
-    --arc: #1f8fe0;
-    --arc-soft: rgba(45, 140, 215, 0.6);
-    --rain: rgba(40, 120, 190, 0.5);
+    --panel: rgba(255, 255, 255, 0.55);
+    --panel-edge: rgba(40, 45, 80, 0.16);
+    --arc: #1f9bff;
+    --arc-soft: rgba(94, 200, 255, 0.9);
+    --rain: rgba(30, 120, 190, 0.55);
+
+    /* A dusk-tinted scrim: black over a lilac sky reads as a hole, not a dim. */
+    --scrim: oklch(0.25 0.05 272 / 0.5);
   }
 
   html,
@@ -154,6 +161,24 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-text-muted);
+  }
+}
+
+/* The hologram's projection bay. Transparent in the (already dark) night theme;
+   in twilight it becomes a deep indigo pane so the additive cyan projection has
+   something to glow against instead of washing out on the pale sky. */
+@layer components {
+  .holo-stage {
+    border-radius: inherit;
+  }
+  :root[data-theme="light"] .holo-stage {
+    background:
+      radial-gradient(60% 42% at 50% 30%, rgba(94, 200, 255, 0.22), transparent 70%),
+      radial-gradient(70% 55% at 50% 82%, rgba(94, 200, 255, 0.2), transparent 74%),
+      oklch(0.2 0.06 275 / 0.92);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   }
 }
 
@@ -399,8 +424,7 @@
 
   .app-window {
     position: relative;
-    width: 1200px;
-    height: 730px;
+    /* width/height are set inline by AppFrame (DESIGN_W/DESIGN_H). */
     padding: 18px;
     border-radius: 30px;
     transform-origin: center center;

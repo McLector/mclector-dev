@@ -1,9 +1,14 @@
 import type { ReactNode } from "react";
 import { useFitScale } from "./useFitScale";
 
-/** The framed window's fixed design size (logical px). */
+/**
+ * The framed window's fixed design size (logical px) — the single source of
+ * truth: it is applied inline below (not in CSS) so it cannot drift from the
+ * value fed to useFitScale. 770 tall is what the full 29-skill grid needs to
+ * show every row without an internal scrollbar.
+ */
 const DESIGN_W = 1200;
-const DESIGN_H = 730;
+const DESIGN_H = 770;
 
 /**
  * The framed "window" the whole portfolio lives in. On desktop it is a
@@ -28,7 +33,10 @@ export function AppFrame({ children }: { children: ReactNode }) {
 
   return (
     <main className="app-fit">
-      <div className="app-window" style={{ transform: `scale(${scale})` }}>
+      <div
+        className="app-window"
+        style={{ width: DESIGN_W, height: DESIGN_H, transform: `scale(${scale})` }}
+      >
         {children}
       </div>
     </main>

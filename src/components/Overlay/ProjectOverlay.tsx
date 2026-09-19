@@ -132,7 +132,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
             data-testid="project-overlay-backdrop"
             aria-hidden="true"
             onClick={close}
-            className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            className="absolute inset-0 bg-[var(--scrim)] backdrop-blur-sm"
           />
 
           <motion.div
@@ -145,12 +145,12 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
             animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.99 }}
             transition={{ duration: reducedMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-[var(--radius-card)] bg-neutral-950/95 p-6 ring-1 ring-white/12 shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)] backdrop-blur-xl sm:p-8"
+            className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-[var(--radius-card)] bg-[color-mix(in_oklab,var(--color-surface-raised)_96%,transparent)] p-6 ring-1 ring-[var(--glass-border)] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)] light:shadow-[0_40px_120px_-30px_rgb(40_45_80/0.45)] backdrop-blur-xl sm:p-8"
           >
             <button
               type="button"
               onClick={close}
-              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-white/12 transition-[colors,transform] duration-200 hover:bg-white/8 hover:text-[var(--color-text-primary)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-[var(--glass-border)] transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:text-[var(--color-text-primary)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
             >
               Close
             </button>
@@ -161,7 +161,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                   data-testid="project-overlay-thumb"
                   aria-hidden="true"
                   style={thumbnailStyle(project.thumbnail)}
-                  className="size-14 shrink-0 rounded-2xl ring-1 ring-white/12"
+                  className="size-14 shrink-0 rounded-2xl ring-1 ring-[var(--glass-border)]"
                 />
               ) : (
                 <motion.span
@@ -170,7 +170,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                   data-testid="project-overlay-thumb"
                   aria-hidden="true"
                   style={thumbnailStyle(project.thumbnail)}
-                  className="size-14 shrink-0 rounded-2xl ring-1 ring-white/12"
+                  className="size-14 shrink-0 rounded-2xl ring-1 ring-[var(--glass-border)]"
                 />
               )}
 
@@ -212,7 +212,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                 {project.stack.map((tech) => (
                   <li
                     key={tech}
-                    className="inline-flex items-center rounded-full bg-white/8 px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-white/10"
+                    className="inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] px-3 py-1 text-xs font-medium text-[var(--color-text-secondary)] ring-1 ring-[var(--glass-border)]"
                   >
                     {tech}
                   </li>
@@ -238,7 +238,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                     {...(isExternal(link.href)
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}
-                    className="inline-flex items-center rounded-full bg-white/10 px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-white/12 transition-[colors,transform] duration-200 hover:bg-white/16 active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                    className="inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--color-text-primary)_10%,transparent)] px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-[var(--glass-border)] transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_16%,transparent)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                   >
                     {link.label}
                   </a>

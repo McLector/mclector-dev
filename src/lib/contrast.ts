@@ -58,9 +58,12 @@ export function contrastRatio(colorA: string, colorB: string): number {
 const CARD_BG_WORST_CASE = "#3e2335"; // dark glass over a bright magenta nebula stop
 const CHIP_BG_WORST_CASE = "#4d3545"; // white/8 over CARD_BG_WORST_CASE
 
-// LIGHT theme worst case: white/62 glass over the pale dawn sky (the lightest
-// the card ground gets), which dark text must still read against.
-const LIGHT_CARD_BG_WORST_CASE = "#eaf4fd";
+// LIGHT theme (twilight) worst case: white/62 glass over the DARKEST part of the
+// twilight sky (#b9c6ef, the top of the gradient) — the dimmest ground dark text
+// must still read against.
+const LIGHT_CARD_BG_WORST_CASE = "#e4e9f9";
+// ink/8% over LIGHT_CARD_BG_WORST_CASE — the themed chip surface.
+const LIGHT_CHIP_BG_WORST_CASE = "#d4d9e9";
 
 export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
   // --- Dark theme (default) ---
@@ -88,7 +91,15 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
     background: CHIP_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
-  // --- Light theme (dawn) ---
+  // color-mix(in oklab, text-primary 62%, arc 38%) — the .eyebrow and skill
+  // group-heading colour. Hex is the oklab mix of #f4f5f8 and #5ec8ff.
+  {
+    name: "dark: eyebrow (ink/arc mix) on card",
+    foreground: "#c0e5fc",
+    background: CARD_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  // --- Light theme (twilight) ---
   {
     name: "light: text-primary on card",
     foreground: "#1a1e2e",
@@ -105,6 +116,19 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
     name: "light: text-muted on card",
     foreground: "#5d6375",
     background: LIGHT_CARD_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  // Oklab mix of #1a1e2e and the light arc #1f9bff.
+  {
+    name: "light: eyebrow (ink/arc mix) on card",
+    foreground: "#264a76",
+    background: LIGHT_CARD_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  {
+    name: "light: chip text (text-secondary) on ink/8 chip",
+    foreground: "#3d4253",
+    background: LIGHT_CHIP_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
 ];

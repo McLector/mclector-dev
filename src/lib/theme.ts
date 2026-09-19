@@ -39,5 +39,5 @@ export function nextTheme(theme: Theme): Theme {
 /** The browser chrome colour to advertise per theme (drives `theme-color`). */
 export const THEME_COLOR: Record<Theme, string> = {
   dark: "#05060d",
-  light: "#cdd9f2",
+  light: "#cdbfe8",
 };

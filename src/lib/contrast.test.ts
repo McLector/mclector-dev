@@ -35,3 +35,23 @@ describe("design-token contrast budget", () => {
     expect(failures).toEqual([]);
   });
 });
+
+describe("design-token contrast budget — coverage", () => {
+  const names = TOKEN_CONTRAST_PAIRS.map((p) => p.name);
+
+  it("covers the arc-tinted eyebrow and group heading in BOTH themes", () => {
+    for (const theme of ["dark", "light"]) {
+      expect(names.some((n) => n.startsWith(`${theme}: eyebrow`))).toBe(true);
+    }
+  });
+
+  it("covers a light-theme chip pair, not just dark", () => {
+    expect(names.some((n) => n.startsWith("light: chip"))).toBe(true);
+  });
+
+  it("never lowers the threshold below AA for normal text", () => {
+    for (const pair of TOKEN_CONTRAST_PAIRS) {
+      expect(pair.minimumRatio).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+});
