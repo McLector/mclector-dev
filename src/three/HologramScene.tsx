@@ -1,17 +1,32 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import type { TierConfig } from "@/lib/capability";
+import { fitCamera } from "./math/fitCamera";
+import {
+  BOB,
+  CARD_Y,
+  DEP,
+  FOV,
+  FRAME_MARGIN,
+  PED_Y,
+  PH,
+  PW,
+  hologramFramePoints,
+} from "./sceneDims";
 import { loadPortraitTexture } from "./textures/portraitTexture";
 import portraitUrl from "@/assets/portfolio-pic.jpg";
 
 const ARC = 0x5ec8ff;
-const PW = 1.95;
-const PH = 2.45;
-const DEP = 0.13;
 const FZ = DEP * 0.5;
 const CARD_ASPECT = PW / PH;
+
+/** Where the projector beam starts (just above the pedestal plate) and how tall it is. */
+const BEAM_Y0 = PED_Y + 0.09;
+const BEAM_H = 4.5;
+/** Beam intensity — the owner reviewed the mockup at its slider minimum and kept it. */
+const BEAM_GAIN = 0.4;
 
 function roundedRect(w: number, h: number, r: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -29,15 +44,14 @@ function roundedRect(w: number, h: number, r: number): THREE.Shape {
   return s;
 }
 
-function radialGlowTexture(): THREE.CanvasTexture {
+/** A 128×128 radial-gradient texture from `[offset, css colour]` stops. */
+function radialTexture(stops: Array<[number, string]>): THREE.CanvasTexture {
   const c = document.createElement("canvas");
   c.width = 128;
   c.height = 128;
   const x = c.getContext("2d")!;
   const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, "rgba(150,230,255,.95)");
-  g.addColorStop(0.5, "rgba(90,200,255,.25)");
-  g.addColorStop(1, "rgba(0,0,0,0)");
+  for (const [offset, colour] of stops) g.addColorStop(offset, colour);
   x.fillStyle = g;
   x.fillRect(0, 0, 128, 128);
   return new THREE.CanvasTexture(c);
@@ -64,23 +78,96 @@ function envTexture(): THREE.Texture {
   return t;
 }
 
+/**
+ * One shell of the projector beam. A truncated cone (narrow emitter at the
+ * pedestal, fanning wide upward), shaded with three interleaved sets of thin
+ * rays, a vertical falloff that reaches zero before the rim, a hot base, a soft
+ * limb, and a horizontal edge fade so the fan never hard-cuts against the frame.
+ * The rays are keyed to the angle around the axis, so they read as straight
+ * shafts of light springing from the emitter.
+ */
+function beamMaterial(
+  shared: BeamUniforms,
+  strength: number,
+  freq: number,
+): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    // Drawn BEHIND the card (see renderOrder) — the light must not streak the portrait.
+    depthTest: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+    uniforms: { ...shared, uStr: { value: strength }, uFreq: { value: freq } },
+    vertexShader: `
+      varying vec3 vPos; varying vec3 vN; varying vec3 vW; varying vec3 vView; varying float vV;
+      uniform float uY0; uniform float uH;
+      void main(){
+        vPos = position;
+        vN = normalize(normalMatrix * normal);
+        vec4 w = modelMatrix * vec4(position, 1.);
+        vW = w.xyz;
+        vV = (w.y - uY0) / uH;
+        vec4 mv = viewMatrix * w;
+        vView = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying vec3 vPos; varying vec3 vN; varying vec3 vW; varying vec3 vView; varying float vV;
+      uniform float t; uniform vec3 tint; uniform float uGain; uniform float uEdge;
+      uniform float uStr; uniform float uFreq;
+      void main(){
+        float a = atan(vPos.z, vPos.x);
+        // Striation: three interleaved ray sets, slowly drifting.
+        float r = 0.;
+        r += pow(abs(sin(a * uFreq * 0.5 + 0.7 + t * 0.05)), 5.) * 0.9;
+        r += pow(abs(sin(a * uFreq * 1.1 + 2.1 - t * 0.07)), 9.) * 0.75;
+        r += pow(abs(sin(a * uFreq * 1.9 + 4.3 + t * 0.03)), 14.) * 0.6;
+        float v = clamp(vV, 0., 1.);
+        float fall = pow(1. - smoothstep(0., 0.9, v), 1.3);
+        float hot = exp(-v * 4.5);
+        float nv = abs(dot(normalize(vN), normalize(vView)));
+        float limb = mix(0.5, 1., nv);
+        float edge = 1. - smoothstep(uEdge * 0.70, uEdge * 0.97, abs(vW.x));
+        float base = (0.16 + r) * fall + hot * 0.55;
+        float alpha = base * limb * edge * smoothstep(0., 0.03, v) * uStr * uGain;
+        vec3 col = mix(tint, vec3(0.86, 0.97, 1.), clamp(hot * 0.9 + r * 0.12, 0., 1.));
+        gl_FragColor = vec4(col, alpha);
+      }`,
+  });
+}
+
+type BeamUniforms = {
+  t: { value: number };
+  tint: { value: THREE.Color };
+  uGain: { value: number };
+  uEdge: { value: number };
+  uY0: { value: number };
+  uH: { value: number };
+};
+
 type BuiltScene = {
   root: THREE.Group;
   cardGroup: THREE.Group;
   pedGroup: THREE.Group;
   holo: THREE.ShaderMaterial;
   edge: THREE.LineLoop;
-  beam: THREE.Mesh;
   core: THREE.Mesh;
   dots: THREE.Mesh[];
+  beamUniforms: BeamUniforms;
   disposables: Array<{ dispose: () => void }>;
 };
 
 /**
- * A holographic ID card floating over a sci-fi projector pedestal + light
- * beam, replacing the old lanyard. Built imperatively (ported from the
- * approved mockup) and mounted via <primitive>; `useFrame` drives motion,
- * gated by `animated` (false = static, for reduced-motion / low-end).
+ * A holographic ID card floating over a sci-fi projector pedestal, lit by a
+ * fanned, striated light cone that spreads UP and out from a hot emitter — the
+ * way a real hologram projector reads. Built imperatively (ported from the
+ * approved mockup) and mounted via <primitive>; `useFrame` drives motion, gated
+ * by `animated` (false = static, for reduced-motion / low-end).
+ *
+ * The camera is not hand-placed: it is fitted to the object's real 3D extent
+ * for the canvas's current aspect (see math/fitCamera), so the hologram sits
+ * centred with headroom at any size.
  */
 export default function HologramScene({
   profile: _profile,
@@ -92,6 +179,7 @@ export default function HologramScene({
   animated: boolean;
 }) {
   const { gl, camera, scene } = useThree();
+  const size = useThree((s) => s.size);
 
   const built = useMemo<BuiltScene>(() => {
     const disposables: Array<{ dispose: () => void }> = [];
@@ -104,12 +192,14 @@ export default function HologramScene({
 
     // ---- card ----
     const cardGroup = new THREE.Group();
-    cardGroup.position.y = 0.55;
+    cardGroup.position.y = CARD_Y;
 
-    // Frame tightly on the subject (the photo has a lot of dusk sky).
+    // Frame tightly on the subject (the photo has a lot of dusk sky). focusX is
+    // where the subject actually sits (≈ 0.49–0.50 of the photo's width), so they
+    // land on the card's midline — and on the pedestal's axis.
     const portraitTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, {
       zoom: 1.5,
-      focusX: 0.48,
+      focusX: 0.495,
       focusY: 0.6,
     });
     disposables.push(portraitTex);
@@ -252,7 +342,7 @@ export default function HologramScene({
 
     // ---- pedestal ----
     const pedGroup = new THREE.Group();
-    pedGroup.position.y = -1.9;
+    pedGroup.position.y = PED_Y;
     const plate = new THREE.Mesh(
       track(new THREE.CylinderGeometry(1.75, 1.9, 0.12, 64)),
       track(
@@ -275,7 +365,7 @@ export default function HologramScene({
           metalness: 0.9,
           roughness: 0.25,
           emissive: new THREE.Color(ARC),
-          emissiveIntensity: 0.5,
+          emissiveIntensity: 0.8,
         }),
       ),
     );
@@ -300,8 +390,9 @@ export default function HologramScene({
       r.position.y = 0.075;
       pedGroup.add(r);
     };
-    ringLine(1.3, 0.5);
-    ringLine(0.95, 0.4);
+    ringLine(1.3, 0.55);
+    ringLine(0.95, 0.5);
+    ringLine(0.55, 0.45);
 
     const dashMat = track(
       new THREE.MeshBasicMaterial({ color: ARC, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending }),
@@ -329,54 +420,123 @@ export default function HologramScene({
       pedGroup.add(ds);
     }
 
-    const cglow = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(2.2, 2.2)),
+    // A hotter emitter: a wide soft pool of light on the plate, and a white-hot
+    // core at its centre — the source the beam visibly springs from.
+    const pool = new THREE.Mesh(
+      track(new THREE.PlaneGeometry(3.7, 3.7)),
       track(
         new THREE.MeshBasicMaterial({
-          map: track(radialGlowTexture()),
+          map: track(
+            radialTexture([
+              [0, "rgba(170,236,255,1)"],
+              [0.32, "rgba(90,200,255,.45)"],
+              [1, "rgba(0,0,0,0)"],
+            ]),
+          ),
           transparent: true,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
         }),
       ),
     );
-    cglow.rotation.x = -Math.PI / 2;
-    cglow.position.y = 0.09;
-    pedGroup.add(cglow);
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.y = 0.09;
+    pedGroup.add(pool);
+
+    const core = new THREE.Mesh(
+      track(new THREE.PlaneGeometry(1.5, 1.5)),
+      track(
+        new THREE.MeshBasicMaterial({
+          map: track(
+            radialTexture([
+              [0, "rgba(255,255,255,1)"],
+              [0.28, "rgba(190,240,255,.7)"],
+              [1, "rgba(0,0,0,0)"],
+            ]),
+          ),
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        }),
+      ),
+    );
+    core.rotation.x = -Math.PI / 2;
+    core.position.y = 0.1;
+    pedGroup.add(core);
     root.add(pedGroup);
 
-    // ---- beam ----
-    const beam = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(0.05, 0.7, 1.7, 32, 1, true)),
-      track(
-        new THREE.MeshBasicMaterial({
-          color: ARC,
-          transparent: true,
-          opacity: 0.14,
-          blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        }),
-      ),
+    // ---- projector beam: narrow emitter fanning wide UPWARD, behind the card ----
+    const beamUniforms: BeamUniforms = {
+      t: { value: 0 },
+      tint: { value: new THREE.Color(ARC) },
+      uGain: { value: BEAM_GAIN },
+      uEdge: { value: 2.2 }, // set from the camera fit, once the canvas size is known
+      uY0: { value: BEAM_Y0 },
+      uH: { value: BEAM_H },
+    };
+    const outer = new THREE.Mesh(
+      track(new THREE.CylinderGeometry(3.0, 1.0, BEAM_H, 96, 1, true)),
+      track(beamMaterial(beamUniforms, 0.2, 30)),
     );
-    beam.position.y = -1.0;
-    root.add(beam);
-    const core = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(0.02, 0.05, 1.7, 16, 1, true)),
-      track(
-        new THREE.MeshBasicMaterial({
-          color: 0xdff4ff,
-          transparent: true,
-          opacity: 0.5,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        }),
-      ),
-    );
-    core.position.y = -1.0;
-    root.add(core);
+    outer.position.y = BEAM_Y0 + BEAM_H / 2;
+    outer.renderOrder = -1;
+    root.add(outer);
 
-    return { root, cardGroup, pedGroup, holo, edge, beam, core, dots, disposables };
+    const inner = new THREE.Mesh(
+      track(new THREE.CylinderGeometry(1.35, 0.55, BEAM_H * 0.8, 64, 1, true)),
+      track(beamMaterial(beamUniforms, 0.26, 18)),
+    );
+    inner.position.y = BEAM_Y0 + BEAM_H * 0.4;
+    inner.renderOrder = -1;
+    root.add(inner);
+
+    // A soft vertical bloom along the axis and a halo behind the card. Sprites
+    // always face the camera; both are drawn first so the card sits on top.
+    const bloomMat = track(
+      new THREE.SpriteMaterial({
+        map: track(
+          radialTexture([
+            [0, "rgba(150,225,255,.8)"],
+            [0.4, "rgba(80,190,255,.22)"],
+            [1, "rgba(0,0,0,0)"],
+          ]),
+        ),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: false,
+        opacity: 0.5 * BEAM_GAIN,
+      }),
+    );
+    const bloom = new THREE.Sprite(bloomMat);
+    bloom.scale.set(2.6, 5.4, 1);
+    bloom.position.set(0, -0.15, -0.5);
+    bloom.renderOrder = -2;
+    root.add(bloom);
+
+    const haloMat = track(
+      new THREE.SpriteMaterial({
+        map: track(
+          radialTexture([
+            [0, "rgba(120,210,255,.55)"],
+            [0.5, "rgba(60,150,255,.14)"],
+            [1, "rgba(0,0,0,0)"],
+          ]),
+        ),
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: false,
+        opacity: 0.55,
+      }),
+    );
+    const halo = new THREE.Sprite(haloMat);
+    halo.scale.set(4.6, 4.9, 1);
+    halo.position.set(0, CARD_Y, -0.7);
+    halo.renderOrder = -2;
+    root.add(halo);
+
+    return { root, cardGroup, pedGroup, holo, edge, core, dots, beamUniforms, disposables };
   }, []);
 
   // Procedural environment for the metal/glass reflections.
@@ -395,9 +555,20 @@ export default function HologramScene({
     };
   }, [gl, scene, built]);
 
-  useEffect(() => {
-    camera.lookAt(0, -0.25, 0);
-  }, [camera]);
+  // Fit the camera to the object's real 3D extent for the current canvas aspect,
+  // so the hologram is centred with headroom at any size. `size` is the layout
+  // box (Canvas is told to ignore the window's scale transform).
+  const framePoints = useMemo(() => hologramFramePoints(), []);
+  useLayoutEffect(() => {
+    const aspect = size.width / size.height;
+    if (!Number.isFinite(aspect) || aspect <= 0) return;
+    const fit = fitCamera(framePoints, FOV, aspect, FRAME_MARGIN);
+    camera.position.set(0, fit.y, fit.z);
+    camera.lookAt(0, fit.y, 0);
+    camera.updateProjectionMatrix();
+    // The beam fades out before the frame's edge at the beam's depth.
+    built.beamUniforms.uEdge.value = Math.tan((FOV * Math.PI) / 360) * aspect * fit.z;
+  }, [camera, built, framePoints, size.width, size.height]);
 
   // Dispose everything on unmount.
   useEffect(() => {
@@ -448,17 +619,17 @@ export default function HologramScene({
     t.current += dt;
     const tt = t.current;
     built.holo.uniforms.t.value = animated ? tt : 0;
+    built.beamUniforms.t.value = animated ? tt : 0;
 
     if (!drag.current.active) {
       built.cardGroup.rotation.y += animated ? 0.0022 + drag.current.vx : drag.current.vx;
       drag.current.vx *= 0.94;
     }
-    built.cardGroup.position.y = 0.55 + (animated ? Math.sin(tt * 1.1) * 0.05 : 0);
+    built.cardGroup.position.y = CARD_Y + (animated ? Math.sin(tt * 1.1) * BOB : 0);
     (built.edge.material as THREE.LineBasicMaterial).opacity = animated ? 0.7 + 0.25 * Math.sin(tt * 2.2) : 0.85;
 
     if (animated) {
-      (built.beam.material as THREE.MeshBasicMaterial).opacity = 0.12 + 0.04 * Math.sin(tt * 6);
-      (built.core.material as THREE.MeshBasicMaterial).opacity = 0.45 + 0.12 * Math.sin(tt * 6);
+      (built.core.material as THREE.MeshBasicMaterial).opacity = 0.85 + 0.15 * Math.sin(tt * 5);
       for (const d of built.dots) {
         (d.material as THREE.MeshBasicMaterial).opacity = 0.55 + 0.4 * Math.sin(tt * 2.5 + (d.userData.ph as number));
       }

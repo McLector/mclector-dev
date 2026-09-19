@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import { TIER_CONFIG, type TierConfig } from "@/lib/capability";
 import HologramScene from "./HologramScene";
+import { FOV } from "./sceneDims";
 
 export type HologramCanvasProps = {
   profile: Profile;
@@ -31,7 +32,15 @@ export default function HologramCanvas({
       <Canvas
         frameloop={active ? "always" : "never"}
         dpr={Math.min(dpr, config.maxDpr)}
-        camera={{ position: [0, 0.3, 7.6], fov: 32 }}
+        // Measure the LAYOUT box (offsetWidth/Height), not getBoundingClientRect().
+        // The window is scaled as a unit with transform: scale(s); a transform-aware
+        // measurement gets written back as the canvas's CSS size and the parent
+        // transform then scales it a second time (visible canvas = layout × s²,
+        // anchored top-left) — the off-centre, undersized hologram seen below
+        // ~1248×818. The camera position is NOT set here: HologramScene fits it to
+        // the canvas aspect.
+        resize={{ offsetSize: true }}
+        camera={{ fov: FOV }}
         gl={{ antialias: config.antialias, powerPreference: "high-performance", alpha: true }}
       >
         <Suspense fallback={null}>
