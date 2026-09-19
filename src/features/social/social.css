@@ -10,7 +10,9 @@
  */
 
 .hexgrid {
-  --hex-w: clamp(54px, 15vw, 78px);
+  /* Fixed inside the scaled window: a viewport unit here would fight the
+     scale-to-fit transform. Mobile (unscaled) gets the fluid clamp below. */
+  --hex-w: 58px;
   --hex-h: calc(var(--hex-w) * 1.1547); /* pointy-top: 2/√3 */
   --hex-gap: 6px;
   --hex-ring: 3px;
@@ -20,6 +22,12 @@
   align-items: center;
   justify-content: center;
   padding-block: var(--hex-ring);
+}
+
+@media (max-width: 860px) {
+  .hexgrid {
+    --hex-w: clamp(54px, 15vw, 78px);
+  }
 }
 
 .hexgrid__row {
@@ -90,28 +98,34 @@
   outline: none;
 }
 
-.hexgrid__link:hover,
+/* Keyboard focus: a solid arc-tinted fill (the crisp ring is the sibling above). */
 .hexgrid__link:focus-visible {
-  background: color-mix(in oklab, var(--color-accent-blue) 34%, var(--color-surface-raised));
+  background: color-mix(in oklab, var(--arc) 40%, var(--color-surface-raised));
   color: var(--color-text-primary);
 }
 
+/* Arc-reactor ignition on hover. The glow is a `drop-shadow` on the CELL, not
+   the link: CSS applies `filter` BEFORE `clip-path`, so a drop-shadow on the
+   clipped link is itself clipped away. On the unclipped parent it follows the
+   clipped child's hexagonal silhouette. Fine pointers only. */
 @media (hover: hover) and (pointer: fine) {
-  .hexgrid__link:hover,
-  .hexgrid__link:focus-visible {
+  .hexgrid__cell {
+    transition: filter 150ms ease, transform 150ms ease;
+  }
+
+  .hexgrid__link:hover {
+    background: color-mix(in oklab, var(--arc) 55%, transparent);
+    color: #eafaff;
     transform: translateY(-2px);
+  }
+
+  .hexgrid__cell:has(.hexgrid__link:hover) {
+    filter: drop-shadow(0 0 8px var(--arc-soft)) drop-shadow(0 0 16px var(--arc-soft));
   }
 }
 
 .hexgrid__link:active {
   transform: scale(0.95);
-}
-
-/* Soft accent halo on hover, via the unclipped ring sibling (a box-shadow on
-   the clipped link itself is invisible). Focus keeps its crisp ring below. */
-.hexgrid__cell:has(.hexgrid__link:hover) .hexgrid__ring {
-  opacity: 0.5;
-  filter: blur(7px);
 }
 
 .hexgrid__icon {
@@ -157,11 +171,18 @@
   }
 }
 
+/* Reduced motion keeps the colour and the glow, drops the lift. */
 @media (prefers-reduced-motion: reduce) {
+  .hexgrid__cell,
   .hexgrid__link,
   .hexgrid__label,
   .hexgrid__icon,
   .hexgrid__ring {
     transition: none;
+  }
+
+  .hexgrid__link:hover,
+  .hexgrid__link:hover .hexgrid__icon {
+    transform: none;
   }
 }

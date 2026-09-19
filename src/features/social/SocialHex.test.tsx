@@ -110,7 +110,7 @@ describe("SocialHex — edge cases", () => {
 
   it("covers every icon name in the SocialIconName union", () => {
     const all: Social[] = (
-      ["github", "linkedin", "email", "x", "youtube", "instagram"] as const
+      ["github", "linkedin", "email", "x", "instagram", "youtube", "tiktok"] as const
     ).map((icon, i) => ({
       id: icon,
       label: icon,
@@ -119,9 +119,21 @@ describe("SocialHex — edge cases", () => {
       hexIndex: i,
     }));
     const { container } = render(<SocialHex socials={all} />);
-    expect(links()).toHaveLength(6);
+    expect(links()).toHaveLength(7);
     // Every hex paints a real icon — no missing-glyph holes.
-    expect(container.querySelectorAll("svg[data-social-icon]")).toHaveLength(6);
+    expect(container.querySelectorAll("svg[data-social-icon]")).toHaveLength(7);
+  });
+
+  it("renders a # placeholder as a same-page link (no new tab, no rel)", () => {
+    render(
+      <SocialHex
+        socials={[{ id: "x", label: "X", href: "#", icon: "x", hexIndex: 0 }]}
+      />,
+    );
+    const [link] = links();
+    expect(link).toHaveAttribute("href", "#");
+    expect(link).not.toHaveAttribute("target");
+    expect(link).not.toHaveAttribute("rel");
   });
 });
 

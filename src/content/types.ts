@@ -109,7 +109,8 @@ export type SocialIconName =
   | "email"
   | "x"
   | "youtube"
-  | "instagram";
+  | "instagram"
+  | "tiktok";
 
 export type Social = {
   id: string;

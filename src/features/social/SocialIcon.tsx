@@ -3,7 +3,7 @@ import type { SocialIconName } from "@/content/types";
 
 /**
  * A hand-rolled inline SVG set — no icon library, per docs/contracts.md (a
- * new dependency is a request to the integrator, and six glyphs do not earn
+ * new dependency is a request to the integrator, and seven glyphs do not earn
  * one). Every member of the `SocialIconName` union has an entry, so a social
  * added to content later can never render a hole.
  *
@@ -51,24 +51,21 @@ const PATHS: Record<SocialIconName, ReactNode> = {
   ),
   x: (
     <path
-      d="M3 3h4.6l4.2 5.66L16.8 3H21l-6.86 7.9L21.4 21h-4.6l-4.55-6.12L6.9 21H2.7l7.2-8.3L3 3Zm2.9 1.6 9.9 14.8h1.5L7.4 4.6H5.9Z"
+      d="M17.5 3h3l-7 8 8.2 10h-6.4l-5-6.1L4 21H1l7.5-8.6L.6 3H7l4.5 5.6L17.5 3Zm-1 16h1.7L7.6 4.8H5.8L16.5 19Z"
       fill="currentColor"
     />
   ),
   youtube: (
-    <>
-      <rect
-        x="2.75"
-        y="5.25"
-        width="18.5"
-        height="13.5"
-        rx="4"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        fill="none"
-      />
-      <path d="M10.4 9.4 15.2 12l-4.8 2.6V9.4Z" fill="currentColor" />
-    </>
+    <path
+      d="M23 12s0-3.4-.43-5a2.8 2.8 0 0 0-1.96-1.96C18.9 4.6 12 4.6 12 4.6s-6.9 0-8.6.44A2.8 2.8 0 0 0 1.43 7C1 8.6 1 12 1 12s0 3.4.43 5a2.8 2.8 0 0 0 1.96 1.96c1.71.44 8.61.44 8.61.44s6.9 0 8.6-.44A2.8 2.8 0 0 0 22.57 17C23 15.4 23 12 23 12ZM9.8 15.3V8.7l5.7 3.3-5.7 3.3Z"
+      fill="currentColor"
+    />
+  ),
+  tiktok: (
+    <path
+      d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"
+      fill="currentColor"
+    />
   ),
   instagram: (
     <>
