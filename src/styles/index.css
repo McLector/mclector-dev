@@ -419,6 +419,11 @@
     inset: 0;
     z-index: 2;
     display: grid;
+    /* Pin the track to the viewport. With auto tracks, a design bigger than
+       the viewport (1200x770 on a short/narrow screen) grows the track to the
+       content size and the window is centred in THAT — pushed down/right, then
+       scaled around its own centre, so its bottom/right edge fell off-screen. */
+    grid-template: 100% / 100%;
     place-items: center;
   }
 
