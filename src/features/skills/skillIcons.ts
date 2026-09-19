@@ -6,6 +6,7 @@
  */
 import {
   siArduino,
+  siClaude,
   siCplusplus,
   siEspressif,
   siExpo,
@@ -16,6 +17,7 @@ import {
   siPostgresql,
   siPython,
   siReact,
+  siRender,
   siShadcnui,
   siSupabase,
   siTailwindcss,
@@ -42,6 +44,8 @@ const REGISTRY: Record<string, SimpleIconLike> = {
   figma: siFigma,
   git: siGit,
   vercel: siVercel,
+  render: siRender,
+  claude: siClaude,
 };
 
 export function getSkillIcon(slug: string | undefined): SimpleIconLike | null {

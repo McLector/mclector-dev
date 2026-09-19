@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Skill } from "@/content/types";
-import { GROUP_LABELS, groupSkills } from "./groupSkills";
+import { GROUP_LABELS, groupSkills, skillRows } from "./groupSkills";
 
 const s = (id: string, group: Skill["group"], featured = false): Skill => ({
   id,
@@ -53,6 +53,57 @@ describe("groupSkills", () => {
       s("esp", "hardware"),
     ];
     const total = groupSkills(input).reduce((n, g) => n + g.skills.length, 0);
+    expect(total).toBe(input.length);
+  });
+});
+
+describe("skillRows", () => {
+  it("merges the six data groups into the four display rows, in order", () => {
+    const rows = skillRows([
+      s("git", "tooling"),
+      s("esp", "hardware"),
+      s("sb", "data"),
+      s("nx", "web"),
+      s("expo", "mobile"),
+      s("ts", "language"),
+    ]);
+    expect(rows.map((r) => r.label)).toEqual([
+      "Languages · Mobile",
+      "Web · Data",
+      "Hardware · Design · PM",
+      "Tools · APIs",
+    ]);
+  });
+
+  it("concatenates constituent groups in order, featured-first within each", () => {
+    const rows = skillRows([
+      s("py", "language"),
+      s("ts", "language", true),
+      s("expo", "mobile"),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].skills.map((x) => x.id)).toEqual(["ts", "py", "expo"]);
+  });
+
+  it("drops rows with no skills", () => {
+    const rows = skillRows([s("git", "tooling")]);
+    expect(rows.map((r) => r.label)).toEqual(["Tools · APIs"]);
+  });
+
+  it("returns an empty array for no skills", () => {
+    expect(skillRows([])).toEqual([]);
+  });
+
+  it("never drops a skill", () => {
+    const input = [
+      s("a", "language"),
+      s("b", "mobile"),
+      s("c", "web"),
+      s("d", "data"),
+      s("e", "hardware"),
+      s("f", "tooling"),
+    ];
+    const total = skillRows(input).reduce((n, r) => n + r.skills.length, 0);
     expect(total).toBe(input.length);
   });
 });

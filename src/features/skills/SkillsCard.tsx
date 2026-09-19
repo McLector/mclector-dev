@@ -1,37 +1,56 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties, type PointerEvent } from "react";
 import type { Skill } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { VisuallyHidden } from "@/components/ui/VisuallyHidden";
+import { brandAccents } from "./brandAccent";
 import { getSkillIcon } from "./skillIcons";
-import { groupSkills } from "./groupSkills";
+import { skillRows } from "./groupSkills";
 import { SkillIcon } from "./SkillIcon";
+import { SkillTooltip, type SkillTip } from "./SkillTooltip";
 
 /**
- * Skills & Tools, presented as a grouped icon grid (all skills, not a featured
- * subset) — the whole toolbelt at a glance. Each tile carries the brand mark;
- * hovering lifts it and glows in the brand colour (`--brand`), while the label
- * stays legible beneath. With no skills the card keeps its heading and shows a
- * subdued line so the grid never gains a dead cell.
+ * Skills & Tools — the whole toolbelt as a compact 7-column logo grid in four
+ * merged rows. Tiles are deliberately small; the name appears in a single
+ * body-portaled tooltip on hover (see SkillTooltip), and every label also
+ * stays in the DOM as visually-hidden text for assistive tech. With no skills
+ * the card keeps its heading and shows a subdued line so the grid never gains
+ * a dead cell.
  */
 export function SkillsCard({ skills }: { skills: Skill[] }) {
-  const groups = groupSkills(skills);
+  const rows = skillRows(skills);
+  const [tip, setTip] = useState<SkillTip | null>(null);
+
+  const showTip = (label: string) => (e: PointerEvent<HTMLElement>) => {
+    // Touch has no hover; a tap-triggered tooltip would just get stuck open.
+    if (e.pointerType === "touch") return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setTip({ label, x: r.left + r.width / 2, y: r.top });
+  };
+  const hideTip = () => setTip(null);
 
   return (
     <BentoCard area="skills" as="section" grow>
-      <div className="flex h-full flex-col gap-4">
-        <h2 className="font-[family-name:var(--font-mono)] text-[0.7rem] font-medium tracking-[0.2em] text-[var(--color-text-muted)] uppercase">
+      <div className="flex h-full flex-col gap-2">
+        <h2 className="eyebrow font-[family-name:var(--font-mono)]">
           Skills &amp; Tools
         </h2>
 
-        {groups.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto pr-1">
-            {groups.map((group) => (
-              <section key={group.group} className="flex flex-col gap-1.5">
-                <h3 className="text-[0.66rem] font-semibold tracking-[0.06em] text-[var(--color-text-secondary)]">
-                  {group.label}
+        {rows.length > 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto pr-1">
+            {rows.map((row) => (
+              <section key={row.label} className="flex flex-col gap-1">
+                <h3 className="mt-0.5 text-[8.5px] font-bold tracking-[0.1em] text-[color-mix(in_oklab,var(--color-text-primary)_55%,var(--arc)_30%)] uppercase">
+                  {row.label}
                 </h3>
-                <ul className="grid grid-cols-[repeat(auto-fill,minmax(54px,1fr))] gap-1.5">
-                  {group.skills.map((skill, index) => (
-                    <SkillTile key={skill.id} skill={skill} index={index} />
+                <ul className="grid grid-cols-7 gap-1">
+                  {row.skills.map((skill, index) => (
+                    <SkillTile
+                      key={skill.id}
+                      skill={skill}
+                      index={index}
+                      onEnter={showTip(skill.label)}
+                      onLeave={hideTip}
+                    />
                   ))}
                 </ul>
               </section>
@@ -43,40 +62,57 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
           </p>
         )}
       </div>
+      <SkillTooltip tip={tip} />
     </BentoCard>
   );
 }
 
-function SkillTile({ skill, index }: { skill: Skill; index: number }) {
+function SkillTile({
+  skill,
+  index,
+  onEnter,
+  onLeave,
+}: {
+  skill: Skill;
+  index: number;
+  onEnter: (e: PointerEvent<HTMLElement>) => void;
+  onLeave: () => void;
+}) {
   const icon = getSkillIcon(skill.icon);
-  // The brand colour drives the hover glow/tint. Fall back to the theme accent
-  // for skills with no brand mark.
-  const brand = icon ? `#${icon.hex}` : "var(--color-accent-blue)";
+  // The accent drives the hover tint/glow; near-black brands clamp to the arc
+  // cyan so the glow stays visible (see brandAccent). `--brand` flips by theme.
+  const accents = brandAccents(icon?.hex);
 
   return (
     <li
-      className="animate-[chip-enter_0.3s_cubic-bezier(0.22,1,0.36,1)_both]"
-      style={{ animationDelay: `${index * 30}ms`, ["--brand" as string]: brand } as CSSProperties}
+      onPointerEnter={onEnter}
+      onPointerLeave={onLeave}
+      className={[
+        "group/skill relative grid aspect-square place-items-center rounded-lg",
+        "text-[var(--color-text-secondary)]",
+        "bg-[color-mix(in_oklab,var(--color-text-primary)_7%,transparent)]",
+        "ring-1 ring-[var(--glass-border)]",
+        "transition-[transform,box-shadow,background-color,color] duration-150 ease-out",
+        "[--brand:var(--brand-dark)] light:[--brand:var(--brand-light)]",
+        "hover-fine:-translate-y-0.5",
+        "hover-fine:bg-[color-mix(in_oklab,var(--brand)_30%,transparent)]",
+        "hover-fine:text-[var(--color-text-primary)]",
+        "hover-fine:shadow-[0_4px_14px_-4px_var(--brand)]",
+        "animate-[chip-enter_0.3s_cubic-bezier(0.22,1,0.36,1)_both]",
+      ].join(" ")}
+      style={
+        {
+          animationDelay: `${index * 20}ms`,
+          "--brand-dark": accents.dark,
+          "--brand-light": accents.light,
+        } as CSSProperties
+      }
     >
-      <div
-        title={skill.label}
-        className={[
-          "group/skill flex h-full flex-col items-center gap-1 rounded-lg px-1 py-2",
-          "bg-[color-mix(in_oklab,var(--color-text-primary)_5%,transparent)]",
-          "ring-1 ring-[var(--glass-border)] transition-[transform,box-shadow,background-color] duration-200",
-          "hover-fine:-translate-y-0.5",
-          "hover-fine:bg-[color-mix(in_oklab,var(--brand)_16%,transparent)]",
-          "hover-fine:shadow-[0_8px_20px_-10px_var(--brand)]",
-        ].join(" ")}
-      >
-        <SkillIcon
-          skill={skill}
-          className="size-[1.15rem] text-[var(--color-text-secondary)] transition-colors duration-200 group-hover/skill:text-[var(--brand)]"
-        />
-        <span className="w-full truncate text-center text-[0.56rem] leading-tight text-[var(--color-text-muted)]">
-          {skill.label}
-        </span>
-      </div>
+      <SkillIcon
+        skill={skill}
+        className={icon ? "size-[64%]" : "text-[7px] leading-none font-bold"}
+      />
+      <VisuallyHidden>{skill.label}</VisuallyHidden>
     </li>
   );
 }

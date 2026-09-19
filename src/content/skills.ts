@@ -2,9 +2,10 @@ import type { Skill } from "./types";
 
 /**
  * The full toolbelt, rendered as a grouped icon grid (all of them, not just a
- * featured subset). `icon` is a simple-icons slug; skills with no brand mark
- * (React Navigation, Zustand, PostGIS, Blynk, Azure DevOps) omit it and get a
- * lettered fallback tile. `featured` sorts a skill first within its group.
+ * featured subset). `icon` is a simple-icons slug; skills with no registered
+ * brand mark (React Navigation, Zustand, PostGIS, Blynk, Azure DevOps, and the
+ * AI tools without a logo) omit it and get a lettered fallback tile.
+ * `featured` sorts a skill first within its group.
  */
 export const skills: Skill[] = [
   { id: "typescript", label: "TypeScript", group: "language", featured: true, icon: "typescript" },
@@ -28,9 +29,18 @@ export const skills: Skill[] = [
   { id: "esp32", label: "ESP32", group: "hardware", icon: "espressif" },
   { id: "arduino", label: "Arduino", group: "hardware", icon: "arduino" },
   { id: "blynk", label: "Blynk", group: "hardware" },
+  // Design + PM live in the hardware group: the display row is "Hardware · Design · PM".
+  { id: "figma", label: "Figma", group: "hardware", icon: "figma" },
+  { id: "azure-devops", label: "Azure DevOps", group: "hardware" },
 
-  { id: "figma", label: "Figma", group: "tooling", icon: "figma" },
-  { id: "azure-devops", label: "Azure DevOps", group: "tooling" },
   { id: "git", label: "Git", group: "tooling", featured: true, icon: "git" },
   { id: "vercel", label: "Vercel", group: "tooling", icon: "vercel" },
+  { id: "render", label: "Render", group: "tooling", icon: "render" },
+  { id: "claude-code", label: "Claude Code", group: "tooling", icon: "claude" },
+  { id: "codex", label: "Codex", group: "tooling" },
+  { id: "antigravity", label: "Antigravity", group: "tooling" },
+  { id: "opencode", label: "OpenCode", group: "tooling" },
+  { id: "cline", label: "Cline CLI", group: "tooling" },
+  { id: "groq", label: "Groq", group: "tooling" },
+  { id: "sapi-tts", label: "Windows SAPI TTS", group: "tooling" },
 ];
