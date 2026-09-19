@@ -19,6 +19,29 @@ export function coverCropUV(imgW: number, imgH: number, targetAspect: number): C
   return { repeat: [1, ry], offset: [0, (1 - ry) / 2] };
 }
 
+/**
+ * Cover-crop, then zoom in on a focal point (0..1 in texture space, origin
+ * bottom-left because textures are flipped). Used to frame the subject of the
+ * hologram portrait tightly instead of showing the whole wide photo.
+ */
+export function focalCropUV(
+  imgW: number,
+  imgH: number,
+  targetAspect: number,
+  zoom = 1,
+  focusX = 0.5,
+  focusY = 0.5,
+): CropUV {
+  const base = coverCropUV(imgW, imgH, targetAspect);
+  const rx = base.repeat[0] / zoom;
+  const ry = base.repeat[1] / zoom;
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  return {
+    repeat: [rx, ry],
+    offset: [clamp(focusX - rx / 2, 0, 1 - rx), clamp(focusY - ry / 2, 0, 1 - ry)],
+  };
+}
+
 /** A deterministic fallback avatar texture, used when the photo can't load. */
 export function fallbackAvatarTexture(): THREE.CanvasTexture {
   const c = document.createElement("canvas");
@@ -54,17 +77,21 @@ export function fallbackAvatarTexture(): THREE.CanvasTexture {
  * Returns a texture immediately (three fills it in on load); calls `onReady`
  * once the crop is applied, and swaps in the fallback avatar on error.
  */
+export type PortraitFraming = { zoom?: number; focusX?: number; focusY?: number };
+
 export function loadPortraitTexture(
   src: string,
   targetAspect: number,
+  framing: PortraitFraming = {},
   onReady?: (tex: THREE.Texture) => void,
 ): THREE.Texture {
+  const { zoom = 1, focusX = 0.5, focusY = 0.5 } = framing;
   const loader = new THREE.TextureLoader();
   const tex = loader.load(
     src,
     (loaded) => {
       const img = loaded.image as { width: number; height: number };
-      const { repeat, offset } = coverCropUV(img.width, img.height, targetAspect);
+      const { repeat, offset } = focalCropUV(img.width, img.height, targetAspect, zoom, focusX, focusY);
       loaded.repeat.set(repeat[0], repeat[1]);
       loaded.offset.set(offset[0], offset[1]);
       loaded.needsUpdate = true;

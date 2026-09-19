@@ -106,7 +106,12 @@ export default function HologramScene({
     const cardGroup = new THREE.Group();
     cardGroup.position.y = 0.55;
 
-    const portraitTex = loadPortraitTexture(portraitUrl, CARD_ASPECT);
+    // Frame tightly on the subject (the photo has a lot of dusk sky).
+    const portraitTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, {
+      zoom: 1.5,
+      focusX: 0.48,
+      focusY: 0.6,
+    });
     disposables.push(portraitTex);
 
     const backMat = track(
@@ -123,8 +128,28 @@ export default function HologramScene({
         uniforms: { map: { value: portraitTex }, t: { value: 0 }, tint: { value: new THREE.Color(ARC) } },
         vertexShader:
           "varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
-        fragmentShader:
-          "varying vec2 vU;uniform sampler2D map;uniform float t;uniform vec3 tint;void main(){vec4 c=texture2D(map,vU);float scan=0.92+0.08*sin(vU.y*190.0 - t*3.0);float hl=smoothstep(0.08,0.0,abs((vU.x*0.72+vU.y*0.28) - fract(t*0.045)));vec3 col=mix(c.rgb,tint,0.2)*scan + hl*0.2;float ex=smoothstep(0.0,0.04,vU.x)*smoothstep(1.0,0.96,vU.x);float ey=smoothstep(0.0,0.03,vU.y)*smoothstep(1.0,0.97,vU.y);gl_FragColor=vec4(col,0.95*ex*ey+0.05);}",
+        fragmentShader: `
+          varying vec2 vU;
+          uniform sampler2D map;
+          uniform float t;
+          uniform vec3 tint;
+          void main(){
+            vec3 rgb = texture2D(map, vU).rgb;
+            // The photo is a dark twilight shot — lift shadows, add punch.
+            rgb = pow(rgb, vec3(0.8));        // gamma lift (opens up the dark subject)
+            rgb = (rgb - 0.5) * 1.22 + 0.5;   // contrast
+            rgb = clamp(rgb * 1.45 + 0.04, 0.0, 1.0); // brightness
+            float scan = 0.95 + 0.05 * sin(vU.y * 190.0 - t * 3.0);
+            float hl = smoothstep(0.09, 0.0, abs((vU.x * 0.72 + vU.y * 0.28) - fract(t * 0.045)));
+            vec3 col = mix(rgb, tint, 0.1) * scan + hl * 0.16;
+            // Cyan rim-glow at the edges — a lit hologram, not a dark fade.
+            float edge = min(min(vU.x, 1.0 - vU.x), min(vU.y, 1.0 - vU.y));
+            col += tint * smoothstep(0.14, 0.0, edge) * 0.38;
+            // Keep the face fully opaque; soften only the very edge.
+            float a = smoothstep(0.0, 0.02, edge);
+            gl_FragColor = vec4(col, 0.9 * a + 0.1);
+          }
+        `,
       }),
     );
     const screen = new THREE.Mesh(track(new THREE.PlaneGeometry(PW, PH)), holo);
