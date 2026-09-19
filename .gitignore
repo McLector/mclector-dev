@@ -1,4 +1,5 @@
-Reference/
+/Reference/
+/portfolio content/
 node_modules/
 dist/
 dist-ssr/
