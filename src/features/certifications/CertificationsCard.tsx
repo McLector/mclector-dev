@@ -147,7 +147,7 @@ export function CertificationsCard({
             // The card lives in a fixed-height, overflow-hidden desktop grid:
             // cap and scroll here so a long list can never blow out the grid.
             style={{ maxHeight: "12rem" }}
-            className="flex min-h-0 flex-col gap-2 overflow-y-auto pr-1"
+            className="flex min-h-0 flex-col gap-2 overflow-y-auto overscroll-contain pr-1"
           >
             {certifications.map((cert) => (
               <CertificationRow key={cert.id} cert={cert} />

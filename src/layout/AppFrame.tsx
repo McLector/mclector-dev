@@ -24,8 +24,19 @@ export function AppFrame({ children }: { children: ReactNode }) {
   const { scale, isMobile } = useFitScale(DESIGN_W, DESIGN_H);
 
   if (isMobile) {
+    // Padding clears the notch / home indicator (env() is 0px unless index.html sets viewport-fit=cover). The
+    // bottom also leaves room for the fixed toggle dock (.toggle-dock: 2.5rem tall, 1rem up) so the last card
+    // scrolls clear of it instead of ending underneath.
     return (
-      <main className="relative z-[2] flex min-h-dvh w-full justify-center px-4 py-6">
+      <main
+        className={[
+          "relative z-[2] flex min-h-dvh w-full justify-center",
+          "pt-[max(1.5rem,env(safe-area-inset-top,0px))]",
+          "pr-[max(1rem,env(safe-area-inset-right,0px))]",
+          "pl-[max(1rem,env(safe-area-inset-left,0px))]",
+          "pb-[calc(5rem_+_env(safe-area-inset-bottom,0px))]",
+        ].join(" ")}
+      >
         <div className="app-window app-window--mobile">{children}</div>
       </main>
     );

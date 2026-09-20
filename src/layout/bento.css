@@ -86,7 +86,9 @@
   [data-bento-area="intro"] { order: 1; }
   [data-bento-area="connect"] { order: 2; }
   [data-bento-area="actions"] { order: 3; }
-  [data-bento-area="pass"] { order: 4; min-height: clamp(400px, 66vh, 660px); }
+  /* svh (the small viewport), not vh: vh is the LARGE viewport on a phone, so it overshoots while the URL bar is
+     showing. The stage is one decorative element; two-thirds of the screen pushed every real card below the fold. */
+  [data-bento-area="pass"] { order: 4; min-height: clamp(300px, 48svh, 460px); }
   [data-bento-area="skills"] { order: 5; }
   [data-bento-area="place"] { order: 6; }
   [data-bento-area="social"] { order: 7; }

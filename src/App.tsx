@@ -17,7 +17,7 @@ export default function App() {
   return (
     <>
       <GalaxyBackdrop />
-      <div className="fixed top-4 right-4 z-40 flex flex-col gap-2 sm:top-5 sm:right-5">
+      <div className="toggle-dock">
         <ThemeToggle />
         <MotionToggle />
       </div>

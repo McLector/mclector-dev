@@ -48,14 +48,15 @@ describe("App", () => {
     expect(center.querySelector('[data-bento-area="pass"]')).not.toBeNull();
   });
 
-  it("stacks the Animations toggle directly BELOW the day/night toggle, in one container", () => {
+  it("puts the Animations toggle directly AFTER the day/night toggle, in one .toggle-dock container", () => {
     render(<App />);
     const theme = screen.getByTestId("theme-toggle");
     const motion = screen.getByTestId("motion-toggle");
     expect(theme.parentElement).toBe(motion.parentElement);
     expect(theme.compareDocumentPosition(motion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // A column, not a row (approved: two circles in a vertical line).
-    expect(theme.parentElement!.className).toMatch(/\bflex-col\b/);
+    // The dock's position and axis are CSS (styles/index.css, a column on desktop and a row under 860px), and
+    // jsdom cannot compute layout, so this only guards the wiring. The axis is measured in e2e/responsive.spec.ts.
+    expect(theme.parentElement).toHaveClass("toggle-dock");
   });
 
   it("keeps the left column to intro, skills and place", () => {

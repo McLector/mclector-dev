@@ -187,3 +187,103 @@ test.describe("mobile: an unscaled, scrolling column", () => {
     expect(desktopColumns.trim().split(/\s+/)).toHaveLength(3);
   });
 });
+
+/**
+ * The day/night + Animations toggles (`.toggle-dock`, styles/index.css). On desktop they float top-right in the margin
+ * around the scaled window. On a phone the window is full-width, so the same spot sat ON the intro card's corner and
+ * headline: the reported bug. Under 860px the pair is a row pinned bottom-right instead.
+ *
+ * The contract is deliberately narrow, because a fixed control floats over SOMETHING mid-scroll and a test claiming
+ * otherwise could never pass: at the top of the page the dock clears the intro, the sign and Download CV; at the
+ * bottom the last card clears the dock. In between it is chrome over the hologram and the lists, which is intended.
+ */
+const THEME = '[data-testid="theme-toggle"]';
+const MOTION = '[data-testid="motion-toggle"]';
+const DOCK = ".toggle-dock";
+
+type Box = { x: number; y: number; width: number; height: number };
+
+const intersects = (a: Box, b: Box) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+async function box(page: Page, selector: string): Promise<Box> {
+  const b = await page.locator(selector).boundingBox();
+  expect(b, `${selector} has no box`).not.toBeNull();
+  return b!;
+}
+
+test.describe("toggle dock: desktop is exactly as approved", () => {
+  test("stacks in a column, top-right, at 1.25rem from each edge, clear of the window (1440x900)", async ({ page }) => {
+    await open(page, 1440, 900);
+
+    expect(await page.locator(DOCK).evaluate((el) => getComputedStyle(el).flexDirection)).toBe("column");
+
+    const theme = await box(page, THEME);
+    const motion = await box(page, MOTION);
+    // 40px discs (size-10) at top:20/right:20 with a 8px gap: the geometry the pair had before it was a class.
+    expect(Math.round(theme.x + theme.width)).toBe(1440 - 20);
+    expect(Math.round(theme.y)).toBe(20);
+    expect(Math.round(motion.y)).toBe(20 + 40 + 8);
+    expect(Math.round(motion.x)).toBe(Math.round(theme.x));
+
+    const win = await box(page, ".app-window");
+    expect(intersects(theme, win), "theme toggle overlaps the window").toBe(false);
+    expect(intersects(motion, win), "motion toggle overlaps the window").toBe(false);
+  });
+
+  test("scales with the root font size (rem, not px), as the utilities it replaced did", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.addInitScript(() => {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.documentElement.style.fontSize = "20px";
+      });
+    });
+    await page.goto("/");
+    await page.locator(THEME).waitFor();
+    const theme = await box(page, THEME);
+    // 1.25rem at a 20px root: 25px, not the 20px a hard-coded value would give.
+    expect(Math.round(theme.y)).toBe(25);
+    expect(Math.round(1440 - (theme.x + theme.width))).toBe(25);
+  });
+});
+
+test.describe("toggle dock: mobile", () => {
+  test("sits in a row, bottom-right, in the lower half of the screen", async ({ page }) => {
+    await open(page, 390, 844);
+
+    expect(await page.locator(DOCK).evaluate((el) => getComputedStyle(el).flexDirection)).toBe("row");
+
+    const theme = await box(page, THEME);
+    const motion = await box(page, MOTION);
+    // Side by side: same row, Animations to the right of day/night.
+    expect(Math.abs(motion.y - theme.y)).toBeLessThan(1);
+    expect(motion.x).toBeGreaterThan(theme.x + theme.width - 1);
+    // Bottom-right: lower half, and inside the right edge.
+    expect(theme.y).toBeGreaterThan(844 / 2);
+    expect(motion.x + motion.width).toBeLessThanOrEqual(390);
+    expect(motion.y + motion.height).toBeLessThanOrEqual(844);
+  });
+
+  test("at the top of the page, clears the intro card, the sign and Download CV (the reported overlap)", async ({ page }) => {
+    await open(page, 390, 844);
+    const theme = await box(page, THEME);
+    const motion = await box(page, MOTION);
+    for (const area of ["intro", "connect", "actions"]) {
+      const card = await box(page, `[data-bento-area="${area}"]`);
+      expect(intersects(theme, card), `theme toggle covers ${area}`).toBe(false);
+      expect(intersects(motion, card), `motion toggle covers ${area}`).toBe(false);
+    }
+  });
+
+  test("at the bottom of the page, the last card scrolls clear of the dock", async ({ page }) => {
+    await open(page, 390, 844);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForFunction(
+      () => Math.abs(window.scrollY + window.innerHeight - document.documentElement.scrollHeight) < 2,
+    );
+
+    const last = await box(page, '[data-bento-area="certifications"]');
+    const dock = await box(page, DOCK);
+    expect(last.y + last.height, "last card ends under the dock").toBeLessThanOrEqual(dock.y);
+  });
+});

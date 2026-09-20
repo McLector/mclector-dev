@@ -62,6 +62,26 @@ test.describe("the built stylesheet", () => {
     expect(css).toMatch(/\.hover\\:opacity-90[^{]*data-input=("?)mouse\1/);
   });
 
+  test("ships the touch baseline: no tap flash, no tap delay, no long-press label selection", async ({ request }) => {
+    const css = await builtCss(request);
+    expect(css).toMatch(/-webkit-tap-highlight-color\s*:\s*transparent/);
+    expect(css).toMatch(/touch-action\s*:\s*manipulation/);
+    // Controls only: a blanket rule would stop visitors copying the address on the Let's Connect sign.
+    expect(css).toMatch(/(?:^|[},])button[^{}]*\{[^}]*user-select\s*:\s*none/);
+    expect(css).not.toMatch(/(?:^|[},])(?:html|body|a|p|\*)\s*\{[^}]*user-select\s*:\s*none/);
+  });
+
+  test("ships the safe-area insets, and the viewport opts in with viewport-fit=cover", async ({ request }) => {
+    const css = await builtCss(request);
+    expect(css).toMatch(/env\(\s*safe-area-inset-bottom/);
+    expect(css).toMatch(/env\(\s*safe-area-inset-right/);
+    // Without viewport-fit=cover every env(safe-area-inset-*) resolves to 0px, so the CSS above would do nothing.
+    const html = await (await request.get("/")).text();
+    expect(html).toMatch(/<meta[^>]+name="viewport"[^>]+viewport-fit=cover/);
+    // Never disable zoom (an accessibility failure).
+    expect(html).not.toMatch(/user-scalable\s*=\s*no|maximum-scale\s*=\s*1(?![0-9.])/);
+  });
+
   test("freezes ambient keyframes when animations are off, and never touches transitions in that rule", async ({
     request,
   }) => {

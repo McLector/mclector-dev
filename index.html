@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- viewport-fit=cover lets the page paint under the notch / home indicator; the CSS then pads content back
+         out with env(safe-area-inset-*), which is 0px without this. Zoom is never disabled. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark light" />
     <meta
       name="description"
@@ -31,6 +33,11 @@
         var theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : "dark";
         root.setAttribute("data-theme", theme);
         root.style.colorScheme = theme;
+
+        // Browser chrome colour (the phone's status bar): right on first paint, not after React boots. Mirrors
+        // THEME_COLOR in src/lib/theme.ts (e2e/boot.spec.ts asserts the two agree).
+        var chrome = document.querySelector('meta[name="theme-color"]');
+        if (chrome) chrome.setAttribute("content", theme === "light" ? "#91b6d7" : "#05060d");
 
         // Animations: on for everyone unless the visitor switched them off. Mirrors src/lib/motion.ts
         // (resolveInitialMotion). The OS reduced-motion setting is deliberately NOT an input.

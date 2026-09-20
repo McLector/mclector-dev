@@ -180,6 +180,28 @@
     min-height: 100%;
   }
 
+  /* Touch baseline: the small platform-layer tells that make a page feel like a website on a phone. All inert
+     with a mouse, so none of it shows on desktop. (No pointer or hover media query is used to gate any of it.)
+     - no grey flash on tap: every tappable control has its own :active feedback, so nothing is lost;
+     - no landscape font inflation;
+     - touch-action: manipulation drops the double-tap-zoom wait, so a tap registers at once;
+     - a long press must not select a CONTROL's label. Links are left alone on purpose: the address on the
+       Let's Connect sign is an anchor and visitors need to be able to copy it. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+  }
+  button,
+  [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   body {
     background-color: var(--sky-bottom);
     color: var(--color-text-primary);
@@ -523,6 +545,31 @@
     transform: none !important;
     padding: 14px;
     border-radius: 26px;
+  }
+
+  /* The day/night + Animations pair. Desktop: a column top-right in the margin around the scaled window
+     (1.25rem and 0.5rem are exactly what the utilities it replaced resolved to at every desktop width: top-4 /
+     right-4 with sm:top-5 / sm:right-5, --spacing .25rem, so the geometry and the way it scales with the root font
+     size are unchanged). It is a class, not utilities, because Tailwind's `sm` is 640px and this project's split
+     is 860px; utilities also sit in a later layer than this one and would beat the mobile flex-direction below.
+     Under 860px the window is full-width, so the top-right spot lands ON the intro card: the pair becomes a row
+     pinned bottom-right instead, padded clear of the home indicator. AppFrame leaves room below the last card. */
+  .toggle-dock {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  @media (max-width: 860px) {
+    .toggle-dock {
+      top: auto;
+      flex-direction: row;
+      bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      right: calc(1rem + env(safe-area-inset-right, 0px));
+    }
   }
 }
 

@@ -33,13 +33,24 @@ test.describe("the Animations toggle", () => {
     await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
   });
 
-  test("sits directly BELOW the day/night toggle, on the same vertical line, not overlapping it", async ({ page }) => {
+  test("sits directly next to the day/night toggle, on one axis, not overlapping it", async ({ page }) => {
     await page.goto("/");
     const theme = (await page.locator(THEME).boundingBox())!;
     const motion = (await page.locator(TOGGLE).boundingBox())!;
-    expect(motion.y).toBeGreaterThanOrEqual(theme.y + theme.height); // below, never overlapping
-    expect(motion.y - (theme.y + theme.height)).toBeLessThan(16); // a gap, not a separate island
-    expect(Math.abs(motion.x + motion.width / 2 - (theme.x + theme.width / 2))).toBeLessThan(1); // one axis
+    // (`desktopOnly()` reads inverted: it is true when this is NOT the desktop project, which is what test.skip wants.)
+    const onPhone = desktopOnly();
+    if (onPhone) {
+      // A phone: the pair is a ROW pinned bottom-right (`.toggle-dock`, styles/index.css), so it never covers the
+      // intro card. Animations sits to the right of day/night on one horizontal line.
+      expect(motion.x).toBeGreaterThanOrEqual(theme.x + theme.width); // beside, never overlapping
+      expect(motion.x - (theme.x + theme.width)).toBeLessThan(16); // a gap, not a separate island
+      expect(Math.abs(motion.y + motion.height / 2 - (theme.y + theme.height / 2))).toBeLessThan(1); // one axis
+    } else {
+      // Desktop: a COLUMN top-right, Animations directly below day/night on one vertical line (approved design).
+      expect(motion.y).toBeGreaterThanOrEqual(theme.y + theme.height); // below, never overlapping
+      expect(motion.y - (theme.y + theme.height)).toBeLessThan(16); // a gap, not a separate island
+      expect(Math.abs(motion.x + motion.width / 2 - (theme.x + theme.width / 2))).toBeLessThan(1); // one axis
+    }
   });
 
   test("off freezes the ambient layer; on brings it back — live, no reload", async ({ page }) => {

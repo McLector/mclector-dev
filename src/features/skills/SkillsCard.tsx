@@ -35,7 +35,7 @@ export function SkillsCard({ skills }: { skills: Skill[] }) {
         <Eyebrow as="h2">Skills &amp; Tools</Eyebrow>
 
         {rows.length > 0 ? (
-          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain">
             {rows.map((row) => (
               <section key={row.label} className="flex flex-col gap-1">
                 <h3 className="mt-0.5 text-[8.5px] leading-[normal] font-bold tracking-[0.1em] text-[color-mix(in_oklab,var(--color-text-primary)_62%,var(--arc)_38%)] uppercase">
