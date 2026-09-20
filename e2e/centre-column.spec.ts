@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 /**
- * The centre column is sign → stage → Download CV, all on ONE vertical axis
+ * The centre column is sign → Download CV → stage, all on ONE vertical axis
  * (the approved mockup measured sign centre x == Download CV centre x).
  * Layout assertions run on the desktop project only.
  */
@@ -38,13 +38,33 @@ test.describe("centre column", () => {
     });
   }
 
-  test("stacks sign above the stage above Download CV", async ({ page }) => {
+  test("stacks sign above Download CV above the stage", async ({ page }) => {
     await open(page, 1440, 900);
     const sign = (await page.locator(SIGN).boundingBox())!;
-    const stage = (await page.locator(STAGE).boundingBox())!;
     const cv = (await page.locator(ACTIONS).boundingBox())!;
-    expect(sign.y + sign.height).toBeLessThanOrEqual(stage.y + 1);
-    expect(stage.y + stage.height).toBeLessThanOrEqual(cv.y + 1);
+    const stage = (await page.locator(STAGE).boundingBox())!;
+    expect(sign.y + sign.height).toBeLessThanOrEqual(cv.y + 1);
+    expect(cv.y + cv.height).toBeLessThanOrEqual(stage.y + 1);
+  });
+
+  test("moving Download CV up does not resize the hologram stage (the canvas size feeds fitCamera)", async ({ page }) => {
+    // Round 2 measured the stage at 630px with the neon sign 42px tall and the button under it. The reorder alone
+    // must not change that, or the hologram canvas and its already-flaky size predicates would move.
+    await open(page, 1440, 900);
+    const stage = (await page.locator(STAGE).boundingBox())!;
+    expect(Math.round(stage.height)).toBe(630);
+  });
+
+  test("the stage sits flush with the bottom of the neighbouring columns", async ({ page }) => {
+    await open(page, 1440, 900);
+    // Poll: measure once the cards have settled, not mid-entrance.
+    await expect
+      .poll(async () => {
+        const stage = (await page.locator(STAGE).boundingBox())!;
+        const place = (await page.locator('[data-bento-area="place"]').boundingBox())!;
+        return Math.abs(stage.y + stage.height - (place.y + place.height));
+      })
+      .toBeLessThan(1.5);
   });
 
   test("the sign opens Gmail compose in a new tab, and there is no Contact me button", async ({ page }) => {
@@ -68,6 +88,41 @@ test.describe("centre column", () => {
     await expect(cv).toBeVisible();
     await expect(cv).toBeDisabled();
     await expect(cv).toHaveAttribute("aria-disabled", "true");
+  });
+
+  test("the neon sign is polished: still 42px tall, no screws, no motion, no glow on its text, at most a two-layer glow", async ({ page }) => {
+    // The "AI look" tells that were removed: fake mounting screws (::before/::after), a nudging arrow, a 9s flicker,
+    // a five-layer glow stack, a glowing text-shadow on the address, and glowing mono for everything. Height stays
+    // 42px so the hologram stage stays 630px (its canvas size feeds fitCamera).
+    await open(page, 1440, 900);
+    const sign = page.locator(SIGN);
+    expect(Math.round((await sign.boundingBox())!.height)).toBe(42);
+    const info = await sign.evaluate((el) => {
+      const cs = (node: Element, pseudo?: string) => getComputedStyle(node, pseudo);
+      const email = el.querySelector(".connect-sign__email")!;
+      const label = el.querySelector(".connect-sign__label")!;
+      return {
+        before: cs(el, "::before").content,
+        after: cs(el, "::after").content,
+        animations: [el, email, label].map((node) => cs(node).animationName),
+        emailShadow: cs(email).textShadow,
+        labelShadow: cs(label).textShadow,
+        emailFont: cs(email).fontFamily,
+        glowLayers: cs(el).boxShadow.split(/\)\s*,\s*/).length,
+        arrows: el.querySelectorAll(".connect-sign__arrow").length,
+      };
+    });
+    expect(info.before).toBe("none");
+    expect(info.after).toBe("none");
+    // The sign's ROOT carries the shared card entrance (`bento-card-enter`, applied to every column child), which
+    // is not an ornament. The label and the address, where the arrow and the flicker used to live, must not animate.
+    expect(["none", "bento-card-enter"]).toContain(info.animations[0]);
+    expect(info.animations.slice(1)).toEqual(["none", "none"]);
+    expect(info.emailShadow).toBe("none");
+    expect(info.labelShadow).toBe("none");
+    expect(info.emailFont).toMatch(/Sora/);
+    expect(info.glowLayers).toBeLessThanOrEqual(2);
+    expect(info.arrows).toBe(0);
   });
 
   test("the sign is legible: text is not dimmed by its glow", async ({ page }) => {

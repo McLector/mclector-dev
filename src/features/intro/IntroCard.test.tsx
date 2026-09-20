@@ -43,6 +43,17 @@ describe("IntroCard", () => {
     expect(container.querySelectorAll('[data-bento-area="intro"]')).toHaveLength(1);
   });
 
+  it("puts the brand mark inside the handle, in place of the eyebrow's arc dot", () => {
+    render(<IntroCard profile={makeProfile()} />);
+    const handle = screen.getByText("@TestHandle");
+    // One lead glyph, not two: the mark replaces the dot the .eyebrow rule would otherwise draw.
+    expect(handle.querySelector("svg")).not.toBeNull();
+    expect(handle.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(handle).toHaveClass("before:hidden");
+    // The handle's accessible text is unchanged: the mark is decoration.
+    expect(handle).toHaveTextContent("@TestHandle");
+  });
+
   it("renders the handle label", () => {
     render(<IntroCard profile={makeProfile()} />);
     expect(screen.getByText("@TestHandle")).toBeInTheDocument();
@@ -149,7 +160,7 @@ describe("IntroCard", () => {
       expect(within(list).getAllByRole("listitem")).toHaveLength(12);
     });
 
-    describe("accent band (approved treatment A)", () => {
+    describe("accent band (approved polish: the refined band)", () => {
       it("wraps the label and the chip list in ONE band", () => {
         render(<IntroCard profile={makeProfile()} />);
         const band = screen.getByTestId("open-to");
@@ -157,15 +168,22 @@ describe("IntroCard", () => {
         expect(band).toContainElement(screen.getByRole("list", { name: /open to/i }));
       });
 
-      it("fills the band with the arc at 13% and rings it at 42%, radius 12", () => {
+      it("keeps today's fill strength and outline: an arc gradient (17% down to 11%) ringed at 42%, radius 12", () => {
+        // "Easily noticeable" was measured, not judged: at its weakest point this band is at least as far from the
+        // card colour as the flat 13% band it replaces (dE 14.4 vs 13.3 dark, 11.2 vs 10.9 light).
         render(<IntroCard profile={makeProfile()} />);
         expect(screen.getByTestId("open-to")).toHaveClass(
           "rounded-[12px]",
           "px-[9px]",
           "py-[5px]",
-          "bg-[color-mix(in_oklab,var(--arc)_13%,transparent)]",
-          "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent)]",
+          "bg-[image:linear-gradient(180deg,color-mix(in_oklab,var(--arc)_17%,transparent),color-mix(in_oklab,var(--arc)_11%,transparent))]",
+          "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent),inset_0_1px_0_0_color-mix(in_oklab,#fff_26%,transparent)]",
         );
+      });
+
+      it("no longer uses the flat 13% fill it was polished from", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        expect(screen.getByTestId("open-to").className).not.toContain("bg-[color-mix(in_oklab,var(--arc)_13%,transparent)]");
       });
 
       it("colours the label from the ink/arc mix (45% / 55%)", () => {
@@ -175,11 +193,22 @@ describe("IntroCard", () => {
         );
       });
 
-      it("renders every chip in the accent tone", () => {
+      it("marks the label with the site's arc dot", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        expect(screen.getByText("Open to")).toHaveClass(
+          "inline-flex",
+          "before:rounded-full",
+          "before:bg-[var(--arc)]",
+          "before:shadow-[0_0_7px_var(--arc)]",
+        );
+      });
+
+      it("renders every chip in the accent tone: a 15% tint with no ring of its own", () => {
         render(<IntroCard profile={makeProfile()} />);
         const list = screen.getByRole("list", { name: /open to/i });
         for (const li of within(list).getAllByRole("listitem")) {
-          expect(li.firstElementChild).toHaveClass("ring-inset");
+          expect(li.firstElementChild).toHaveClass("bg-[color-mix(in_oklab,var(--arc)_15%,transparent)]");
+          expect(li.firstElementChild!.className).not.toMatch(/\bring-/);
         }
       });
 

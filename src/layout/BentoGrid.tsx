@@ -14,7 +14,7 @@ import "./bento.css";
  * The window interior: three columns — an identity rail (left), the hologram
  * stage (centre), and a feed rail (right). Columns are flex so the list-heavy
  * cards (skills, projects) grow to fill the fixed-height window. The centre
- * column is sign → hologram stage → Download CV, all on one vertical axis. On
+ * column is sign → Download CV → hologram stage, all on one vertical axis. On
  * mobile the columns collapse (via `display: contents` in bento.css) and each
  * card is re-ordered into a single scrolling stack.
  */
@@ -29,8 +29,8 @@ export function BentoGrid({ content }: { content: SiteContent }) {
 
       <div className="bento__col bento__col--center">
         <ConnectSign email={content.profile.email} />
-        <PassCard profile={content.profile} />
         <ActionsRow profile={content.profile} />
+        <PassCard profile={content.profile} />
       </div>
 
       <div className="bento__col">

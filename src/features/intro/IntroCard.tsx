@@ -1,5 +1,6 @@
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
+import { BrandMark } from "@/components/ui/BrandMark";
 import { Chip } from "@/components/ui/Chip";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 
@@ -22,7 +23,12 @@ export function IntroCard({ profile }: { profile: Profile }) {
     <BentoCard area="intro" as="section">
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <Eyebrow as="p">{profile.handle}</Eyebrow>
+          {/* The brand mark leads the handle, in place of the arc dot the .eyebrow rule would draw (one lead
+              glyph, not two). Decorative: the handle text already names it. */}
+          <Eyebrow as="p" className="before:hidden">
+            <BrandMark size={18} />
+            {profile.handle}
+          </Eyebrow>
           <ActiveStatus />
         </div>
 
@@ -44,18 +50,27 @@ export function IntroCard({ profile }: { profile: Profile }) {
         </p>
 
         {profile.openTo.length > 0 ? (
-          // An arc-tinted band (the approved "treatment A"): availability is the one thing a
-          // recruiter is scanning for, so the row is a lit object of its own rather than a caption.
+          // An arc-tinted band (approved, then polished): availability is the one thing a recruiter is
+          // scanning for, so the row is a lit object of its own rather than a caption. The polish kept
+          // today's fill strength (17% at the top easing to 11%, so it is at least as noticeable as the
+          // flat 13% it replaced, measured) and changed the finish: a soft top highlight for depth, chips
+          // tinted with no rings of their own, and the site's arc dot on the label.
           <div
             data-testid="open-to"
             className={[
               "mt-[3px] -mx-[3px] flex flex-wrap items-center gap-[5px]",
               "rounded-[12px] px-[9px] py-[5px]",
-              "bg-[color-mix(in_oklab,var(--arc)_13%,transparent)]",
-              "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent)]",
+              "bg-[image:linear-gradient(180deg,color-mix(in_oklab,var(--arc)_17%,transparent),color-mix(in_oklab,var(--arc)_11%,transparent))]",
+              "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent),inset_0_1px_0_0_color-mix(in_oklab,#fff_26%,transparent)]",
             ].join(" ")}
           >
-            <span className="mr-0.5 font-[family-name:var(--font-mono)] text-[8.5px] font-bold tracking-[0.14em] text-[color:color-mix(in_oklab,var(--color-text-primary)_45%,var(--arc)_55%)] uppercase">
+            <span
+              className={[
+                "mr-0.5 inline-flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[8.5px] font-bold tracking-[0.14em] uppercase",
+                "text-[color:color-mix(in_oklab,var(--color-text-primary)_45%,var(--arc)_55%)]",
+                "before:size-[5px] before:rounded-full before:bg-[var(--arc)] before:shadow-[0_0_7px_var(--arc)] before:content-['']",
+              ].join(" ")}
+            >
               Open to
             </span>
             {/* `contents` lets the chips flow in the same row as the label. */}

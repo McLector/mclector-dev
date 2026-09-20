@@ -33,18 +33,29 @@ describe("App", () => {
     );
   });
 
-  it("lays the centre column out as sign → stage → Download CV", () => {
+  it("lays the centre column out as sign → Download CV → stage", () => {
     render(<App />);
     const order = (a: string, b: string) =>
       document
         .querySelector(`[data-bento-area="${a}"]`)!
         .compareDocumentPosition(document.querySelector(`[data-bento-area="${b}"]`)!) &
       Node.DOCUMENT_POSITION_FOLLOWING;
-    expect(order("connect", "pass")).toBeTruthy();
-    expect(order("pass", "actions")).toBeTruthy();
+    expect(order("connect", "actions")).toBeTruthy();
+    expect(order("actions", "pass")).toBeTruthy();
     const center = document.querySelector(".bento__col--center")!;
     expect(center.querySelector('[data-bento-area="connect"]')).not.toBeNull();
     expect(center.querySelector('[data-bento-area="actions"]')).not.toBeNull();
+    expect(center.querySelector('[data-bento-area="pass"]')).not.toBeNull();
+  });
+
+  it("stacks the Animations toggle directly BELOW the day/night toggle, in one container", () => {
+    render(<App />);
+    const theme = screen.getByTestId("theme-toggle");
+    const motion = screen.getByTestId("motion-toggle");
+    expect(theme.parentElement).toBe(motion.parentElement);
+    expect(theme.compareDocumentPosition(motion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // A column, not a row (approved: two circles in a vertical line).
+    expect(theme.parentElement!.className).toMatch(/\bflex-col\b/);
   });
 
   it("keeps the left column to intro, skills and place", () => {

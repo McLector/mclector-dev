@@ -13,13 +13,9 @@ const NEUTRAL = [
   "ring-[var(--glass-border)]",
   "text-[var(--color-text-secondary)]",
 ];
-const ACCENT = [
-  "bg-[color-mix(in_oklab,var(--arc)_10%,transparent)]",
-  "ring-inset",
-  // `color:` hint: Tailwind cannot always tell a colour from a width in an arbitrary ring value.
-  "ring-[color:color-mix(in_oklab,var(--arc)_36%,transparent)]",
-  "text-[var(--color-text-primary)]",
-];
+// The approved polished "Open to" chip: a 15% arc tint and primary ink, and NO ring of its own. The band around
+// it carries the only outline, so the row stops reading as a box inside a box.
+const ACCENT = ["bg-[color-mix(in_oklab,var(--arc)_15%,transparent)]", "text-[var(--color-text-primary)]"];
 
 describe("Chip", () => {
   it("renders its text", () => {
@@ -41,9 +37,14 @@ describe("Chip", () => {
   });
 
   describe('tone="accent"', () => {
-    it("has the arc-tinted surface, an INSET arc ring, and primary ink", () => {
+    it("has the arc-tinted surface and primary ink", () => {
       render(<Chip tone="accent">Lit</Chip>);
       expect(screen.getByText("Lit")).toHaveClass(...ACCENT);
+    });
+
+    it("has NO ring of its own: the band around it carries the only outline", () => {
+      render(<Chip tone="accent">Lit</Chip>);
+      expect(screen.getByText("Lit").className).not.toMatch(/\bring-/);
     });
 
     it("SWAPS the neutral classes out — they are absent, not merely overridden", () => {
