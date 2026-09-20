@@ -2,8 +2,8 @@
 
 **Date:** 2026-09-20 to 2026-09-21
 **Repo:** `D:\Projects\mclector-dev` — https://github.com/McLector/mclector-dev
-**Work branch:** `feat/mobile-native-pass` (from `main` at `f298836`), pushed to `origin`. **Not merged to `main`.** No deploy was run from here.
-**Live URL:** https://mclector-dev.vercel.app (still the session-009 build)
+**Work branch:** `feat/mobile-native-pass` (from `main` at `f298836`), pushed for review, then **fast-forward merged to `main` and pushed at the owner's explicit request**. The branch was deleted afterwards. No deploy command was run from here.
+**Live URL:** https://mclector-dev.vercel.app (the session-009 build when this was written; the push to `main` may have redeployed it, which this summary does not record)
 
 Like sessions 001–009, this records *what happened and why*, not a task handover. Flow: **question → read the code → plan → review the plan (three times) → tests first → implement → prove.**
 
@@ -32,7 +32,7 @@ The two round toggles were `position: fixed; top-4 right-4`. On desktop the scal
 | Toggle placement on phones | **Bottom-right floating pair, laid out as a row** (owner's pick over top-right-with-clearance and an inline header row). Desktop keeps the top-right column. |
 | Scope | **Toggle fix plus a native-feel pass**, not a full mobile layout redesign. |
 | Where it was seen | A **real phone browser**, so the hardware-only checks in §7 are the owner's to confirm. |
-| Branch | Work is on a branch, not `main`: a push to `main` can trigger a production deploy. |
+| Branch | Built and pushed on a branch first, because a push to `main` can trigger a production deploy. Merged to `main` only once the owner asked for that. |
 
 ## 5. What changed
 
@@ -74,7 +74,7 @@ TDD: each test was watched **fail for the right reason** before the change.
 4. Switching to light changes the status-bar colour, and a reload in light shows no dark flash.
 5. Long-pressing a button does not select its label, but the email on the sign can still be selected and copied.
 
-Also unverified: whether the branch push produced a Vercel preview (the Git integration was not checked).
+Also unverified: whether the push to `main` produced a production deployment, and so whether the live site has any of this yet (the Vercel Git integration was not checked from this summary).
 
 ## 8. Known rough edges
 
@@ -87,9 +87,10 @@ Also unverified: whether the branch push produced a Vercel preview (the Git inte
 
 ## 9. State at the end of this session
 
-- **Branch:** `feat/mobile-native-pass`, two commits (the code and its tests, then this summary), **pushed**. `main` is untouched at `f298836`.
+- **Branch:** work landed on `main` by fast-forward (the code and its tests, this summary, and a small follow-up commit recording the merge). `feat/mobile-native-pass` is deleted locally and on `origin`.
+- **Cleanup done:** the local `feat/round-3-hover-motion-palette` branch from session 009 was already fully merged into `main` and was deleted. The remote `feat/dark-by-default` and `feat/round-2-hologram-polish` are also fully merged but were **left in place**: they were not created this session, and deleting a remote branch is the owner's call.
 - **Working tree:** clean apart from the four untracked mockups.
-- **Still owed by the owner:** the five phone checks in §7; a go to merge to `main`; a decision on the mockups.
+- **Still owed by the owner:** the five phone checks in §7; confirming the live site actually redeployed; a decision on the mockups and on the two stale remote branches.
 
 ## 10. Where things live
 
