@@ -287,3 +287,37 @@ test.describe("toggle dock: mobile", () => {
     expect(last.y + last.height, "last card ends under the dock").toBeLessThanOrEqual(dock.y);
   });
 });
+
+/**
+ * A container that cannot scroll must not stop a swipe reaching the page. MDN: "A scroll container that has no
+ * scrollable overflow… is always considered to be at its scroll boundary. So setting a non-default
+ * `overscroll-behavior` such as `contain` or `none` on it will prevent scroll chaining to ancestor scroll
+ * containers." On a phone the skills and projects lists are exactly that: `overflow-y: auto` (a desktop safety net for
+ * the fixed-height window) inside cards that grow to fit, so they never overflow. `overscroll-contain` on them made a
+ * finger on either card unable to scroll the page.
+ *
+ * Stated as a rule rather than a class name: a non-default overscroll-behavior-y is only allowed on a container the
+ * user can actually scroll. (The project overlay's panel is one, and is not mounted on the home page.)
+ */
+test.describe("mobile: touch scrolling", () => {
+  test("overscroll-behavior only sits on a container the user can actually scroll", async ({ page }) => {
+    await open(page, 390, 844);
+
+    const offenders = await page.evaluate(() => {
+      const found: string[] = [];
+      for (const el of document.querySelectorAll<HTMLElement>("*")) {
+        const style = getComputedStyle(el);
+        if (style.overscrollBehaviorY === "auto") continue;
+        const userScrollable =
+          (style.overflowY === "auto" || style.overflowY === "scroll") && el.scrollHeight > el.clientHeight + 1;
+        if (userScrollable) continue;
+        const id = el.dataset.testid ? `[data-testid="${el.dataset.testid}"]` : "";
+        const classes = (el.getAttribute("class") ?? "").slice(0, 80);
+        found.push(`<${el.tagName.toLowerCase()}${id}> overscroll-behavior-y:${style.overscrollBehaviorY} class="${classes}"`);
+      }
+      return found;
+    });
+
+    expect(offenders, "these swallow a swipe that starts on them without being able to scroll").toEqual([]);
+  });
+});
