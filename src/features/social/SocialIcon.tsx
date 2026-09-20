@@ -2,10 +2,16 @@ import type { ReactNode } from "react";
 import type { SocialIconName } from "@/content/types";
 
 /**
- * A hand-rolled inline SVG set — no icon library, per docs/contracts.md (a
- * new dependency is a request to the integrator, and seven glyphs do not earn
- * one). Every member of the `SocialIconName` union has an entry, so a social
- * added to content later can never render a hole.
+ * An inline SVG set — no icon library, per docs/contracts.md (a new dependency
+ * is a request to the integrator, and seven glyphs do not earn one). Every
+ * member of the `SocialIconName` union has an entry, so a social added to
+ * content later can never render a hole.
+ *
+ * Most glyphs are hand-rolled. The exception is Upwork, whose path is pasted
+ * verbatim from simple-icons (`upwork`, CC0-1.0; the trademark remains
+ * Upwork's) — pasted rather than imported, so there is still no icon library
+ * in this file and it costs no runtime import. It is the very path the
+ * approved round-2 mockup rendered.
  *
  * All paths are drawn on a 24×24 box and inherit `currentColor`.
  */
@@ -55,9 +61,9 @@ const PATHS: Record<SocialIconName, ReactNode> = {
       fill="currentColor"
     />
   ),
-  youtube: (
+  upwork: (
     <path
-      d="M23 12s0-3.4-.43-5a2.8 2.8 0 0 0-1.96-1.96C18.9 4.6 12 4.6 12 4.6s-6.9 0-8.6.44A2.8 2.8 0 0 0 1.43 7C1 8.6 1 12 1 12s0 3.4.43 5a2.8 2.8 0 0 0 1.96 1.96c1.71.44 8.61.44 8.61.44s6.9 0 8.6-.44A2.8 2.8 0 0 0 22.57 17C23 15.4 23 12 23 12ZM9.8 15.3V8.7l5.7 3.3-5.7 3.3Z"
+      d="M18.561 13.158c-1.102 0-2.135-.467-3.074-1.227l.228-1.076.008-.042c.207-1.143.849-3.06 2.839-3.06 1.492 0 2.703 1.212 2.703 2.703-.001 1.489-1.212 2.702-2.704 2.702zm0-8.14c-2.539 0-4.51 1.649-5.31 4.366-1.22-1.834-2.148-4.036-2.687-5.892H7.828v7.112c-.002 1.406-1.141 2.546-2.547 2.548-1.405-.002-2.543-1.143-2.545-2.548V3.492H0v7.112c0 2.914 2.37 5.303 5.281 5.303 2.913 0 5.283-2.389 5.283-5.303v-1.19c.529 1.107 1.182 2.229 1.974 3.221l-1.673 7.873h2.797l1.213-5.71c1.063.679 2.285 1.109 3.686 1.109 3 0 5.439-2.452 5.439-5.45 0-3-2.439-5.439-5.439-5.439z"
       fill="currentColor"
     />
   ),

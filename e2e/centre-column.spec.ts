@@ -47,11 +47,17 @@ test.describe("centre column", () => {
     expect(stage.y + stage.height).toBeLessThanOrEqual(cv.y + 1);
   });
 
-  test("the sign is a mailto link and there is no Contact me button", async ({ page }) => {
+  test("the sign opens Gmail compose in a new tab, and there is no Contact me button", async ({ page }) => {
     await open(page, 1440, 900);
     const sign = page.locator(SIGN);
     await expect(sign).toBeVisible();
-    await expect(sign).toHaveAttribute("href", /^mailto:.+@.+/);
+    // Not a mailto: — that does nothing on a machine with no mail app registered.
+    await expect(sign).toHaveAttribute(
+      "href",
+      "https://mail.google.com/mail/?view=cm&fs=1&to=moradamyre%40gmail.com",
+    );
+    await expect(sign).toHaveAttribute("target", "_blank");
+    await expect(sign).toHaveAttribute("rel", "noopener noreferrer");
     await expect(sign).toContainText("moradamyre@gmail.com");
     await expect(page.getByRole("button", { name: /contact me/i })).toHaveCount(0);
   });

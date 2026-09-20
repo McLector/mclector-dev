@@ -46,9 +46,12 @@ props — never a deep import of `src/content/index.ts`.
 
 `ActionsRow` is just the centred Download CV control now — the "Contact me"
 button and the contact form/dialog were removed (Stream F is retired). Contact
-is `ConnectSign`: a neon `mailto:` link at the top of the centre column. It is
-rendered as a bare anchor, not a `BentoCard` (BentoCard is `overflow-hidden`
-and would clip its glow).
+is `ConnectSign`: a neon link at the top of the centre column that opens Gmail's
+compose window (`gmailComposeUrl`, `src/lib/contactUrl.ts`) in a new tab — not a
+`mailto:`, which does nothing on a machine with no mail app registered. The Email
+hexagon in `SocialHex` uses the same URL. `ConnectSign` is rendered as a bare
+anchor, not a `BentoCard` (BentoCard is `overflow-hidden` and would clip its
+glow).
 
 ## Routing contract
 

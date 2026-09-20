@@ -110,7 +110,7 @@ describe("SocialHex — edge cases", () => {
 
   it("covers every icon name in the SocialIconName union", () => {
     const all: Social[] = (
-      ["github", "linkedin", "email", "x", "instagram", "youtube", "tiktok"] as const
+      ["github", "linkedin", "email", "x", "instagram", "upwork", "tiktok"] as const
     ).map((icon, i) => ({
       id: icon,
       label: icon,
@@ -122,6 +122,37 @@ describe("SocialHex — edge cases", () => {
     expect(links()).toHaveLength(7);
     // Every hex paints a real icon — no missing-glyph holes.
     expect(container.querySelectorAll("svg[data-social-icon]")).toHaveLength(7);
+  });
+
+  it("paints the Upwork glyph with real path data (not an empty svg)", () => {
+    const { container } = render(
+      <SocialHex
+        socials={[{ id: "upwork", label: "Upwork", href: "#", icon: "upwork", hexIndex: 0 }]}
+      />,
+    );
+    const glyph = container.querySelector('svg[data-social-icon="upwork"]');
+    expect(glyph).not.toBeNull();
+    expect(glyph!.querySelector("path")?.getAttribute("d")?.length ?? 0).toBeGreaterThan(100);
+    expect(screen.getByRole("link", { name: "Upwork" })).toBeInTheDocument();
+  });
+
+  it("opens a Gmail compose link in a new tab with a safe rel", () => {
+    render(
+      <SocialHex
+        socials={[
+          {
+            id: "email",
+            label: "Email",
+            href: "https://mail.google.com/mail/?view=cm&fs=1&to=me%40example.com",
+            icon: "email",
+            hexIndex: 0,
+          },
+        ]}
+      />,
+    );
+    const email = screen.getByRole("link", { name: "Email" });
+    expect(email).toHaveAttribute("target", "_blank");
+    expect(email).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   it("renders a # placeholder as a same-page link (no new tab, no rel)", () => {

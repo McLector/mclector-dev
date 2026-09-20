@@ -23,13 +23,13 @@ describe("App", () => {
     }
   });
 
-  it("has no contact form or 'Contact me' control — the sign's mailto is the contact path", () => {
+  it("has no contact form or 'Contact me' control — the sign's Gmail compose link is the contact path", () => {
     render(<App />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /contact me/i })).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: /let's connect/i })).toHaveAttribute(
       "href",
-      expect.stringMatching(/^mailto:/),
+      expect.stringMatching(/^https:\/\/mail\.google\.com\/mail\/\?view=cm&fs=1&to=/),
     );
   });
 

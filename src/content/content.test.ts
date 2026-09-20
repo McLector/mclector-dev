@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { content } from "./index";
+import { gmailComposeUrl } from "@/lib/contactUrl";
 import { getSkillIcon } from "@/features/skills/skillIcons";
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -82,7 +83,7 @@ describe("content invariants", () => {
   });
 
   it("every social has a valid href (mailto, https, or the '#' placeholder)", () => {
-    // '#' marks a link the owner has not supplied yet (x/instagram/youtube/tiktok).
+    // '#' marks a link the owner has not supplied yet (x/instagram/upwork/tiktok).
     for (const social of content.socials) {
       expect(social.href).toMatch(/^(https:\/\/|mailto:|#$)/);
     }
@@ -91,6 +92,20 @@ describe("content invariants", () => {
   it("ships all seven honeycomb links with contiguous hex indices", () => {
     const indices = content.socials.map((s) => s.hexIndex).sort((a, b) => a - b);
     expect(indices).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+
+  it("links Upwork (not YouTube) in the sixth hexagon, as a placeholder until the URL exists", () => {
+    const upwork = content.socials.find((s) => s.id === "upwork");
+    expect(upwork).toMatchObject({ label: "Upwork", icon: "upwork", hexIndex: 5, href: "#" });
+    expect(content.socials.some((s) => s.id === "youtube" || s.icon === ("youtube" as never))).toBe(
+      false,
+    );
+  });
+
+  it("the Email hexagon opens Gmail compose for the profile address, not a mailto: link", () => {
+    const email = content.socials.find((s) => s.id === "email");
+    expect(email?.href).toBe(gmailComposeUrl(content.profile.email));
+    expect(email?.href).not.toMatch(/^mailto:/);
   });
 
   it("certifications ship empty in v1 but are well-typed", () => {

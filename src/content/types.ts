@@ -109,7 +109,7 @@ export type SocialIconName =
   | "linkedin"
   | "email"
   | "x"
-  | "youtube"
+  | "upwork"
   | "instagram"
   | "tiktok";
 

@@ -8,7 +8,7 @@ import { ProjectOverlay } from "@/components/Overlay/ProjectOverlay";
 /**
  * Composition root. Mounts the full-bleed galaxy, the day/night toggle, the
  * scaled window with the portfolio in it, and the (always-present) project
- * overlay. Contact is a `mailto:` sign in the centre column — there is no
+ * overlay. Contact is a Gmail-compose sign in the centre column — there is no
  * contact form or dialog. The portfolio fits one screen by scaling as a unit,
  * so it works at any viewport without the visitor reaching for browser zoom.
  */

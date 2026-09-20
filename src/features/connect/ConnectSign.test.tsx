@@ -3,12 +3,18 @@ import { render, screen } from "@testing-library/react";
 import { ConnectSign } from "./ConnectSign";
 
 const EMAIL = "moradamyre@gmail.com";
+const COMPOSE = "https://mail.google.com/mail/?view=cm&fs=1&to=moradamyre%40gmail.com";
 
 describe("ConnectSign", () => {
-  it("is a single mailto link to the given address", () => {
+  it("is a single link that opens Gmail compose addressed to the given address", () => {
     render(<ConnectSign email={EMAIL} />);
     const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", `mailto:${EMAIL}`);
+    expect(link).toHaveAttribute("href", COMPOSE);
+  });
+
+  it("is not a mailto: link — that hands off to whatever mail app the OS has, often none", () => {
+    render(<ConnectSign email={EMAIL} />);
+    expect(screen.getByRole("link").getAttribute("href")).not.toMatch(/^mailto:/i);
   });
 
   it("shows 'Let's Connect' and the address as visible text", () => {
@@ -18,9 +24,13 @@ describe("ConnectSign", () => {
     expect(link).toHaveTextContent(EMAIL);
   });
 
-  it("lets the visible text be the accessible name (no aria-label override)", () => {
+  it("names the link with its visible text plus where it goes — spaced, not run together", () => {
     render(<ConnectSign email={EMAIL} />);
-    const link = screen.getByRole("link", { name: /let's connect.*moradamyre@gmail\.com/i });
+    // Exact string on purpose: a missing text node between the address and the hint would
+    // read "…gmail.com(opens Gmail…" to a screen reader.
+    const link = screen.getByRole("link", {
+      name: "Let's Connect moradamyre@gmail.com (opens Gmail compose in a new tab)",
+    });
     expect(link).not.toHaveAttribute("aria-label");
   });
 
@@ -40,9 +50,11 @@ describe("ConnectSign", () => {
     );
   });
 
-  it("does not open a new tab (mailto stays in the page)", () => {
+  it("opens in a new tab, and cannot reach back into this page", () => {
     render(<ConnectSign email={EMAIL} />);
-    expect(screen.getByRole("link")).not.toHaveAttribute("target");
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
   });
 
   it("renders nothing rather than a dead link when there is no address", () => {
@@ -50,11 +62,18 @@ describe("ConnectSign", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("keeps an unusual but valid address intact", () => {
+  it("renders nothing for a whitespace-only address either (it would encode to an empty link)", () => {
+    const { container } = render(<ConnectSign email="   " />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("keeps an unusual but valid address intact: encoded in the link, raw in the text", () => {
     render(<ConnectSign email="first.last+tag@sub.example.co.uk" />);
-    expect(screen.getByRole("link")).toHaveAttribute(
+    const link = screen.getByRole("link");
+    expect(link).toHaveAttribute(
       "href",
-      "mailto:first.last+tag@sub.example.co.uk",
+      "https://mail.google.com/mail/?view=cm&fs=1&to=first.last%2Btag%40sub.example.co.uk",
     );
+    expect(link).toHaveTextContent("first.last+tag@sub.example.co.uk");
   });
 });

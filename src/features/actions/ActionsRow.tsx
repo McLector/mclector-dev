@@ -8,7 +8,7 @@ import { Button, buttonClasses } from "@/components/ui/Button";
  *
  * Now just the Download CV control, centred under the hologram's "Digital
  * Pass" caption on the same axis as the pedestal and the contact sign. (The
- * "Contact me" button and its dialog are gone — contact is the sign's mailto.)
+ * "Contact me" button and its dialog are gone — contact is the sign's Gmail link.)
  *
  * The CV action is never hidden. Until a real PDF exists it renders as a
  * visibly inert control with a reason attached, so a recruiter reads
