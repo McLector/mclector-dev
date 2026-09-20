@@ -7,7 +7,10 @@
 export const THEMES = ["dark", "light"] as const;
 export type Theme = (typeof THEMES)[number];
 
-/** The deep-space default when nothing else is known. */
+/**
+ * What a first-time visitor sees: the deep-space night sky, whatever their OS is set to.
+ * Only an explicit choice (the day/night toggle) changes it.
+ */
 export const DEFAULT_THEME: Theme = "dark";
 
 /** localStorage key the visitor's explicit choice is persisted under. */
@@ -19,16 +22,15 @@ export function isTheme(value: unknown): value is Theme {
 
 /**
  * Resolve the theme to apply on first paint:
- *   1. a valid, previously stored choice wins;
- *   2. otherwise the OS `prefers-color-scheme`;
- *   3. otherwise {@link DEFAULT_THEME}.
+ *   1. a valid, previously stored choice wins (so the toggle persists across visits);
+ *   2. otherwise {@link DEFAULT_THEME} — dark.
+ *
+ * The visitor's OS `prefers-color-scheme` is deliberately NOT an input: the site is designed as a
+ * night sky, and a light-mode OS should not turn a first visit into the daytime theme.
+ * Keep the inline anti-flash script in index.html in agreement with this rule.
  */
-export function resolveInitialTheme(
-  stored: string | null | undefined,
-  systemPrefersDark: boolean,
-): Theme {
-  if (isTheme(stored)) return stored;
-  return systemPrefersDark ? "dark" : "light";
+export function resolveInitialTheme(stored: string | null | undefined): Theme {
+  return isTheme(stored) ? stored : DEFAULT_THEME;
 }
 
 /** The other theme — what a toggle switches to. */

@@ -13,18 +13,14 @@
     <title>Myre Lector — Portfolio</title>
     <!--
       Anti-flash theme boot: resolve dark/light BEFORE first paint so the
-      galaxy never flashes the wrong sky. Mirrors src/lib/theme.ts exactly.
+      galaxy never flashes the wrong sky. Mirrors src/lib/theme.ts exactly:
+      a stored choice wins, otherwise DARK — the visitor's OS scheme is not an input.
     -->
     <script>
       (function () {
         try {
           var stored = localStorage.getItem("mclector-theme");
-          var theme =
-            stored === "dark" || stored === "light"
-              ? stored
-              : window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light";
+          var theme = stored === "dark" || stored === "light" ? stored : "dark";
           var root = document.documentElement;
           root.setAttribute("data-theme", theme);
           root.style.colorScheme = theme;

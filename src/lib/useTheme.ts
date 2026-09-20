@@ -9,20 +9,12 @@ import {
   type Theme,
 } from "./theme";
 
-const DARK_QUERY = "(prefers-color-scheme: dark)";
-
 function readStored(): string | null {
   try {
     return localStorage.getItem(THEME_STORAGE_KEY);
   } catch {
     return null;
   }
-}
-
-function systemPrefersDark(): boolean {
-  return typeof window !== "undefined" && typeof window.matchMedia === "function"
-    ? window.matchMedia(DARK_QUERY).matches
-    : true;
 }
 
 /**
@@ -55,7 +47,7 @@ export function useTheme(): {
       return document.documentElement.dataset.theme as Theme;
     }
     if (typeof window === "undefined") return DEFAULT_THEME;
-    return resolveInitialTheme(readStored(), systemPrefersDark());
+    return resolveInitialTheme(readStored());
   });
 
   const setTheme = useCallback((next: Theme) => {
@@ -84,17 +76,8 @@ export function useTheme(): {
     applyTheme(theme);
   }, [theme]);
 
-  // Follow the OS while the visitor hasn't made an explicit choice.
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const query = window.matchMedia(DARK_QUERY);
-    const onChange = () => {
-      if (isTheme(readStored())) return; // an explicit choice wins.
-      setThemeState(query.matches ? "dark" : "light");
-    };
-    query.addEventListener?.("change", onChange);
-    return () => query.removeEventListener?.("change", onChange);
-  }, []);
+  // No OS-following: dark is the default, so the OS switching scheme mid-visit must not flip a
+  // visitor who has made no choice (only the toggle changes the theme).
 
   return { theme, toggle, setTheme };
 }

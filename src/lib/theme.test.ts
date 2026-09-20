@@ -1,27 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { nextTheme, resolveInitialTheme, THEMES, type Theme } from "./theme";
+import { DEFAULT_THEME, nextTheme, resolveInitialTheme, THEMES, type Theme } from "./theme";
+
+describe("DEFAULT_THEME", () => {
+  it("is dark — the deep-space night sky is what a first-time visitor sees", () => {
+    expect(DEFAULT_THEME).toBe("dark");
+  });
+});
 
 describe("resolveInitialTheme", () => {
-  it("honours a valid stored value over the system preference", () => {
-    expect(resolveInitialTheme("light", true)).toBe("light");
-    expect(resolveInitialTheme("dark", false)).toBe("dark");
+  it("honours a valid stored choice, so the day/night toggle keeps working across visits", () => {
+    expect(resolveInitialTheme("light")).toBe("light");
+    expect(resolveInitialTheme("dark")).toBe("dark");
   });
 
-  it("falls back to the system preference when there is no stored value", () => {
-    expect(resolveInitialTheme(null, true)).toBe("dark");
-    expect(resolveInitialTheme(null, false)).toBe("light");
+  it("is dark when nothing is stored", () => {
+    expect(resolveInitialTheme(null)).toBe("dark");
+    expect(resolveInitialTheme(undefined)).toBe("dark");
   });
 
-  it("ignores a garbage stored value and uses the system preference", () => {
-    expect(resolveInitialTheme("banana", true)).toBe("dark");
-    expect(resolveInitialTheme("", false)).toBe("light");
-    expect(resolveInitialTheme(undefined, true)).toBe("dark");
+  it("ignores a garbage stored value and stays dark", () => {
+    expect(resolveInitialTheme("banana")).toBe("dark");
+    expect(resolveInitialTheme("")).toBe("dark");
+    // Case matters: only the two exact names are valid choices.
+    expect(resolveInitialTheme("LIGHT")).toBe("dark");
+    expect(resolveInitialTheme(" light")).toBe("dark");
   });
 
-  it("defaults to dark when nothing is known", () => {
-    // No stored value and no system signal → the deep-space default.
-    expect(resolveInitialTheme(null, false)).toBe("light");
-    expect(resolveInitialTheme(null, true)).toBe("dark");
+  it("takes no OS colour-scheme signal: a light-mode OS must not turn a first visit light", () => {
+    // The rule is `stored ?? dark`; the visitor's OS setting is deliberately not an input.
+    expect(resolveInitialTheme.length).toBe(1);
   });
 });
 

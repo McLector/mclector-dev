@@ -111,7 +111,7 @@ test.describe("hologram at a scaled viewport", () => {
  * so its pixels are deterministic.
  *
  * Every threshold was CALIBRATED by breaking the thing and measuring, not assumed. Canvas is
- * 546×596 at 1440×900 (light theme, whose stage is the deep-navy bay):
+ * 546×596 at 1440×900 in the LIGHT theme (pinned in the test), whose stage is the deep-navy bay:
  *
  *                              nonBlue%   lumaP5   back margins (mean luma)
  *   as approved                  2.76      63.8      50 top / 67 sides
@@ -176,14 +176,18 @@ async function measure(page: Page, png: Buffer, regions: Record<string, Region>)
 }
 
 test.describe("hologram picture", () => {
-  // Static scene on a fixed stage (the light theme's), with software-GL patience: each screenshot is slow.
-  test.use({ reducedMotion: "reduce", colorScheme: "light" });
+  // Static scene, with software-GL patience: each screenshot is slow.
+  test.use({ reducedMotion: "reduce" });
   test.describe.configure({ timeout: 300_000 });
 
   // ONE test with steps: every mount is slow under software WebGL, so all three guards share one page.
   test("front shows real colour without a white veil; back is a cutout, not a slab", async ({ page }) => {
+    // The thresholds below were calibrated on the LIGHT theme's stage (the deep-navy bay). Pin it
+    // explicitly: the app's default is now dark, and this must not depend on any default or OS setting.
+    await page.addInitScript(() => localStorage.setItem("mclector-theme", "light"));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
     const canvas = page.locator('[data-pass-variant="webgl"] canvas');
     await expect(canvas, "the WebGL canvas never mounted").toHaveCount(1, { timeout: 60_000 });
 

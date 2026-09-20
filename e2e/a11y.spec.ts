@@ -25,17 +25,21 @@ async function assertNoBlockingViolations(page: import("@playwright/test").Page)
 }
 
 test.describe("accessibility", () => {
-  test("has no serious or critical axe violations at desktop", async ({ page }) => {
+  // These two run the DEFAULT theme, which is dark. (Before dark became the default they inherited
+  // Playwright's light OS and silently tested the light theme, so dark had no axe coverage at all.)
+  test("has no serious or critical axe violations at desktop (default dark theme)", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await assertNoBlockingViolations(page);
   });
 
-  test("has no serious or critical axe violations at mobile", async ({ page }) => {
+  test("has no serious or critical axe violations at mobile (default dark theme)", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await assertNoBlockingViolations(page);
   });
 
