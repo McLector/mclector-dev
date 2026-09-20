@@ -148,5 +148,46 @@ describe("IntroCard", () => {
       const list = screen.getByRole("list", { name: /open to/i });
       expect(within(list).getAllByRole("listitem")).toHaveLength(12);
     });
+
+    describe("accent band (approved treatment A)", () => {
+      it("wraps the label and the chip list in ONE band", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        const band = screen.getByTestId("open-to");
+        expect(band).toContainElement(screen.getByText("Open to"));
+        expect(band).toContainElement(screen.getByRole("list", { name: /open to/i }));
+      });
+
+      it("fills the band with the arc at 13% and rings it at 42%, radius 12", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        expect(screen.getByTestId("open-to")).toHaveClass(
+          "rounded-[12px]",
+          "px-[9px]",
+          "py-[5px]",
+          "bg-[color-mix(in_oklab,var(--arc)_13%,transparent)]",
+          "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent)]",
+        );
+      });
+
+      it("colours the label from the ink/arc mix (45% / 55%)", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        expect(screen.getByText("Open to")).toHaveClass(
+          "text-[color:color-mix(in_oklab,var(--color-text-primary)_45%,var(--arc)_55%)]",
+        );
+      });
+
+      it("renders every chip in the accent tone", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        const list = screen.getByRole("list", { name: /open to/i });
+        for (const li of within(list).getAllByRole("listitem")) {
+          expect(li.firstElementChild).toHaveClass("ring-inset");
+        }
+      });
+
+      it("keeps the band out of the accessibility tree as a landmark (a div, not a region)", () => {
+        render(<IntroCard profile={makeProfile()} />);
+        expect(screen.getByTestId("open-to").tagName).toBe("DIV");
+        expect(screen.getByTestId("open-to")).not.toHaveAttribute("role");
+      });
+    });
   });
 });

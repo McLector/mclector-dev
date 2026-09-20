@@ -44,15 +44,27 @@ export function IntroCard({ profile }: { profile: Profile }) {
         </p>
 
         {profile.openTo.length > 0 ? (
-          <div className="mt-px flex flex-wrap items-center gap-[5px]">
-            <span className="mr-0.5 font-[family-name:var(--font-mono)] text-[8.5px] font-bold tracking-[0.14em] text-[var(--color-text-muted)] uppercase">
+          // An arc-tinted band (the approved "treatment A"): availability is the one thing a
+          // recruiter is scanning for, so the row is a lit object of its own rather than a caption.
+          <div
+            data-testid="open-to"
+            className={[
+              "mt-[3px] -mx-[3px] flex flex-wrap items-center gap-[5px]",
+              "rounded-[12px] px-[9px] py-[5px]",
+              "bg-[color-mix(in_oklab,var(--arc)_13%,transparent)]",
+              "shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--arc)_42%,transparent)]",
+            ].join(" ")}
+          >
+            <span className="mr-0.5 font-[family-name:var(--font-mono)] text-[8.5px] font-bold tracking-[0.14em] text-[color:color-mix(in_oklab,var(--color-text-primary)_45%,var(--arc)_55%)] uppercase">
               Open to
             </span>
             {/* `contents` lets the chips flow in the same row as the label. */}
             <ul role="list" aria-label="Open to" className="contents">
               {profile.openTo.map((item) => (
                 <li key={item} className="flex">
-                  <Chip size="sm">{item}</Chip>
+                  <Chip size="sm" tone="accent">
+                    {item}
+                  </Chip>
                 </li>
               ))}
             </ul>

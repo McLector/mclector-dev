@@ -49,6 +49,15 @@ describe("design-token contrast budget — coverage", () => {
     expect(names.some((n) => n.startsWith("light: chip"))).toBe(true);
   });
 
+  it("covers the accent 'Open to' band — its chip text AND its label — in BOTH themes", () => {
+    for (const theme of ["dark", "light"]) {
+      expect(names.some((n) => n.startsWith(`${theme}: Open to chip`)), `${theme} chip`).toBe(true);
+      expect(names.some((n) => n.startsWith(`${theme}: Open to label`)), `${theme} label`).toBe(
+        true,
+      );
+    }
+  });
+
   it("never lowers the threshold below AA for normal text", () => {
     for (const pair of TOKEN_CONTRAST_PAIRS) {
       expect(pair.minimumRatio).toBeGreaterThanOrEqual(4.5);

@@ -65,6 +65,15 @@ const LIGHT_CARD_BG_WORST_CASE = "#eef0f8";
 // ink/8% over LIGHT_CARD_BG_WORST_CASE — the themed chip surface.
 const LIGHT_CHIP_BG_WORST_CASE = "#dddfe8";
 
+// The "Open to" accent band (IntroCard). Composited in sRGB, the way a browser blends
+// translucent layers: band = arc 13% over the worst-case card; chip = arc 10% over that band.
+// dark  arc #5ec8ff over #3e2335 → band #42384f → chip #454761
+// light arc #1a86f5 over #eef0f8 → band #d2e2f8 → chip #c0d9f7
+const DARK_OPEN_BAND = "#42384f";
+const DARK_OPEN_CHIP = "#454761";
+const LIGHT_OPEN_BAND = "#d2e2f8";
+const LIGHT_OPEN_CHIP = "#c0d9f7";
+
 export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
   // --- Dark theme (default) ---
   {
@@ -97,6 +106,20 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
     name: "dark: eyebrow (ink/arc mix) on card",
     foreground: "#c0e5fc",
     background: CARD_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  // "Open to" accent band — chip text is text-primary; the label is the oklab mix
+  // color-mix(in oklab, text-primary 45%, arc 55%) of #f4f5f8 and #5ec8ff.
+  {
+    name: "dark: Open to chip text (ink) on the arc/10 chip",
+    foreground: "#f4f5f8",
+    background: DARK_OPEN_CHIP,
+    minimumRatio: 4.5,
+  },
+  {
+    name: "dark: Open to label (ink/arc mix) on the arc/13 band",
+    foreground: "#a8ddfd",
+    background: DARK_OPEN_BAND,
     minimumRatio: 4.5,
   },
   // --- Light theme (twilight) ---
@@ -135,6 +158,19 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
     name: "light: chip text (text-secondary) on ink/8 chip",
     foreground: "#343a4d",
     background: LIGHT_CHIP_BG_WORST_CASE,
+    minimumRatio: 4.5,
+  },
+  // "Open to" accent band — the label is the oklab mix of ink #15192b (45%) and arc #1a86f5 (55%).
+  {
+    name: "light: Open to chip text (ink) on the arc/10 chip",
+    foreground: "#15192b",
+    background: LIGHT_OPEN_CHIP,
+    minimumRatio: 4.5,
+  },
+  {
+    name: "light: Open to label (ink/arc mix) on the arc/13 band",
+    foreground: "#215293",
+    background: LIGHT_OPEN_BAND,
     minimumRatio: 4.5,
   },
 ];
