@@ -3,6 +3,15 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import type { TierConfig } from "@/lib/capability";
+import {
+  FACE_Z,
+  GLINT_TRAIL,
+  frameOpacities,
+  glintOpacity,
+  glintPoint,
+  glintScale,
+} from "./cardFrame";
+import { createHoloMaterial, createHoloUniforms, type HoloUniforms } from "./holoMaterial";
 import { fitCamera } from "./math/fitCamera";
 import {
   BOB,
@@ -17,9 +26,9 @@ import {
 } from "./sceneDims";
 import { loadPortraitTexture } from "./textures/portraitTexture";
 import portraitUrl from "@/assets/portfolio-pic.jpg";
+import formalUrl from "@/assets/formal-pic.webp";
 
 const ARC = 0x5ec8ff;
-const FZ = DEP * 0.5;
 const CARD_ASPECT = PW / PH;
 
 /** Where the projector beam starts (just above the pedestal plate) and how tall it is. */
@@ -146,12 +155,18 @@ type BeamUniforms = {
   uH: { value: number };
 };
 
+/** One sprite of the rim glint: `k` 0 is the bright head, the rest trail behind it. */
+type GlintSprite = { sprite: THREE.Sprite; k: number; side: 1 | -1 };
+
 type BuiltScene = {
   root: THREE.Group;
   cardGroup: THREE.Group;
   pedGroup: THREE.Group;
-  holo: THREE.ShaderMaterial;
-  edge: THREE.LineLoop;
+  /** Shared by both faces: one clock, one look. */
+  holo: HoloUniforms;
+  rims: { inner: THREE.LineBasicMaterial; outer: THREE.LineBasicMaterial };
+  glints: GlintSprite[];
+  glintPath: THREE.Vector2[];
   core: THREE.Mesh;
   dots: THREE.Mesh[];
   beamUniforms: BeamUniforms;
@@ -159,11 +174,13 @@ type BuiltScene = {
 };
 
 /**
- * A holographic ID card floating over a sci-fi projector pedestal, lit by a
+ * A two-sided holographic ID card floating over a sci-fi projector pedestal, lit by a
  * fanned, striated light cone that spreads UP and out from a hot emitter — the
- * way a real hologram projector reads. Built imperatively (ported from the
- * approved mockup) and mounted via <primitive>; `useFrame` drives motion, gated
- * by `animated` (false = static, for reduced-motion / low-end).
+ * way a real hologram projector reads. The front projects the portfolio photo in
+ * real colour; the back projects the formal portrait with its background removed, so it
+ * reads as a floating bust. Built imperatively (ported from the approved mockup) and
+ * mounted via <primitive>; `useFrame` drives motion, gated by `animated` (false =
+ * static, for reduced-motion / low-end).
  *
  * The camera is not hand-placed: it is fitted to the object's real 3D extent
  * for the canvas's current aspect (see math/fitCamera), so the hologram sits
@@ -190,74 +207,59 @@ export default function HologramScene({
 
     const root = new THREE.Group();
 
-    // ---- card ----
+    // ---- card: a genuinely two-sided slab ----
     const cardGroup = new THREE.Group();
     cardGroup.position.y = CARD_Y;
+
+    const holo = createHoloUniforms(ARC);
 
     // Frame tightly on the subject (the photo has a lot of dusk sky). focusX is
     // where the subject actually sits (≈ 0.49–0.50 of the photo's width), so they
     // land on the card's midline — and on the pedestal's axis.
-    const portraitTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, {
+    const frontTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, {
       zoom: 1.5,
       focusX: 0.495,
       focusY: 0.6,
     });
-    disposables.push(portraitTex);
+    // The formal portrait, background removed (src/assets/formalPic.test.ts pins that it is a
+    // real matte). It is square, so cover-cropping trims its sides; the head stays in frame.
+    const backTex = loadPortraitTexture(formalUrl, CARD_ASPECT, {
+      zoom: 1.12,
+      focusX: 0.5,
+      focusY: 0.52,
+    });
+    disposables.push(frontTex, backTex);
 
-    // A faint smoked-glass backing so the projection has a hint of body, but
-    // stays mostly see-through — the hologram reads as light, not a photo.
-    const back = new THREE.Mesh(
+    // A faint smoked-glass body between the two faces, so each face has something to read
+    // against and neither is seen straight through to the other. It draws no depth (the faces
+    // are 0.03 apart) and stays mostly see-through — the hologram reads as light, not a photo.
+    const backing = new THREE.Mesh(
       track(new THREE.PlaneGeometry(PW + 0.18, PH + 0.18)),
-      track(new THREE.MeshBasicMaterial({ color: 0x061020, transparent: true, opacity: 0.18, side: THREE.DoubleSide })),
+      track(
+        new THREE.MeshBasicMaterial({
+          color: 0x061020,
+          transparent: true,
+          opacity: 0.18,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+        }),
+      ),
     );
-    back.position.z = -FZ;
-    cardGroup.add(back);
+    backing.position.z = FACE_Z.backing;
+    cardGroup.add(backing);
 
-    const holo = track(
-      new THREE.ShaderMaterial({
-        transparent: true,
-        depthWrite: false,
-        uniforms: { map: { value: portraitTex }, t: { value: 0 }, tint: { value: new THREE.Color(ARC) } },
-        vertexShader:
-          "varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}",
-        fragmentShader: `
-          varying vec2 vU;
-          uniform sampler2D map;
-          uniform float t;
-          uniform vec3 tint;
-          float lum(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
-          void main(){
-            // Chromatic-split sample for a holographic RGB fringe.
-            float off = 0.006;
-            float lr = lum(texture2D(map, vU + vec2(off, 0.0)).rgb);
-            float lc = lum(texture2D(map, vU).rgb);
-            float lb = lum(texture2D(map, vU - vec2(off, 0.0)).rgb);
-            // Lift the dark subject, then push contrast so it separates.
-            float l = pow(clamp(lc, 0.0, 1.0), 0.7);
-            l = clamp((l - 0.34) * 1.75 + 0.42, 0.0, 1.0);
-            // Cyan hologram ramp: deep blue -> tint -> white-hot.
-            vec3 holo = mix(vec3(0.04, 0.2, 0.5), tint, smoothstep(0.1, 0.6, l));
-            holo = mix(holo, vec3(0.85, 0.97, 1.0), smoothstep(0.72, 1.0, l));
-            holo.r += (lr - lc) * 0.6;
-            holo.b += (lb - lc) * 0.6;
-            // Hard scanlines + a bright scan band sweeping up + interlace flicker.
-            float sl = 0.72 + 0.28 * sin(vU.y * 168.0 - t * 3.0);
-            float band = smoothstep(0.04, 0.0, abs(fract(vU.y - t * 0.1) - 0.5) - 0.47);
-            float flick = 0.9 + 0.07 * sin(t * 34.0) + 0.05 * sin(t * 8.0);
-            vec3 col = holo * sl * flick + band * 0.6 * vec3(0.85, 0.97, 1.0);
-            // Edge rim glow — the projection is brightest at its border.
-            float edge = min(min(vU.x, 1.0 - vU.x), min(vU.y, 1.0 - vU.y));
-            col += tint * smoothstep(0.17, 0.0, edge) * 0.5;
-            // Alpha: the glowing subject is opaque, dark background see-through.
-            float a = clamp(l * 1.3 + 0.1, 0.0, 1.0) * smoothstep(0.0, 0.02, edge);
-            gl_FragColor = vec4(col * 1.15, a);
-          }
-        `,
-      }),
-    );
-    const screen = new THREE.Mesh(track(new THREE.PlaneGeometry(PW, PH)), holo);
-    screen.position.z = FZ - 0.05;
-    cardGroup.add(screen);
+    // Front screen at +z, back screen at −z rotated π so it faces backwards (and is not
+    // mirrored). Both are FrontSide, so culling keeps each face from showing through the other.
+    const screenGeo = track(new THREE.PlaneGeometry(PW, PH));
+    for (const [texture, side, mask] of [
+      [frontTex, 1, false],
+      [backTex, -1, true],
+    ] as const) {
+      const screen = new THREE.Mesh(screenGeo, track(createHoloMaterial(texture, { mask }, holo)));
+      screen.position.z = side * FACE_Z.screen;
+      if (side < 0) screen.rotation.y = Math.PI;
+      cardGroup.add(screen);
+    }
 
     const bezShape = roundedRect(PW + 0.17, PH + 0.17, 0.2);
     bezShape.holes.push(roundedRect(PW - 0.03, PH - 0.03, 0.14));
@@ -273,71 +275,144 @@ export default function HologramScene({
       }),
     );
     bezGeo.center();
+    // Lit steel rather than a dark slab, so the frame reads as hardware catching the light.
     const bezel = new THREE.Mesh(
       bezGeo,
       track(
         new THREE.MeshPhysicalMaterial({
-          color: 0x18233c,
+          color: 0x4a566e,
           metalness: 0.72,
           roughness: 0.15,
           clearcoat: 1,
           clearcoatRoughness: 0.08,
-          emissive: new THREE.Color(0x0a1c3a),
-          emissiveIntensity: 0.26,
+          emissive: new THREE.Color(0x0c2b52),
+          emissiveIntensity: 0.34,
           envMapIntensity: 1.3,
         }),
       ),
     );
     cardGroup.add(bezel);
 
-    const cover = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(PW, PH)),
+    // The glass sheen over each photo.
+    const sheenGeo = track(new THREE.PlaneGeometry(PW, PH));
+    const sheenMat = track(
+      new THREE.MeshPhysicalMaterial({
+        color: 0xbfeaff,
+        metalness: 0,
+        roughness: 0.05,
+        clearcoat: 1,
+        clearcoatRoughness: 0.03,
+        transparent: true,
+        opacity: 0.05,
+        envMapIntensity: 1.7,
+        depthWrite: false,
+      }),
+    );
+    for (const side of [1, -1] as const) {
+      const sheen = new THREE.Mesh(sheenGeo, sheenMat);
+      sheen.position.z = side * FACE_Z.sheen;
+      if (side < 0) sheen.rotation.y = Math.PI;
+      cardGroup.add(sheen);
+    }
+
+    // A double-stroke rim on both faces: a hot thin inner line and a wider, dimmer outer one,
+    // so the edge reads as a lit tube rather than a hairline. Opacities pulse in `useFrame`.
+    const additiveLine = (opacity: number) =>
       track(
-        new THREE.MeshPhysicalMaterial({
-          color: 0xbfeaff,
-          metalness: 0,
-          roughness: 0.05,
-          clearcoat: 1,
-          clearcoatRoughness: 0.03,
+        new THREE.LineBasicMaterial({
+          color: ARC,
           transparent: true,
-          opacity: 0.05,
-          envMapIntensity: 1.7,
-          depthWrite: false,
+          opacity,
+          blending: THREE.AdditiveBlending,
         }),
-      ),
+      );
+    const still = frameOpacities(0, false);
+    const rims = { inner: additiveLine(still.rimInner), outer: additiveLine(still.rimOuter) };
+    const rimInnerGeo = track(
+      new THREE.BufferGeometry().setFromPoints(roundedRect(PW + 0.02, PH + 0.02, 0.14).getPoints(120)),
     );
-    cover.position.z = FZ + 0.012;
-    cardGroup.add(cover);
-
-    const edge = new THREE.LineLoop(
-      track(new THREE.BufferGeometry().setFromPoints(roundedRect(PW + 0.02, PH + 0.02, 0.14).getPoints(120))),
-      track(new THREE.LineBasicMaterial({ color: ARC, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending })),
+    const rimOuterGeo = track(
+      new THREE.BufferGeometry().setFromPoints(roundedRect(PW + 0.085, PH + 0.085, 0.18).getPoints(120)),
     );
-    edge.position.z = FZ + 0.02;
-    cardGroup.add(edge);
+    for (const side of [1, -1] as const) {
+      for (const [geo, mat] of [
+        [rimInnerGeo, rims.inner],
+        [rimOuterGeo, rims.outer],
+      ] as const) {
+        const rim = new THREE.LineLoop(geo, mat);
+        rim.position.z = side * FACE_Z.rim;
+        cardGroup.add(rim);
+      }
+    }
 
-    const bracket = (cx: number, cy: number, sx: number, sy: number) => {
-      const L = 0.26;
+    // Corner brackets, also double-stroked, on both faces.
+    const bracketInner = additiveLine(0.95);
+    const bracketOuter = additiveLine(still.bracketOuter);
+    const bracket = (
+      cx: number,
+      cy: number,
+      sx: number,
+      sy: number,
+      length: number,
+      material: THREE.LineBasicMaterial,
+      z: number,
+    ) => {
       const g = track(
         new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(cx, cy - sy * L, 0),
+          new THREE.Vector3(cx, cy - sy * length, 0),
           new THREE.Vector3(cx, cy, 0),
-          new THREE.Vector3(cx - sx * L, cy, 0),
+          new THREE.Vector3(cx - sx * length, cy, 0),
         ]),
       );
-      const l = new THREE.Line(
-        g,
-        track(new THREE.LineBasicMaterial({ color: ARC, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending })),
-      );
-      l.position.z = FZ + 0.03;
+      const l = new THREE.Line(g, material);
+      l.position.z = z;
       cardGroup.add(l);
     };
     const hw = (PW + 0.06) / 2;
     const hh = (PH + 0.06) / 2;
-    bracket(hw, hh, 1, 1);
-    bracket(-hw, hh, -1, 1);
-    bracket(hw, -hh, 1, -1);
-    bracket(-hw, -hh, -1, -1);
+    for (const side of [1, -1] as const) {
+      for (const [sx, sy] of [
+        [1, 1],
+        [-1, 1],
+        [1, -1],
+        [-1, -1],
+      ] as const) {
+        bracket(sx * hw, sy * hh, sx, sy, 0.26, bracketInner, side * FACE_Z.bracket);
+        bracket(sx * (hw + 0.028), sy * (hh + 0.028), sx, sy, 0.2, bracketOuter, side * FACE_Z.bracket);
+      }
+    }
+
+    // A travelling glint: one bright head and a short trail running the rim on a slow loop,
+    // on both faces. Positioned every frame in `useFrame`; frozen there when not animating.
+    const glintPath = roundedRect(PW + 0.06, PH + 0.06, 0.17).getPoints(300);
+    const glintTex = track(
+      radialTexture([
+        [0, "rgba(255,255,255,1)"],
+        [0.25, "rgba(170,236,255,.85)"],
+        [1, "rgba(0,0,0,0)"],
+      ]),
+    );
+    const glints: GlintSprite[] = [];
+    for (const side of [1, -1] as const) {
+      for (let k = 0; k < GLINT_TRAIL; k++) {
+        const sprite = new THREE.Sprite(
+          track(
+            new THREE.SpriteMaterial({
+              map: glintTex,
+              transparent: true,
+              blending: THREE.AdditiveBlending,
+              depthWrite: false,
+              opacity: glintOpacity(k),
+            }),
+          ),
+        );
+        sprite.scale.setScalar(glintScale(k));
+        const p = glintPoint(glintPath, 0, k, false);
+        sprite.position.set(p.x, p.y, side * FACE_Z.glint);
+        cardGroup.add(sprite);
+        glints.push({ sprite, k, side });
+      }
+    }
     root.add(cardGroup);
 
     // ---- pedestal ----
@@ -536,7 +611,7 @@ export default function HologramScene({
     halo.renderOrder = -2;
     root.add(halo);
 
-    return { root, cardGroup, pedGroup, holo, edge, core, dots, beamUniforms, disposables };
+    return { root, cardGroup, pedGroup, holo, rims, glints, glintPath, core, dots, beamUniforms, disposables };
   }, []);
 
   // Procedural environment for the metal/glass reflections.
@@ -618,7 +693,7 @@ export default function HologramScene({
     const dt = Math.min(delta, 1 / 30);
     t.current += dt;
     const tt = t.current;
-    built.holo.uniforms.t.value = animated ? tt : 0;
+    built.holo.t.value = animated ? tt : 0;
     built.beamUniforms.t.value = animated ? tt : 0;
 
     if (!drag.current.active) {
@@ -626,7 +701,15 @@ export default function HologramScene({
       drag.current.vx *= 0.94;
     }
     built.cardGroup.position.y = CARD_Y + (animated ? Math.sin(tt * 1.1) * BOB : 0);
-    (built.edge.material as THREE.LineBasicMaterial).opacity = animated ? 0.7 + 0.25 * Math.sin(tt * 2.2) : 0.85;
+
+    // The rim pulses and the glint runs — both frozen (see cardFrame) when not animating.
+    const frame = frameOpacities(tt, animated);
+    built.rims.inner.opacity = frame.rimInner;
+    built.rims.outer.opacity = frame.rimOuter;
+    for (const { sprite, k, side } of built.glints) {
+      const p = glintPoint(built.glintPath, tt, k, animated);
+      sprite.position.set(p.x, p.y, side * FACE_Z.glint);
+    }
 
     if (animated) {
       (built.core.material as THREE.MeshBasicMaterial).opacity = 0.85 + 0.15 * Math.sin(tt * 5);
