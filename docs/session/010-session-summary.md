@@ -3,7 +3,7 @@
 **Date:** 2026-09-20 to 2026-09-21
 **Repo:** `D:\Projects\mclector-dev` — https://github.com/McLector/mclector-dev
 **Work branch:** `feat/mobile-native-pass` (from `main` at `f298836`), pushed for review, then **fast-forward merged to `main` and pushed at the owner's explicit request**. The branch was deleted afterwards. No deploy command was run from here.
-**Live URL:** https://mclector-dev.vercel.app (the session-009 build when this was written; the push to `main` may have redeployed it, which this summary does not record)
+**Live URL:** https://mclector-dev.vercel.app: **redeployed by the push to `main`**. Checked afterwards by fetching the live HTML, which serves `viewport-fit=cover` and the `theme-color` boot write. That proves the new build is live, not that the mobile view works on a phone (§7).
 
 Like sessions 001–009, this records *what happened and why*, not a task handover. Flow: **question → read the code → plan → review the plan (three times) → tests first → implement → prove.**
 
@@ -74,7 +74,7 @@ TDD: each test was watched **fail for the right reason** before the change.
 4. Switching to light changes the status-bar colour, and a reload in light shows no dark flash.
 5. Long-pressing a button does not select its label, but the email on the sign can still be selected and copied.
 
-Also unverified: whether the push to `main` produced a production deployment, and so whether the live site has any of this yet (the Vercel Git integration was not checked from this summary).
+Verified after the push, so no longer open: the live site is the new build (see the header). The owner can now run the five checks above straight against https://mclector-dev.vercel.app.
 
 ## 8. Known rough edges
 
@@ -87,10 +87,10 @@ Also unverified: whether the push to `main` produced a production deployment, an
 
 ## 9. State at the end of this session
 
-- **Branch:** work landed on `main` by fast-forward (the code and its tests, this summary, and a small follow-up commit recording the merge). `feat/mobile-native-pass` is deleted locally and on `origin`.
+- **Branch:** work landed on `main` by fast-forward (the code and its tests, this summary, and two small follow-up commits correcting it as the merge and the deploy were confirmed). `feat/mobile-native-pass` is deleted locally and on `origin`.
 - **Cleanup done:** the local `feat/round-3-hover-motion-palette` branch from session 009 was already fully merged into `main` and was deleted. The remote `feat/dark-by-default` and `feat/round-2-hologram-polish` are also fully merged but were **left in place**: they were not created this session, and deleting a remote branch is the owner's call.
 - **Working tree:** clean apart from the four untracked mockups.
-- **Still owed by the owner:** the five phone checks in §7; confirming the live site actually redeployed; a decision on the mockups and on the two stale remote branches.
+- **Still owed by the owner:** the five phone checks in §7, now against the live site; a decision on the mockups and on the two stale remote branches.
 
 ## 10. Where things live
 
