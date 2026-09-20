@@ -1,16 +1,26 @@
 @import "tailwindcss";
 
-/* Hover, but only on devices with a fine pointer — so a `hover-fine:` style
-   applies on real hover on desktop and NEVER sticks on touch. The `&:hover` is
-   essential: without it the styles would apply unconditionally on any
-   hover-capable device rather than only while actually hovered. */
-@custom-variant hover-fine {
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      @slot;
-    }
-  }
-}
+/* Tailwind scans every tracked file in the repo for class names, comments and prose included. The reference
+   mockups and session notes under docs/ are prose and standalone HTML, not part of the app, so keep them out:
+   otherwise a sentence that happens to contain a class-shaped token ships as a real CSS rule. */
+@source not "../../docs";
+
+/* Hover, but only while the visitor is actually using a mouse (or pen), so a hover style applies on real hover
+   on desktop and NEVER sticks on touch. `data-input` is set on <html> by src/lib/inputMode.ts (seeded by the
+   inline boot script in index.html, then following real pointer events).
+
+   WHY NOT A MEDIA QUERY: this used to be `@media (hover: hover) and (pointer: fine)`, which asks the browser
+   what the DEVICE is. Some devices (a touchscreen laptop was the owner's) answer wrongly for the input in
+   use, so hover never fired and the hexagons showed their names permanently. Hover is locked on for
+   everyone; do not put a hover or pointer media query back.
+
+   `hover` itself is overridden to the same rule, so plain `hover:` and `group-hover:` (which Tailwind builds on
+   top of `hover`) follow it too. Tailwind's default wraps them in `@media (hover: hover)`, which has the same
+   problem. `hover-fine` is kept as an alias so its call sites did not have to change. The `:where()` keeps the
+   attribute check at zero specificity, and `&:hover` is essential: without it the styles would apply
+   unconditionally while a mouse is in use rather than only while actually hovered. */
+@custom-variant hover (&:where(:root[data-input="mouse"] *):hover);
+@custom-variant hover-fine (&:where(:root[data-input="mouse"] *):hover);
 /* Target a specific theme from a utility when a value must diverge by theme. */
 @custom-variant light (&:where([data-theme="light"] *));
 @custom-variant dark (&:where([data-theme="dark"] *));
@@ -432,19 +442,28 @@
 }
 
 @layer utilities {
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-      scroll-behavior: auto !important;
-    }
-    /* Freeze the comet off-screen so it never sits mid-streak. */
-    .comet {
-      opacity: 0 !important;
-    }
+  /* The Animations toggle (src/lib/motion.ts) sets `data-motion` on <html>. OFF freezes AMBIENT keyframe
+     animations only: the starfield, nebula, comet, status ripple, card entrances. It deliberately never touches
+     `transition-*`, because hover and focus transitions are locked on for every visitor in both states.
+
+     It also zeroes `animation-delay`. The entrance stagger animates with a per-card delay and `fill-mode: both`,
+     so shortening only the duration would leave every card blank and offset until its delay elapsed (up to a third
+     of a second) before snapping into place. Off means the page is in its final state immediately.
+
+     The OS `prefers-reduced-motion` setting is NOT read anywhere (owner decision): this toggle, on by default,
+     is the visitor's only way to switch ambient motion off. This used to be a
+     `@media (prefers-reduced-motion: reduce)` rule that also forced `transition-duration: 0.001ms`, which
+     made every hover snap instead of animate for anyone with the OS setting on. */
+  :root[data-motion="off"] *,
+  :root[data-motion="off"] *::before,
+  :root[data-motion="off"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+  }
+  /* Freeze the comet off-screen so it never sits mid-streak. */
+  :root[data-motion="off"] .comet {
+    opacity: 0 !important;
   }
 }
 

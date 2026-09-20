@@ -18,15 +18,34 @@
     -->
     <script>
       (function () {
+        var root = document.documentElement;
+        var storedTheme = null;
+        var storedMotion = null;
         try {
-          var stored = localStorage.getItem("mclector-theme");
-          var theme = stored === "dark" || stored === "light" ? stored : "dark";
-          var root = document.documentElement;
-          root.setAttribute("data-theme", theme);
-          root.style.colorScheme = theme;
+          storedTheme = localStorage.getItem("mclector-theme");
+          storedMotion = localStorage.getItem("mclector-motion");
         } catch (e) {
-          document.documentElement.setAttribute("data-theme", "dark");
+          // Blocked storage (private window): fall through to the defaults below.
         }
+
+        var theme = storedTheme === "dark" || storedTheme === "light" ? storedTheme : "dark";
+        root.setAttribute("data-theme", theme);
+        root.style.colorScheme = theme;
+
+        // Animations: on for everyone unless the visitor switched them off. Mirrors src/lib/motion.ts
+        // (resolveInitialMotion). The OS reduced-motion setting is deliberately NOT an input.
+        root.setAttribute("data-motion", storedMotion === "off" ? "off" : "on");
+
+        // Input mode: a first-paint HINT only (any input can hover -> mouse, else touch). Mirrors
+        // src/lib/inputMode.ts (initialInputMode); real pointer events take over from there, so a browser that
+        // misreports its pointer still gets working hover once a mouse moves.
+        var anyHover = false;
+        try {
+          anyHover = window.matchMedia("(any-hover: hover)").matches;
+        } catch (e) {
+          // No matchMedia: stay on the safe touch default.
+        }
+        root.setAttribute("data-input", anyHover ? "mouse" : "touch");
       })();
     </script>
   </head>

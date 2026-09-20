@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import type { Project, ProjectLink } from "@/content/types";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useMotion } from "@/lib/useMotion";
 import { useHashRoute } from "@/lib/useHashRoute";
 import { projectLayoutId, statusLabel, thumbnailStyle } from "@/features/projects/thumbnail";
 
@@ -18,25 +19,6 @@ import { projectLayoutId, statusLabel, thumbnailStyle } from "@/features/project
  * not an error"). No broken empty dialog.
  */
 
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return false;
-    return window.matchMedia(REDUCED_MOTION_QUERY).matches;
-  });
-
-  useEffect(() => {
-    if (!window.matchMedia) return;
-    const query = window.matchMedia(REDUCED_MOTION_QUERY);
-    const onChange = () => setReduced(query.matches);
-    query.addEventListener?.("change", onChange);
-    return () => query.removeEventListener?.("change", onChange);
-  }, []);
-
-  return reduced;
-}
-
 /** External links open in a new tab; `mailto:`/`tel:` hand off to the OS instead. */
 function isExternal(href: ProjectLink["href"]): boolean {
   return /^https?:/i.test(href);
@@ -44,7 +26,10 @@ function isExternal(href: ProjectLink["href"]): boolean {
 
 export function ProjectOverlay({ projects }: { projects: Project[] }) {
   const { openProjectId, close } = useHashRoute();
-  const reducedMotion = usePrefersReducedMotion();
+  // The Animations toggle (never the OS setting): off swaps the large open/close motion and the shared-element
+  // thumbnail morph for a plain quick fade. On is the default for everyone.
+  const { on: animationsOn } = useMotion();
+  const animationsOff = !animationsOn;
 
   const project =
     openProjectId === null
@@ -126,7 +111,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: reducedMotion ? 0.12 : 0.18 }}
+          transition={{ duration: animationsOff ? 0.12 : 0.18 }}
         >
           <div
             data-testid="project-overlay-backdrop"
@@ -141,22 +126,22 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
             aria-modal="true"
             aria-labelledby={titleId}
             data-testid="project-overlay"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }}
-            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.99 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+            initial={animationsOff ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }}
+            animate={animationsOff ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={animationsOff ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.99 }}
+            transition={{ duration: animationsOff ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-[var(--radius-card)] bg-[color-mix(in_oklab,var(--color-surface-raised)_96%,transparent)] p-6 ring-1 ring-[var(--glass-border)] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)] light:shadow-[0_40px_120px_-30px_rgb(40_45_80/0.45)] backdrop-blur-xl sm:p-8"
           >
             <button
               type="button"
               onClick={close}
-              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-[var(--glass-border)] transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:text-[var(--color-text-primary)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+              className="absolute right-4 top-4 rounded-full px-3 py-1 text-xs text-[var(--color-text-muted)] ring-1 ring-[var(--glass-border)] transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:text-[var(--color-text-primary)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
             >
               Close
             </button>
 
             <div className="flex items-center gap-4 pr-20">
-              {reducedMotion ? (
+              {animationsOff ? (
                 <span
                   data-testid="project-overlay-thumb"
                   aria-hidden="true"
@@ -238,7 +223,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
                     {...(isExternal(link.href)
                       ? { target: "_blank", rel: "noopener noreferrer" }
                       : {})}
-                    className="inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--color-text-primary)_10%,transparent)] px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-[var(--glass-border)] transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_16%,transparent)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                    className="inline-flex items-center rounded-full bg-[color-mix(in_oklab,var(--color-text-primary)_10%,transparent)] px-4 py-2 text-xs font-medium text-[var(--color-text-primary)] ring-1 ring-[var(--glass-border)] transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_16%,transparent)] active:scale-[0.97] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                   >
                     {link.label}
                   </a>

@@ -107,21 +107,24 @@
 /* Arc-reactor ignition on hover. The glow is a `drop-shadow` on the CELL, not
    the link: CSS applies `filter` BEFORE `clip-path`, so a drop-shadow on the
    clipped link is itself clipped away. On the unclipped parent it follows the
-   clipped child's hexagonal silhouette. Fine pointers only. */
-@media (hover: hover) and (pointer: fine) {
-  .hexgrid__cell {
-    transition: filter 150ms ease, transform 150ms ease;
-  }
+   clipped child's hexagonal silhouette. Only while a mouse (or pen) is in use.
 
-  .hexgrid__link:hover {
-    background: color-mix(in oklab, var(--arc) 62%, transparent);
-    color: #eafaff;
-    transform: translateY(-2px);
-  }
+   HOVER IS KEYED TO `html[data-input="mouse"]` (src/lib/inputMode.ts), NOT a media query: `(hover: hover) and
+   (pointer: fine)` is false on some laptops that do have a mouse, which killed every effect below and left the
+   names showing permanently. `:where()` keeps the attribute check at zero specificity so these rules rank
+   exactly as before, and the `:active` press below still beats the hover lift. */
+:where(:root[data-input="mouse"]) .hexgrid__cell {
+  transition: filter 150ms ease, transform 150ms ease;
+}
 
-  .hexgrid__cell:has(.hexgrid__link:hover) {
-    filter: drop-shadow(0 0 8px var(--arc-soft)) drop-shadow(0 0 16px var(--arc-soft));
-  }
+:where(:root[data-input="mouse"]) .hexgrid__link:hover {
+  background: color-mix(in oklab, var(--arc) 62%, transparent);
+  color: #eafaff;
+  transform: translateY(-2px);
+}
+
+:where(:root[data-input="mouse"]) .hexgrid__cell:has(.hexgrid__link:hover) {
+  filter: drop-shadow(0 0 8px var(--arc-soft)) drop-shadow(0 0 16px var(--arc-soft));
 }
 
 .hexgrid__link:active {
@@ -161,8 +164,9 @@
     transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* No hover (touch): there is nothing to reveal the name, so it is always shown
-   and the icon sits lifted to make room — navigation is never mystery-meat. */
+/* No mouse in use (touch, or nothing has moved yet): there is nothing to reveal the name, so it is always shown
+   and the icon sits lifted to make room — navigation is never mystery-meat. This is also the safe default when
+   the browser gives no sign of a mouse. */
 .hexgrid__icon {
   transform: translateY(-8px);
 }
@@ -171,42 +175,27 @@
   transform: none;
 }
 
-/* Fine pointer: icon centred and label hidden at rest; on hover OR keyboard
+/* Mouse in use: icon centred and label hidden at rest; on hover OR keyboard
    focus the icon lifts and the name fades in beneath it. */
-@media (hover: hover) and (pointer: fine) {
-  .hexgrid__icon {
-    transform: none;
-  }
-  .hexgrid__label {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-
-  .hexgrid__link:hover .hexgrid__icon,
-  .hexgrid__link:focus-visible .hexgrid__icon {
-    transform: translateY(-8px);
-  }
-
-  .hexgrid__link:hover .hexgrid__label,
-  .hexgrid__link:focus-visible .hexgrid__label {
-    opacity: 1;
-    transform: none;
-  }
+:where(:root[data-input="mouse"]) .hexgrid__icon {
+  transform: none;
+}
+:where(:root[data-input="mouse"]) .hexgrid__label {
+  opacity: 0;
+  transform: translateY(4px);
 }
 
-/* Reduced motion keeps the colour and the glow and drops the animation. The
-   icon still moves aside for the label — that is layout, not decoration, so it
-   just happens instantly (transition: none) rather than being cancelled. */
-@media (prefers-reduced-motion: reduce) {
-  .hexgrid__cell,
-  .hexgrid__link,
-  .hexgrid__label,
-  .hexgrid__icon,
-  .hexgrid__ring {
-    transition: none;
-  }
-
-  .hexgrid__link:hover {
-    transform: none;
-  }
+:where(:root[data-input="mouse"]) .hexgrid__link:hover .hexgrid__icon,
+:where(:root[data-input="mouse"]) .hexgrid__link:focus-visible .hexgrid__icon {
+  transform: translateY(-8px);
 }
+
+:where(:root[data-input="mouse"]) .hexgrid__link:hover .hexgrid__label,
+:where(:root[data-input="mouse"]) .hexgrid__link:focus-visible .hexgrid__label {
+  opacity: 1;
+  transform: none;
+}
+
+/* There is deliberately NO reduced-motion block here. Every transition in this file is a hover or focus
+   response, which is locked on for every visitor whatever the OS animation setting says (owner decision).
+   The Animations toggle freezes ambient keyframes only and never touches these. */

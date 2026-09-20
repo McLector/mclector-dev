@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "@/lib/useTheme";
+import { ROUND_TOGGLE_CLASSES } from "./roundToggle";
 
 /**
  * The day/night switch. A single button that toggles the document theme; the
@@ -19,17 +20,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label={isLight ? "Switch to dark theme" : "Switch to light theme"}
       title={isLight ? "Switch to dark theme" : "Switch to light theme"}
       data-testid="theme-toggle"
-      className={[
-        "group relative grid size-10 place-items-center overflow-hidden rounded-full",
-        // The window-panel surface (as in the approved mockup): at dusk --glass-bg is
-        // now a near-white .9 that would read as a bright disc on the sky.
-        "bg-[var(--panel)] text-[var(--color-text-secondary)] backdrop-blur-md",
-        "ring-1 ring-[var(--panel-edge)] shadow-[var(--glass-shadow)]",
-        "transition-[transform,color] duration-200 active:scale-[0.92]",
-        "hover-fine:text-[var(--color-text-primary)]",
-        "focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]",
-        className ?? "",
-      ].join(" ")}
+      className={[ROUND_TOGGLE_CLASSES, className ?? ""].join(" ")}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

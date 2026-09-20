@@ -79,3 +79,33 @@ the pure maths (`src/three/math/**`, e.g. `fitCamera`), the scene dimensions
 scene from tested units. The hologram's canvas mounting, sizing and centring
 are covered by `e2e/hologram.spec.ts` (the `webgl` Playwright project); its
 look is judged by eye on a real GPU.
+
+## Hover and motion policy (round 3)
+
+Two owner decisions that every component must respect. Both have guards that fail the build, so they cannot
+regress quietly.
+
+**Hover is locked on.** Every hover and focus transition works for every visitor, whatever the browser claims
+about its pointer and whatever the OS or the site's Animations toggle says. Hover rules key off
+`html[data-input="mouse"]` (`src/lib/inputMode.ts`, seeded by the inline script in `index.html`, then following
+real pointer events), never a media query. Tailwind's `hover` variant is overridden to the same rule in
+`styles/index.css`, so plain `hover:` and `group-hover:` follow it. Hand-written CSS uses
+`:where(:root[data-input="mouse"]) …` to keep specificity unchanged. With no evidence of a mouse the safe default
+is touch: the social hexagons show their names and nothing depends on hover. Do not put `@media (hover: …)` or
+`(pointer: …)` back: a touchscreen laptop fails `(hover: hover) and (pointer: fine)` while a real mouse is attached,
+which killed every hover effect there. Guards: `src/lib/hoverAndMotionPolicy.test.ts` (source),
+`e2e/compiled-css.spec.ts` (built CSS), `e2e/no-hover-browser.spec.ts` (a browser that reports no hover).
+
+**The OS `prefers-reduced-motion` setting is never read.** Ambient, decorative motion (starfield, falling code,
+rocks, comet, parallax, the hologram's spin, the status ripple, entrance staggers, the project overlay's large
+motion) runs by default for everyone and is governed only by the visible **Animations** toggle
+(`src/lib/motion.ts`, `html[data-motion]`, persisted as `localStorage["mclector-motion"]`). Off freezes keyframe
+animations and zeroes their delay; it never touches `transition-*`, which is what keeps hover locked on. Because the
+default ignores the OS, the toggle is the only way out of ambient motion, so it stays visible, labelled and
+keyboard-operable. Seeding the default from the OS later is a one-line change in `resolveInitialMotion`.
+The e2e suite runs with the toggle OFF (`storageState` in `playwright.config.ts`), which keeps the visual baselines
+and the hologram picture guards deterministic; specs that need the animated site opt out with an empty
+`storageState`.
+
+`ConnectSign` is a polished dark neon plate (a lit tube ring and one soft bloom, no screws, arrow or flicker),
+exactly 42px tall so the hologram stage keeps its measured height. The centre column is sign → Download CV → stage.

@@ -2,9 +2,11 @@ import { test, expect, type Page } from "@playwright/test";
 
 /**
  * Regression guard for the bug that started the redesign: a visitor with
- * `prefers-reduced-motion` (or a modest GPU) was shown the FLAT 2D card instead
+ * the reduced-motion setting (or a modest GPU) was shown the FLAT 2D card instead
  * of the 3D object, because the capability gate conflated "render 3D" with
- * "animate 3D".
+ * "animate 3D". The site no longer reads the OS setting; the same guard now covers the
+ * visible Animations toggle: switched OFF (which is how this whole suite runs, see
+ * playwright.config.ts) the hologram must still render, just static.
  *
  * This is the only spec that runs with WebGL available (the `webgl` project in
  * playwright.config.ts); every other spec runs with 3D APIs disabled so the
@@ -12,8 +14,7 @@ import { test, expect, type Page } from "@playwright/test";
  * a <canvas> — not pixels: headless software GL cannot settle the scene, and
  * the live look is checked on a real GPU.
  */
-test.describe("hologram under reduced motion", () => {
-  test.use({ reducedMotion: "reduce" });
+test.describe("hologram with animations off", () => {
   // Software-rendered WebGL is slow to mount; two parallel workers can starve it past 30s.
   test.describe.configure({ timeout: 120_000 });
 
@@ -43,7 +44,6 @@ test.describe("hologram under reduced motion", () => {
  * canvas ÷ container = 1.000 @1440×900, 0.935 @1366×768, 0.873 @1280×720.
  */
 test.describe("hologram at a scaled viewport", () => {
-  test.use({ reducedMotion: "reduce" });
   // Software-rendered WebGL is slow to mount and CI runs specs in parallel: the
   // canvas mount (up to 30s) plus the settle poll must fit inside the test budget.
   test.describe.configure({ timeout: 120_000 });
@@ -107,7 +107,7 @@ test.describe("hologram at a scaled viewport", () => {
 /**
  * Pixel guards for the PICTURE on the card. The rest of this file proves the canvas mounts and is
  * sized; nothing above would notice if the portrait rendered as flat cyan, veiled white, or if
- * the back face were an opaque slab. Under reduced motion the scene is static (rotation 0, t = 0),
+ * the back face were an opaque slab. With the Animations toggle off the scene is static (rotation 0, t = 0),
  * so its pixels are deterministic.
  *
  * Every threshold was CALIBRATED by breaking the thing and measuring, not assumed. Canvas is
@@ -177,7 +177,6 @@ async function measure(page: Page, png: Buffer, regions: Record<string, Region>)
 
 test.describe("hologram picture", () => {
   // Static scene, with software-GL patience: each screenshot is slow.
-  test.use({ reducedMotion: "reduce" });
   test.describe.configure({ timeout: 300_000 });
 
   // ONE test with steps: every mount is slow under software WebGL, so all three guards share one page.

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Project } from "@/content/types";
+import { setMotion } from "@/lib/motion";
 import { ProjectOverlay } from "./ProjectOverlay";
 
 /**
@@ -291,23 +292,36 @@ describe("ProjectOverlay — focus trap", () => {
   });
 });
 
-describe("ProjectOverlay — reduced motion", () => {
-  it("drops the shared-layout morph when the user prefers reduced motion", () => {
-    vi.spyOn(window, "matchMedia").mockImplementation((query: string) => ({
-      matches: query.includes("prefers-reduced-motion"),
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-      dispatchEvent: vi.fn(),
-    }) as unknown as MediaQueryList);
+describe("ProjectOverlay — the Animations toggle", () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute("data-motion");
+    localStorage.clear();
+  });
 
+  it("drops the shared-layout morph when the visitor has switched animations off", () => {
+    setMotion("off");
     window.location.hash = "#/project/eiyu-system";
     render(<ProjectOverlay projects={projects} />);
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByTestId("project-overlay-thumb")).not.toHaveAttribute("data-layout-id");
+  });
+
+  it("keeps the shared-layout morph by default, even when the OS asks for reduced motion", () => {
+    // The OS setting is deliberately ignored (owner decision): the visible toggle is the only way to opt out.
+    const matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("prefers-reduced-motion"),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    vi.stubGlobal("matchMedia", matchMedia);
+
+    window.location.hash = "#/project/eiyu-system";
+    render(<ProjectOverlay projects={projects} />);
+
+    expect(screen.getByTestId("project-overlay-thumb")).toHaveAttribute("data-layout-id");
+    expect(matchMedia).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 });

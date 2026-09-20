@@ -1,10 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { resolveQualityTier, resolveSceneMode, TIER_CONFIG, type CapabilitySignals } from "./capability";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  readCapabilitySignals,
+  resolveQualityTier,
+  resolveSceneMode,
+  TIER_CONFIG,
+  type CapabilitySignals,
+} from "./capability";
 
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
     hasWebGL: true,
-    prefersReducedMotion: false,
+    motionOff: false,
     devicePixelRatio: 2,
     hardwareConcurrency: 8,
     deviceMemory: 8,
@@ -18,8 +24,8 @@ describe("resolveQualityTier", () => {
     expect(resolveQualityTier(signals({ hasWebGL: false }))).toBe("unsupported");
   });
 
-  it("returns 'unsupported' when the user prefers reduced motion", () => {
-    expect(resolveQualityTier(signals({ prefersReducedMotion: true }))).toBe(
+  it("returns 'unsupported' when the visitor has switched animations off", () => {
+    expect(resolveQualityTier(signals({ motionOff: true }))).toBe(
       "unsupported",
     );
   });
@@ -77,8 +83,8 @@ describe("TIER_CONFIG", () => {
 });
 
 describe("resolveSceneMode", () => {
-  it("renders static (not fallback) under reduced motion", () => {
-    expect(resolveSceneMode(signals({ prefersReducedMotion: true }))).toBe("static");
+  it("renders static (not fallback) when the visitor has switched animations off", () => {
+    expect(resolveSceneMode(signals({ motionOff: true }))).toBe("static");
   });
 
   it("falls back only without WebGL or a usable GPU", () => {
@@ -92,5 +98,32 @@ describe("resolveSceneMode", () => {
 
   it("is full on a capable device", () => {
     expect(resolveSceneMode(signals())).toBe("full");
+  });
+});
+
+describe("readCapabilitySignals", () => {
+  const root = document.documentElement;
+
+  afterEach(() => {
+    root.removeAttribute("data-motion");
+    vi.unstubAllGlobals();
+  });
+
+  it("reports motion as on for a fresh visitor, and off once the Animations toggle is off", () => {
+    expect(readCapabilitySignals().motionOff).toBe(false);
+    root.setAttribute("data-motion", "off");
+    expect(readCapabilitySignals().motionOff).toBe(true);
+  });
+
+  it("does not consult the OS reduced-motion setting, even when it is on", () => {
+    const matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("reduced-motion"),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    vi.stubGlobal("matchMedia", matchMedia);
+    expect(readCapabilitySignals().motionOff).toBe(false);
+    expect(matchMedia).not.toHaveBeenCalled();
   });
 });

@@ -48,7 +48,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                   data-project-row={project.id}
                   aria-haspopup="dialog"
                   onClick={() => openProject(project.id)}
-                  className="group flex w-full items-center gap-2.5 rounded-xl p-1.5 text-left transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] focus-visible:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  className="group flex w-full items-center gap-2.5 rounded-xl p-1.5 text-left transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] focus-visible:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"
                 >
                   <motion.span
                     layoutId={projectLayoutId(project.id)}

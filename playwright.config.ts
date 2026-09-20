@@ -20,6 +20,21 @@ function portForThisWorkingDirectory(): number {
 }
 
 const PORT = portForThisWorkingDirectory();
+const ORIGIN = `http://localhost:${PORT}`;
+
+/**
+ * The suite runs with the site's own Animations toggle switched OFF (`localStorage["mclector-motion"] = "off"`).
+ * That freezes AMBIENT motion (keyframes, the falling-code canvas, parallax, the hologram spin), which is what
+ * keeps the visual baselines and the hologram picture guards deterministic. It used to be done with Playwright's
+ * `reducedMotion: "reduce"`, but the site no longer reads the OS setting (owner decision), so that lever is gone.
+ *
+ * It never affects hover: hover and focus transitions are locked on in both states of the toggle. A spec that
+ * needs the real, animated site opts out with `test.use({ storageState: ANIMATIONS_ON })` (see e2e/hover.spec.ts).
+ */
+const ANIMATIONS_OFF = {
+  cookies: [],
+  origins: [{ origin: ORIGIN, localStorage: [{ name: "mclector-motion", value: "off" }] }],
+};
 
 export default defineConfig({
   testDir: "./e2e",
@@ -29,22 +44,22 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { open: "never" }]],
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: ORIGIN,
     trace: "on-first-retry",
+    storageState: ANIMATIONS_OFF,
     // Run with 3D APIs DISABLED, so the hologram cell settles on the static
     // fallback card. Under headless swiftshader the live WebGL scene is
     // software-rendered and never settles: it pins a CPU core and starves axe,
     // keyboard-interaction and exit-animation assertions into flaky timeouts.
     // The WebGL path has its own project below (hologram.spec.ts), and the
     // visual baselines mask the hologram cell either way.
-    reducedMotion: "reduce",
     launchOptions: { args: ["--disable-3d-apis"] },
   },
   projects: [
     { name: "chromium", testIgnore: /hologram.spec.ts/, use: { ...devices["Desktop Chrome"] } },
     { name: "mobile-chrome", testIgnore: /hologram.spec.ts/, use: { ...devices["Pixel 7"] } },
     {
-      // The one project with WebGL: guards the reduced-motion-still-renders-3D fix.
+      // The one project with WebGL: guards the animations-off-still-renders-3D fix.
       name: "webgl",
       testMatch: /hologram.spec.ts/,
       use: {

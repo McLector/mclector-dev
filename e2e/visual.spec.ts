@@ -11,8 +11,8 @@ import { test, expect } from "@playwright/test";
  * Animations are frozen (`animations: "disabled"`) so the galaxy drift and
  * nebula animations in src/styles/index.css cannot shift the baseline.
  *
- * DETERMINISM: the suite runs with 3D APIs disabled and reduced motion
- * (playwright.config.ts), so the hologram cell settles on the static fallback
+ * DETERMINISM: the suite runs with 3D APIs disabled and the site's Animations toggle
+ * off (playwright.config.ts), so the hologram cell settles on the static fallback
  * card instead of a canvas that never reaches the "two identical frames"
  * stability `toHaveScreenshot` requires. It is masked anyway, so this only buys
  * a stable page, not less coverage.
@@ -48,7 +48,6 @@ async function pinTheme(page: import("@playwright/test").Page, theme: "dark" | "
 test.describe("visual baselines", () => {
   test("desktop 1440x900", async ({ page }) => {
     await pinTheme(page, "dark");
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();
@@ -62,7 +61,6 @@ test.describe("visual baselines", () => {
 
   test("desktop 1440x900 — twilight (light)", async ({ page }) => {
     await pinTheme(page, "light");
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();
@@ -76,7 +74,6 @@ test.describe("visual baselines", () => {
 
   test("mobile 390x844", async ({ page }) => {
     await pinTheme(page, "dark");
-    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.locator('[data-bento-area="certifications"]').waitFor();

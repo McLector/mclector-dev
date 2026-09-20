@@ -1,11 +1,14 @@
 import { useEffect, useRef } from "react";
+import { motionOn, subscribeMotion } from "@/lib/motion";
 import { makeAsteroids, makeRainColumns, type Asteroid, type RainColumn } from "./galaxyCanvas";
 
 /**
  * The full-bleed galaxy behind the portfolio: CSS sky + nebula + twinkling
  * star layers (in index.css), plus a 2D canvas of drifting asteroids, an
  * occasional comet, and a faint binary data-rain — and mouse parallax on the
- * star layers. All motion is frozen under `prefers-reduced-motion`.
+ * star layers. The ambient motion here (rain, rocks, comet, parallax; the CSS star layers) follows the
+ * Animations toggle (src/lib/motion.ts). The OS reduced-motion setting is deliberately not read. The draw
+ * loop checks the setting on every frame, so switching it needs no teardown and no restart.
  */
 export function GalaxyBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,10 +18,6 @@ export function GalaxyBackdrop() {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
-
-    const reduce =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let w = 0;
@@ -58,9 +57,11 @@ export function GalaxyBackdrop() {
 
     const draw = () => {
       ctx.clearRect(0, 0, w, h);
+      // Live: a plain attribute read, so the toggle takes effect on the very next frame.
+      const animate = motionOn();
 
       // data rain (stable glyph per cell → no flicker)
-      if (!reduce) {
+      if (animate) {
         ctx.font = "12px 'Space Mono', monospace";
         ctx.textAlign = "left";
         for (let c = 0; c < cols.length; c++) {
@@ -85,7 +86,7 @@ export function GalaxyBackdrop() {
 
       // asteroids
       for (const r of rocks) {
-        if (!reduce) {
+        if (animate) {
           r.x += r.vx;
           r.y += r.vy;
           r.rot += r.vr;
@@ -112,7 +113,7 @@ export function GalaxyBackdrop() {
       }
 
       // comet
-      if (!reduce) {
+      if (animate) {
         ct++;
         if (!comet && ct > 150 && Math.random() < 0.012) {
           comet = { x: -60, y: Math.random() * h * 0.55, vx: 6 + Math.random() * 4, vy: 1.6 + Math.random() * 1.8 };
@@ -146,14 +147,19 @@ export function GalaxyBackdrop() {
 
     // parallax
     const onMove = (e: PointerEvent) => {
-      if (reduce || !parallaxRef.current) return;
+      if (!motionOn() || !parallaxRef.current) return;
       const nx = e.clientX / window.innerWidth - 0.5;
       const ny = e.clientY / window.innerHeight - 0.5;
       parallaxRef.current.style.transform = `translate(${-nx * 16}px, ${-ny * 12}px)`;
     };
     window.addEventListener("pointermove", onMove);
+    // Switching off must not leave the star layers stranded at their last parallax offset.
+    const offMotion = subscribeMotion((next) => {
+      if (next === "off" && parallaxRef.current) parallaxRef.current.style.transform = "";
+    });
 
     return () => {
+      offMotion();
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", size);
       window.removeEventListener("pointermove", onMove);

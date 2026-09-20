@@ -5,11 +5,14 @@
  * the consuming hook/component, not here.
  */
 
+import { getMotion } from "./motion";
+
 export type QualityTier = "unsupported" | "low" | "medium" | "high";
 
 export type CapabilitySignals = {
   hasWebGL: boolean;
-  prefersReducedMotion: boolean;
+  /** The visitor switched the Animations toggle off. The OS reduced-motion setting is deliberately NOT read (see motion.ts). */
+  motionOff: boolean;
   devicePixelRatio: number;
   hardwareConcurrency: number;
   /** navigator.deviceMemory is non-standard and often undefined (e.g. Safari, Firefox). */
@@ -36,7 +39,7 @@ export const TIER_CONFIG: Record<Exclude<QualityTier, "unsupported">, TierConfig
 
 export function resolveQualityTier(signals: CapabilitySignals): QualityTier {
   if (!signals.hasWebGL) return "unsupported";
-  if (signals.prefersReducedMotion) return "unsupported";
+  if (signals.motionOff) return "unsupported";
   if (signals.gpuTier <= 0) return "unsupported";
 
   const memory = signals.deviceMemory ?? 4; // unknown → assume modest, not generous
@@ -61,13 +64,10 @@ export function readCapabilitySignals(): CapabilitySignals {
     }
   })();
 
-  const prefersReducedMotion =
-    typeof window.matchMedia === "function" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
   return {
     hasWebGL,
-    prefersReducedMotion,
+    // The Animations toggle, not the OS setting: ambient motion runs by default for every visitor.
+    motionOff: getMotion() === "off",
     devicePixelRatio: window.devicePixelRatio || 1,
     hardwareConcurrency: navigator.hardwareConcurrency || 4,
     deviceMemory: (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
@@ -80,8 +80,8 @@ export function readCapabilitySignals(): CapabilitySignals {
 
 /**
  * The scene render decision, decoupled from motion. Unlike `resolveQualityTier`
- * (which folds reduced-motion into "unsupported"), this renders the 3D object
- * for anyone with a working GPU — reduced-motion (or a low-end device) only
+ * (which folds "animations off" into "unsupported"), this renders the 3D object
+ * for anyone with a working GPU — the Animations toggle being off (or a low-end device) only
  * downgrades it to `static` (rendered but no autonomous animation), never to
  * the flat 2D fallback. Only a missing WebGL context or an unusable GPU
  * (`gpuTier <= 0`) yields `fallback`.
@@ -102,7 +102,7 @@ export function resolveHardwareTier(
 export function resolveSceneMode(signals: CapabilitySignals): SceneMode {
   if (!signals.hasWebGL) return "fallback";
   if (signals.gpuTier <= 0) return "fallback";
-  if (signals.prefersReducedMotion) return "static";
+  if (signals.motionOff) return "static";
   if (resolveHardwareTier(signals) === "low") return "static";
   return "full";
 }

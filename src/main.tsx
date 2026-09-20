@@ -8,6 +8,13 @@ import "@fontsource-variable/sora";
 import "@fontsource/space-mono/latin-400.css";
 import "@fontsource/space-mono/latin-700.css";
 import "./styles/index.css";
+import { initMotion } from "./lib/motion";
+import { installInputMode } from "./lib/inputMode";
+
+// The inline boot script in index.html normally sets both attributes before first paint; these make sure they
+// exist (and, for the input mode, keep following the visitor's real input) even if it did not run.
+initMotion();
+installInputMode(document.documentElement, window);
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

@@ -78,7 +78,7 @@ function CertificationRow({ cert }: { cert: Certification }) {
           rel="noopener noreferrer"
           className={cn(
             rowClass,
-            "transition-[colors,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:ring-[var(--glass-highlight)] active:scale-[0.98]",
+            "transition-[color,background-color,box-shadow,transform] duration-200 hover:bg-[color-mix(in_oklab,var(--color-text-primary)_8%,transparent)] hover:ring-[var(--glass-highlight)] active:scale-[0.98]",
           )}
         >
           {inner}

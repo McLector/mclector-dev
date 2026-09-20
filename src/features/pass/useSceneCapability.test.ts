@@ -1,12 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, renderHook } from "@testing-library/react";
 import type { CapabilitySignals } from "@/lib/capability";
+import { setMotion } from "@/lib/motion";
 import { fallbackReason, useSceneCapability } from "./useSceneCapability";
 
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
     hasWebGL: true,
-    prefersReducedMotion: false,
+    motionOff: false,
     devicePixelRatio: 2,
     hardwareConcurrency: 8,
     deviceMemory: 8,
@@ -28,43 +29,27 @@ describe("fallbackReason", () => {
     expect(fallbackReason(signals({ gpuTier: 0 }))).toBe("low-tier");
   });
 
-  it("does NOT fall back merely for reduced motion (renders static instead)", () => {
-    expect(fallbackReason(signals({ prefersReducedMotion: true }))).toBeNull();
+  it("does NOT fall back merely because animations are off (renders static instead)", () => {
+    expect(fallbackReason(signals({ motionOff: true }))).toBeNull();
   });
 });
 
 describe("useSceneCapability", () => {
-  const listeners: Array<(e: { matches: boolean }) => void> = [];
-
   afterEach(() => {
-    listeners.length = 0;
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    document.documentElement.removeAttribute("data-motion");
+    localStorage.clear();
   });
 
-  function stubEnvironment(options: { webgl: boolean; reducedMotion: boolean }) {
+  function stubWebGL(webgl: boolean) {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(
-      () => (options.webgl ? ({} as RenderingContext) : null) as never,
+      () => (webgl ? ({} as RenderingContext) : null) as never,
     );
-    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-      matches: query.includes("reduced-motion") ? options.reducedMotion : false,
-      media: query,
-      onchange: null,
-      addListener: vi.fn(),
-      removeListener: vi.fn(),
-      addEventListener: vi.fn((_: string, cb: (e: { matches: boolean }) => void) => {
-        listeners.push(cb);
-      }),
-      removeEventListener: vi.fn((_: string, cb: (e: { matches: boolean }) => void) => {
-        const index = listeners.indexOf(cb);
-        if (index >= 0) listeners.splice(index, 1);
-      }),
-      dispatchEvent: vi.fn(),
-    })) as typeof window.matchMedia;
   }
 
   it("falls back when jsdom reports no WebGL context", () => {
-    stubEnvironment({ webgl: false, reducedMotion: false });
+    stubWebGL(false);
     const { result } = renderHook(() => useSceneCapability());
     expect(result.current.mode).toBe("fallback");
     expect(result.current.reason).toBe("no-webgl");
@@ -72,7 +57,7 @@ describe("useSceneCapability", () => {
   });
 
   it("renders full animated 3D on a capable device with WebGL", () => {
-    stubEnvironment({ webgl: true, reducedMotion: false });
+    stubWebGL(true);
     const { result } = renderHook(() => useSceneCapability());
     expect(result.current.mode).toBe("full");
     expect(result.current.animated).toBe(true);
@@ -80,8 +65,9 @@ describe("useSceneCapability", () => {
     expect(result.current.config?.maxDpr).toBeGreaterThan(0);
   });
 
-  it("renders STATIC 3D (not the 2D fallback) under prefers-reduced-motion", () => {
-    stubEnvironment({ webgl: true, reducedMotion: true });
+  it("renders STATIC 3D (not the 2D fallback) when the visitor has switched animations off", () => {
+    stubWebGL(true);
+    setMotion("off");
     const { result } = renderHook(() => useSceneCapability());
     expect(result.current.mode).toBe("static");
     expect(result.current.animated).toBe(false);
@@ -89,28 +75,37 @@ describe("useSceneCapability", () => {
     expect(result.current.reason).toBeNull();
   });
 
-  it("re-resolves between full and static when reduced-motion changes at runtime", () => {
-    stubEnvironment({ webgl: true, reducedMotion: false });
+  it("re-resolves between full and static when the toggle changes at runtime — live, no reload", () => {
+    stubWebGL(true);
     const { result } = renderHook(() => useSceneCapability());
     expect(result.current.mode).toBe("full");
 
-    act(() => {
-      for (const listener of listeners) listener({ matches: true });
-    });
-
+    act(() => setMotion("off"));
     expect(result.current.mode).toBe("static");
+    expect(result.current.animated).toBe(false);
+
+    act(() => setMotion("on"));
+    expect(result.current.mode).toBe("full");
+    expect(result.current.animated).toBe(true);
   });
 
-  it("detaches its media listener on unmount", () => {
-    stubEnvironment({ webgl: true, reducedMotion: false });
-    const { unmount } = renderHook(() => useSceneCapability());
-    expect(listeners.length).toBeGreaterThan(0);
-    unmount();
-    expect(listeners.length).toBe(0);
+  it("ignores the OS reduced-motion setting: the hologram spins for a visitor whose OS asks for less motion", () => {
+    stubWebGL(true);
+    const matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: query.includes("reduced-motion"),
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    vi.stubGlobal("matchMedia", matchMedia);
+    const { result } = renderHook(() => useSceneCapability());
+    expect(result.current.mode).toBe("full");
+    expect(result.current.animated).toBe(true);
+    expect(matchMedia).not.toHaveBeenCalled();
   });
 
   it("caps DPR at the tier's ceiling rather than the device's raw value", () => {
-    stubEnvironment({ webgl: true, reducedMotion: false });
+    stubWebGL(true);
     const { result } = renderHook(() => useSceneCapability());
     const config = result.current.config;
     expect(config).not.toBeNull();
