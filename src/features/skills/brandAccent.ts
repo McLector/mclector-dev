@@ -13,8 +13,10 @@ import { contrastRatio } from "@/lib/contrast";
 const ARC = "var(--arc)";
 const MIN_CONTRAST = 3;
 
-// Approximate sRGB of the skill tile ground (glass card + 7% ink wash) per theme.
-const TILE_GROUND = { dark: "#1b2036", light: "#e4e8f6" } as const;
+// sRGB of the skill tile ground per theme. Light is MEASURED from the rendered steel tile (the median of 12 tiles, all
+// identical: #e2effe); dark is the original estimate. Re-measure if the light tokens (--tile-bg, --glass-bg, the
+// steel sky/panel) change: a few brand colours sit right at the 3:1 line and flip with it.
+const TILE_GROUND = { dark: "#1b2036", light: "#e2effe" } as const;
 
 export type BrandAccents = { dark: string; light: string };
 

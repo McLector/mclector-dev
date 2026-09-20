@@ -103,35 +103,50 @@
     --cv-bg: color-mix(in oklab, var(--color-text-primary) 10%, transparent);
     --cv-fg: var(--color-text-primary);
     --cv-dis: 0.42;
+
+    /* Nebula clouds (the galaxy glow behind everything). The dark theme keeps the full accent sweep; the light
+       theme re-tints them into one blue family so the purple and magenta clouds stop pulling the sky violet. */
+    --neb-a: var(--color-accent-cyan);
+    --neb-b: var(--color-accent-blue);
+    --neb-c: var(--color-accent-purple);
+    --neb-d: var(--color-accent-magenta);
   }
 
-  /* Twilight — a "deepened" dusk with a real value ladder: a saturated mid-tone
-     sky, a deeper indigo window, and bright cards floating off it. Values are
-     the approved mockup's (docs/reference/2026-09-19-revamp-mockup.html). Contrast
-     is enforced by contrast.test.ts against the hand-synced table in contrast.ts. */
+  /* Steel — one cool-blue hue family (hue ~250) at low chroma, so the sky, the window glass, the cards, the text and
+     the nebula all read as one place instead of three unrelated colour families. The arc blue is the only saturated
+     colour, and the hologram bay is a deep blue of the SAME hue, so it reads as part of the page rather than a
+     hole in it. Values are the approved round-3b mockup's `steel` preset, ported verbatim from its generator
+     (docs/reference/2026-09-20-revamp-round-3b-mockup.html, "Resolved tokens"). Contrast is enforced by
+     contrast.test.ts against the hand-synced table in contrast.ts. */
   :root[data-theme="light"] {
-    --sky-top: #6f80d3;
-    --sky-mid: #9887d8;
-    --sky-bottom: #dcc3e8;
+    --sky-top: oklch(0.69 0.098 250);
+    --sky-mid: oklch(0.76 0.062 246);
+    --sky-bottom: oklch(0.84 0.026 242);
     --star-color: rgba(255, 255, 255, 0.92);
     --star-opacity: 0.6;
     --nebula-strength: 0.6;
-    --grid-color: rgba(255, 255, 255, 0.1);
+    --grid-color: rgba(255, 255, 255, 0.16);
 
-    --color-surface: oklch(0.96 0.01 265);
-    --color-surface-raised: oklch(0.99 0.005 265);
-    --color-text-primary: oklch(0.22 0.035 272);
-    --color-text-secondary: oklch(0.35 0.035 272);
-    --color-text-muted: oklch(0.44 0.035 272);
+    /* Nebula clouds: one blue family (dark theme keeps its purple and magenta). */
+    --neb-a: oklch(0.8 0.09 220);
+    --neb-b: oklch(0.72 0.12 250);
+    --neb-c: oklch(0.68 0.092 258.2);
+    --neb-d: oklch(0.72 0.084 265.2);
 
-    --glass-bg: rgba(255, 255, 255, 0.9);
-    --glass-border: rgba(48, 52, 120, 0.2);
+    --color-surface: oklch(0.96 0.01 250);
+    --color-surface-raised: oklch(0.99 0.005 250);
+    --color-text-primary: oklch(0.21 0.04 262);
+    --color-text-secondary: oklch(0.34 0.04 262);
+    --color-text-muted: oklch(0.43 0.04 262);
+
+    --glass-bg: rgba(255, 255, 255, 0.88);
+    --glass-border: oklch(0.4 0.08 250 / 0.2);
     --glass-highlight: rgba(255, 255, 255, 0.95);
-    --glass-shadow: 0 22px 46px -22px rgba(32, 30, 105, 0.62);
+    --glass-shadow: 0 22px 46px -22px oklch(0.28 0.1 250 / 0.5);
 
-    --panel: rgba(44, 48, 128, 0.34);
-    --panel-edge: rgba(255, 255, 255, 0.42);
-    --window-shadow: 0 40px 110px -28px rgba(28, 26, 96, 0.6);
+    --panel: oklch(0.42 0.1 250 / 0.338);
+    --panel-edge: rgba(255, 255, 255, 0.5);
+    --window-shadow: 0 40px 110px -28px oklch(0.28 0.1 250 / 0.5);
     --arc: #1a86f5;
     --arc-soft: rgba(94, 200, 255, 0.9);
     --rain: rgba(226, 238, 255, 0.55);
@@ -141,22 +156,22 @@
     --card-accent: 0.85;
     --tile-bg: color-mix(in oklab, var(--arc) 12%, rgba(255, 255, 255, 0.72));
     --tile-ring: color-mix(in oklab, var(--arc) 34%, transparent);
-    --btn-bg: oklch(0.22 0.035 272);
+    --btn-bg: oklch(0.21 0.04 262);
     --btn-ink: #f4f6ff;
-    /* A hologram is light-emitting, so its stage stays a deep navy bay in this
-       theme — additive cyan washes out on a pale surface. */
+    /* A hologram is light-emitting, so its stage stays a deep bay in this theme — additive cyan washes out on a
+       pale surface — but a bay of the page's own hue, not a separate navy. */
     --stage-bg:
       radial-gradient(60% 42% at 50% 30%, rgba(94, 200, 255, 0.2), transparent 70%),
       radial-gradient(70% 55% at 50% 88%, rgba(60, 140, 255, 0.34), transparent 74%),
-      linear-gradient(180deg, #0c1c50, #070f34);
+      linear-gradient(180deg, oklch(0.25 0.09 250), oklch(0.17 0.08 250));
     --stage-edge: rgba(255, 255, 255, 0.14);
-    --stage-caption: #b8c8f0;
+    --stage-caption: oklch(0.82 0.05 250);
     --cv-bg: rgba(255, 255, 255, 0.82);
-    --cv-fg: oklch(0.22 0.035 272);
+    --cv-fg: oklch(0.21 0.04 262);
     --cv-dis: 0.66;
 
-    /* A dusk-tinted scrim: black over a lilac sky reads as a hole, not a dim. */
-    --scrim: oklch(0.25 0.05 272 / 0.5);
+    /* A steel-tinted scrim: black over a blue sky reads as a hole, not a dim. */
+    --scrim: oklch(0.25 0.05 250 / 0.45);
   }
 
   html,
@@ -348,10 +363,10 @@
     position: absolute;
     inset: -10%;
     background-image:
-      radial-gradient(38% 30% at 50% 32%, color-mix(in oklab, var(--color-accent-cyan) 55%, transparent) 0%, transparent 70%),
-      radial-gradient(46% 40% at 30% 24%, color-mix(in oklab, var(--color-accent-blue) 45%, transparent) 0%, transparent 72%),
-      radial-gradient(42% 40% at 72% 40%, color-mix(in oklab, var(--color-accent-purple) 42%, transparent) 0%, transparent 72%),
-      radial-gradient(50% 45% at 82% 88%, color-mix(in oklab, var(--color-accent-magenta) 32%, transparent) 0%, transparent 72%);
+      radial-gradient(38% 30% at 50% 32%, color-mix(in oklab, var(--neb-a) 55%, transparent) 0%, transparent 70%),
+      radial-gradient(46% 40% at 30% 24%, color-mix(in oklab, var(--neb-b) 45%, transparent) 0%, transparent 72%),
+      radial-gradient(42% 40% at 72% 40%, color-mix(in oklab, var(--neb-c) 42%, transparent) 0%, transparent 72%),
+      radial-gradient(50% 45% at 82% 88%, color-mix(in oklab, var(--neb-d) 32%, transparent) 0%, transparent 72%);
     opacity: var(--nebula-strength);
     animation: nebula-breathe 16s ease-in-out infinite;
   }
@@ -365,7 +380,7 @@
     opacity: calc(1 - (0.7 * (1 - var(--nebula-strength))));
   }
   :root[data-theme="light"] .galaxy::after {
-    background: radial-gradient(130% 120% at 50% 40%, transparent 50%, rgba(40, 34, 110, 0.32) 100%);
+    background: radial-gradient(130% 120% at 50% 40%, transparent 50%, oklch(0.3 0.08 250 / 0.22) 100%);
   }
 
   /* Two twinkling star fields, hand-placed as tiled radial-gradient dots. */

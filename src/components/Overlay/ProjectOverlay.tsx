@@ -130,7 +130,7 @@ export function ProjectOverlay({ projects }: { projects: Project[] }) {
             animate={animationsOff ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={animationsOff ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.99 }}
             transition={{ duration: animationsOff ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-[var(--radius-card)] bg-[color-mix(in_oklab,var(--color-surface-raised)_96%,transparent)] p-6 ring-1 ring-[var(--glass-border)] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)] light:shadow-[0_40px_120px_-30px_rgb(40_45_80/0.45)] backdrop-blur-xl sm:p-8"
+            className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-y-auto rounded-[var(--radius-card)] bg-[color-mix(in_oklab,var(--color-surface-raised)_96%,transparent)] p-6 ring-1 ring-[var(--glass-border)] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)] light:shadow-[0_40px_120px_-30px_rgb(24_44_86/0.45)] backdrop-blur-xl sm:p-8"
           >
             <button
               type="button"

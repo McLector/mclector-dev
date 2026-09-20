@@ -117,6 +117,20 @@ describe("LocationCard", () => {
     });
   });
 
+  describe("light theme (steel)", () => {
+    it("fades the dark map texture almost out, so it does not read as a grey smudge on the cool-white card", () => {
+      render(<LocationCard location={fixture()} />);
+      const map = screen.getByTestId("map-placeholder");
+      expect(map).toHaveClass("opacity-60", "light:opacity-[0.035]");
+      expect(map.className).not.toContain("light:opacity-[0.1]");
+    });
+
+    it("dims the accent wash a little in light", () => {
+      render(<LocationCard location={fixture()} />);
+      expect(screen.getByTestId("location-wash")).toHaveClass("opacity-70", "light:opacity-[0.55]");
+    });
+  });
+
   describe("mapTexture placeholder", () => {
     it("renders no <img> at all when mapTexture.src is undefined (the v1 state)", () => {
       const { container } = render(<LocationCard location={fixture()} />);

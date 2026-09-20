@@ -42,7 +42,7 @@ export function LocationCard({ location }: LocationCardProps) {
       <div
         aria-hidden="true"
         data-testid="map-placeholder"
-        className="pointer-events-none absolute inset-0 opacity-60 light:opacity-[0.1]"
+        className="pointer-events-none absolute inset-0 opacity-60 light:opacity-[0.035]"
         style={mapPlaceholderStyle(location.mapTexture)}
       />
       {/* A faint accent wash so the clock reads as "alive", not a flat panel.
@@ -50,7 +50,7 @@ export function LocationCard({ location }: LocationCardProps) {
       <div
         aria-hidden="true"
         data-testid="location-wash"
-        className="pointer-events-none absolute inset-0 opacity-70"
+        className="pointer-events-none absolute inset-0 opacity-70 light:opacity-[0.55]"
         style={{
           backgroundImage:
             "radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-accent-cyan) 26%, transparent) 0%, transparent 60%)",

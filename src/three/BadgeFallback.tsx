@@ -109,7 +109,7 @@ export function BadgeFallback({
         ) : null}
       </div>
 
-      <p className="font-mono text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase light:text-[#b8c4e6]">
+      <p className="font-mono text-[0.625rem] tracking-[0.18em] text-[var(--color-text-muted)] uppercase light:text-[var(--stage-caption)]">
         {badge.caption}
       </p>
     </div>

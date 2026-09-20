@@ -58,21 +58,24 @@ export function contrastRatio(colorA: string, colorB: string): number {
 const CARD_BG_WORST_CASE = "#3e2335"; // dark glass over a bright magenta nebula stop
 const CHIP_BG_WORST_CASE = "#4d3545"; // white/8 over CARD_BG_WORST_CASE
 
-// LIGHT theme (twilight) worst case: white/90 glass over the indigo window panel
-// (rgba(44,48,128,.34)) over the DARKEST sky stop (#6f80d3, the top of the
-// gradient) — the dimmest ground dark text must still read against.
-const LIGHT_CARD_BG_WORST_CASE = "#eef0f8";
+// LIGHT theme (steel) worst case: white/88 glass over the steel window panel
+// (oklch(.42 .10 250 / .338)) over the DARKEST sky stop (--sky-top, oklch(.69 .098 250), the top of the
+// gradient) — the dimmest ground dark text must still read against. Composited in sRGB, the way a
+// browser blends translucent layers.
+const LIGHT_CARD_BG_WORST_CASE = "#eaf0f7";
 // ink/8% over LIGHT_CARD_BG_WORST_CASE — the themed chip surface.
-const LIGHT_CHIP_BG_WORST_CASE = "#dddfe8";
+const LIGHT_CHIP_BG_WORST_CASE = "#d8dfe6";
 
-// The "Open to" accent band (IntroCard). Composited in sRGB, the way a browser blends
-// translucent layers: band = arc 13% over the worst-case card; chip = arc 10% over that band.
-// dark  arc #5ec8ff over #3e2335 → band #42384f → chip #454761
-// light arc #1a86f5 over #eef0f8 → band #d2e2f8 → chip #c0d9f7
-const DARK_OPEN_BAND = "#42384f";
-const DARK_OPEN_CHIP = "#454761";
-const LIGHT_OPEN_BAND = "#d2e2f8";
-const LIGHT_OPEN_CHIP = "#c0d9f7";
+// The "Open to" accent band (IntroCard, the approved polished "refined band"). Composited in sRGB, the way a
+// browser blends translucent layers. The band is a vertical gradient from arc 17% (top) to arc 11% (bottom); the
+// STRONGEST tint is the worst case for text on it (light text on the lightest dark-theme fill, dark text on the
+// darkest light-theme fill), so the pairs below use 17%. The chip is arc 15% over that band, with no ring.
+// dark  arc #5ec8ff over #3e2335 → band #433f57 → chip #475470
+// light arc #1a86f5 over #eaf0f7 → band #c7def6 → chip #add1f6
+const DARK_OPEN_BAND = "#433f57";
+const DARK_OPEN_CHIP = "#475470";
+const LIGHT_OPEN_BAND = "#c7def6";
+const LIGHT_OPEN_CHIP = "#add1f6";
 
 export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
   // --- Dark theme (default) ---
@@ -111,65 +114,65 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
   // "Open to" accent band — chip text is text-primary; the label is the oklab mix
   // color-mix(in oklab, text-primary 45%, arc 55%) of #f4f5f8 and #5ec8ff.
   {
-    name: "dark: Open to chip text (ink) on the arc/10 chip",
+    name: "dark: Open to chip text (ink) on the arc/15 chip",
     foreground: "#f4f5f8",
     background: DARK_OPEN_CHIP,
     minimumRatio: 4.5,
   },
   {
-    name: "dark: Open to label (ink/arc mix) on the arc/13 band",
+    name: "dark: Open to label (ink/arc mix) on the arc/17 band",
     foreground: "#a8ddfd",
     background: DARK_OPEN_BAND,
     minimumRatio: 4.5,
   },
-  // --- Light theme (twilight) ---
+  // --- Light theme (steel) ---
   {
     name: "light: text-primary on card",
-    foreground: "#15192b",
+    foreground: "#0e182b",
     background: LIGHT_CARD_BG_WORST_CASE,
     minimumRatio: 7,
   },
   {
     name: "light: text-secondary on card",
-    foreground: "#343a4d",
+    foreground: "#2d384d",
     background: LIGHT_CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
   {
     name: "light: text-muted on card",
-    foreground: "#4c5266",
+    foreground: "#445066",
     background: LIGHT_CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
-  // Oklab mix of ink #15192b (62%) and the light arc #1a86f5 (38%).
+  // Oklab mix of ink #0e182b (62%) and the light arc #1a86f5 (38%).
   {
     name: "light: eyebrow (ink/arc mix) on card",
-    foreground: "#174278",
+    foreground: "#183f71",
     background: LIGHT_CARD_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
   {
     name: "light: Currently Active (green-ink) on its green/15 pill",
     foreground: "#0b6b46",
-    background: "#cde3e2",
+    background: "#c9e3e0",
     minimumRatio: 4.5,
   },
   {
     name: "light: chip text (text-secondary) on ink/8 chip",
-    foreground: "#343a4d",
+    foreground: "#2d384d",
     background: LIGHT_CHIP_BG_WORST_CASE,
     minimumRatio: 4.5,
   },
-  // "Open to" accent band — the label is the oklab mix of ink #15192b (45%) and arc #1a86f5 (55%).
+  // "Open to" accent band — the label is the oklab mix of ink #0e182b (45%) and arc #1a86f5 (55%).
   {
-    name: "light: Open to chip text (ink) on the arc/10 chip",
-    foreground: "#15192b",
+    name: "light: Open to chip text (ink) on the arc/15 chip",
+    foreground: "#0e182b",
     background: LIGHT_OPEN_CHIP,
     minimumRatio: 4.5,
   },
   {
-    name: "light: Open to label (ink/arc mix) on the arc/13 band",
-    foreground: "#215293",
+    name: "light: Open to label (ink/arc mix) on the arc/17 band",
+    foreground: "#1b5193",
     background: LIGHT_OPEN_BAND,
     minimumRatio: 4.5,
   },
