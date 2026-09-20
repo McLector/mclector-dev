@@ -41,7 +41,7 @@ The two round toggles were `position: fixed; top-4 right-4`. On desktop the scal
 - **`src/layout/AppFrame.tsx`** (mobile branch): safe-area padding on top and sides; `5rem` plus the bottom inset below, so the last card scrolls clear of the dock.
 - **`index.html`**: `viewport-fit=cover` (without it every `env(safe-area-inset-*)` is `0px`); the boot script now also sets `theme-color`, so the status bar is right on first paint.
 - **`src/layout/bento.css`**: mobile hologram stage `clamp(400px, 66vh, 660px)` → `clamp(300px, 48svh, 460px)`. `vh` is the large viewport on a phone, and two-thirds of the screen for one decorative element pushed every real card below the fold.
-- **`ProjectOverlay.tsx`**: bottom padding clears the home indicator; `overscroll-contain` on its scroller and on the skills, projects and certifications scrollers.
+- **`ProjectOverlay.tsx`**: bottom padding clears the home indicator; `overscroll-contain` on its scroller (a modal that really scrolls over a scroll-locked page, which is what that class is for). The same class was first also added to the skills, projects and certifications lists, and that broke touch scrolling on them: see §11.
 
 ## 6. Findings worth keeping
 
@@ -54,6 +54,7 @@ The two round toggles were `position: fixed; top-4 right-4`. On desktop the scal
 7. **I missed a test I should have read.** `animations.spec.ts` runs on the `mobile-chrome` project and pinned the toggles as a *vertical* stack, which the owner's row decision necessarily contradicts. I had grepped the toggle test-ids but not read that test; the full run caught it. Lesson: read every hit, not the ones that look relevant. It now branches by layout. Note its `desktopOnly()` helper reads **inverted** (true when the project is *not* desktop).
 8. **A `git stash` baseline separates flake from regression cheaply.** Used for the webgl failures in §7.
 9. **`reuseExistingServer` is a stale-`dist` trap.** Playwright's port is derived from the working directory (`4888` here). Anything already listening on it would be reused and the rebuild skipped. Checked before each run; the listener seen on 5040 was an unrelated `svchost`.
+10. **`overscroll-behavior: contain` belongs only on a container that actually scrolls.** MDN: a scroll container with no scrollable overflow is always at its scroll boundary, so `contain` on it stops a swipe chaining to the page. In the mobile stack the skills and projects lists never overflow, so a finger on either card could not scroll the page. This shipped, was reported by the owner from the live site, and is fixed and guarded (§11).
 
 ## 7. Testing & verification
 
@@ -62,7 +63,7 @@ TDD: each test was watched **fail for the right reason** before the change.
 - **Red phase:** the unit test failed on the missing class; the e2e specs went **7 failed / 27 passed**, including `theme toggle covers intro` → `Received: true`, which is the reported bug reproduced as a failing assertion. The `rem` test and the dark-theme boot cases passed on the old code by design (they pin behaviour that must survive).
 - **Final tree:** `typecheck` clean, `lint` clean, **unit 556 / 46 files** (same count as session 009: one test rewritten, none added).
 - **e2e, all three projects: 172 passed, 49 skipped, 1 failed** (222 runs; session 009 had 200, and the +22 are the new specs).
-- **The one failure is a webgl canvas-size test** (`hologram.spec.ts`, "the canvas fills its container at 1440x900"). It is flaky on the code from before this session: the webgl project run twice on stashed, pristine code failed that same test in 1 of 12 runs. On this branch the webgl project failed 1 of 6, 2 of 6 and 1 of 6 across three runs, with the failing test varying (1366×768, 1440×900, "centred"). That is **not a controlled comparison**, so this session cannot claim the flake rate is unchanged, only that the test is not a regression it introduced. The predicates are timing-based under software GL.
+- **The one failure is a webgl canvas-size test** (`hologram.spec.ts`, "the canvas fills its container at 1440x900"). It is flaky on the code from before this session: the webgl project run twice on stashed, pristine code failed that same test in 1 of 12 runs. On this branch the webgl project failed 1 of 6, 2 of 6 and 1 of 6 across three runs, with the failing test varying (1366×768, 1440×900, "centred"). That was **not a controlled comparison**; a proper interleaved A/B was run later and is in §11 (no regression: the pre-branch code fails as often). The predicates are timing-based under software GL.
 - **Desktop unchanged:** both desktop baselines passed without being regenerated.
 - **New guards:** `responsive.spec.ts` (dock geometry on desktop and mobile, the reported overlap, the `rem` scaling), `compiled-css.spec.ts` (tap-highlight, `touch-action`, safe-area insets, `viewport-fit=cover`, no zoom disabling, no blanket `user-select: none`), `boot.spec.ts` (`theme-color` before React runs, expected values read from `THEME_COLOR` so the inline script cannot drift), `App.test.tsx`.
 
@@ -80,14 +81,14 @@ Verified after the push, so no longer open: the live site is the new build (see 
 
 - **The dock floats over the hologram and the lists mid-scroll.** By design (finding 4).
 - **Wide phones and small tablets in landscape still see an overlap.** At 861px and up the desktop layout applies, and the dock's desktop position is unchanged. By arithmetic (not measured), at 1024×768 the window spans x 24–1000 and y 71–697 while the Animations toggle sits at x 964–1004, y 68–108, so it clips the window's top-right corner. This predates this session (009 noted the theme toggle already overlapped the corner) and was left alone because desktop was to stay exactly as approved.
-- **The webgl canvas-size flake** (§7).
+- **The webgl canvas-size flake** (§7, measured in §11): load-sensitive on this 4-core machine, present before this branch, not a regression.
 - **The Download CV label stays selectable** once a PDF exists, because it is an `<a>`; the price of keeping the sign's email copyable.
 - **No root `overscroll-behavior`, no `interactive-widget`.** Deliberate: mobile is a real scrolling document where pull-to-refresh is expected, and the page has no text inputs.
 - Carried over from 009: the 16px favicon; real URLs for X / Instagram / TikTok / Upwork and a CV PDF; `badge.subtitle` still reading "CS Student · Mobile Dev"; the README's "lanyard badge"; Linux CI visual baselines. The four round-3 / round-3b mockup and logo-sheet files are **still untracked and deliberately not committed** (the repo is public and they embed the photos).
 
 ## 9. State at the end of this session
 
-- **Branch:** work landed on `main` by fast-forward (the code and its tests, this summary, and two small follow-up commits correcting it as the merge and the deploy were confirmed). `feat/mobile-native-pass` is deleted locally and on `origin`.
+- **Branch:** work landed on `main` by fast-forward (the code and its tests, this summary, and two small follow-up commits correcting it as the merge and the deploy were confirmed). `feat/mobile-native-pass` is deleted locally and on `origin`. A later `fix(mobile)` commit repairs the scroll regression described in §11.
 - **Cleanup done:** the local `feat/round-3-hover-motion-palette` branch from session 009 was already fully merged into `main` and was deleted. The remote `feat/dark-by-default` and `feat/round-2-hologram-polish` are also fully merged but were **left in place**: they were not created this session, and deleting a remote branch is the owner's call.
 - **Working tree:** clean apart from the four untracked mockups.
 - **Still owed by the owner:** the five phone checks in §7, now against the live site; a decision on the mockups and on the two stale remote branches.
@@ -105,3 +106,25 @@ Verified after the push, so no longer open: the live site is the new build (see 
 - **`python` is not on PATH** (the Windows Store shortcut answers instead); use the Edit tool for text changes.
 - **`gh` is not on PATH in either shell.** Repo visibility was checked through the public API (`Invoke-RestMethod https://api.github.com/repos/McLector/mclector-dev`): public.
 - Background Playwright runs: a command that ends in `echo "exit=$?"` reports the wrapper's exit code to the harness, so read the `exit=` line in the log, not the task notification.
+
+## 11. Addendum: a regression from this session, reported from the live site
+
+**Report.** After the push the owner tested on a real phone: with a finger on **Featured Projects** or **Skills & Tools** the page would not scroll; anywhere else it did.
+
+**Cause: my own change.** The mobile pass added `overscroll-contain` to the inner lists of the skills, projects and certifications cards. [MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/overscroll-behavior): *"A scroll container that has no scrollable overflow… is always considered to be at its scroll boundary. So setting a non-default `overscroll-behavior` such as `contain` or `none` on it will prevent scroll chaining to ancestor scroll containers."* On a phone those cards grow to fit their content, so the lists (`overflow-y: auto` only as a desktop safety net) never overflow, and a swipe that started on one never reached the page. On desktop the class protected nothing either: the window is fixed and the page never scrolls.
+
+**Reproduced before fixing**, with real touch events (Pixel 7 emulation) against the shipped code. Page movement per swipe: intro card 285px, **skills list 0px**, **projects list 0px**, socials card 223px. Exactly the two cards reported.
+
+**Why I missed it.** No e2e scrolled by touch. The `mobile-native` guidance ("`contain` on inner scrollables") presumes containers that really scroll, and my plan repeated it without checking that these never scroll on a phone. The mobile screenshot itself showed every skill and project unclipped.
+
+**Fix.** `overscroll-contain` removed from the three lists. The project overlay keeps it: a modal that really scrolls over a scroll-locked page.
+
+**Guards** (each watched fail on the old code first).
+- `e2e/responsive.spec.ts`: a rule, not a class name. *A non-default `overscroll-behavior-y` is only allowed on a container the user can actually scroll.* Red on the old code, naming exactly the two lists.
+- `e2e/touch-scroll.spec.ts` (mobile-chrome project): real swipes from the intro card (control), Skills and Projects. On the old code the control passed and both lists moved the page 0px. **Gotcha:** CDP `Input.synthesizeScrollGesture` with `gestureSourceType: "touch"` and `speed: 1200` scrolled nothing even on a card with no scroller, which cannot tell "swallowed" from "gesture broken"; the spec uses hand-rolled `Input.dispatchTouchEvent` and keeps the control so the two stay distinguishable.
+
+**Verification.** `typecheck` and `lint` clean; unit **556 / 46**; e2e **175 passed, 53 skipped, 2 failed** (both webgl, below). All three visual baselines passed untouched, as expected for a change with no visual effect. 222 previous runs plus 8 new is 230.
+
+**The webgl flake, measured rather than asserted.** After the fix the webgl project failed 2 of 6 and then 3 of 6 in isolation, worse than the 1 of 12 seen earlier on pre-branch code. Rather than call that flaky, an interleaved A/B (4-core machine, 12 samples per run, two runs each): the commit **before** the mobile pass (`f298836`, in a throwaway worktree) failed **3 and 2 of 12 (5 of 24, 21%)**; the current tree failed **2 and 1 of 12 (3 of 24, 12.5%)**. No regression from the mobile pass or this fix. The tests are load-sensitive (software-rendered WebGL against 15-second polling windows), and the same old code failed 1 of 12 earlier and 21% now. The worktree was removed; its `node_modules` junction was unlinked with `cmd /c rmdir` first, because a recursive delete on Windows can follow a junction into the real folder.
+
+**Still the owner's, on the phone:** a finger-drag that starts on the Skills grid scrolls the page; the same on Featured Projects, and tapping a project row still opens its overlay; the overlay still scrolls without moving the page behind it.
