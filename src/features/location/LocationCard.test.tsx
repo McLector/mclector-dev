@@ -87,6 +87,36 @@ describe("LocationCard", () => {
     expect(screen.getByTestId("location-status-dot")).toBeInTheDocument();
   });
 
+  describe("centred layout", () => {
+    it("centres the content on the card's vertical centre line", () => {
+      render(<LocationCard location={fixture()} />);
+      expect(screen.getByTestId("location-content")).toHaveClass("items-center", "text-center");
+    });
+
+    it("centres the city row (dot + name) as one unit", () => {
+      render(<LocationCard location={fixture()} />);
+      const row = screen.getByTestId("location-status-dot").parentElement;
+      expect(row).toHaveClass("justify-center");
+    });
+
+    it("pulls the eyebrow back by its trailing letter-spacing, so the VISIBLE text is what sits on the axis", () => {
+      render(<LocationCard location={fixture()} />);
+      // .eyebrow letter-spacing is 0.2em, which leaves that much empty space after the last glyph.
+      expect(screen.getByText("GMT+8 · Manila")).toHaveClass("-mr-[0.2em]");
+    });
+
+    it("aims the map layer and the accent wash at the horizontal centre, not the left/right", () => {
+      render(<LocationCard location={fixture()} />);
+      expect(screen.getByTestId("map-placeholder").style.backgroundImage).toContain("at 50% 12%");
+      expect(screen.getByTestId("location-wash").style.backgroundImage).toContain("at 50% 0%");
+    });
+
+    it("keeps the wash decorative (aria-hidden) like the map layer", () => {
+      render(<LocationCard location={fixture()} />);
+      expect(screen.getByTestId("location-wash")).toHaveAttribute("aria-hidden", "true");
+    });
+  });
+
   describe("mapTexture placeholder", () => {
     it("renders no <img> at all when mapTexture.src is undefined (the v1 state)", () => {
       const { container } = render(<LocationCard location={fixture()} />);

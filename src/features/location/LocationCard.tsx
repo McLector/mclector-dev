@@ -20,7 +20,7 @@ function mapPlaceholderStyle(
   return {
     backgroundColor: to,
     backgroundImage: [
-      `radial-gradient(120% 90% at 18% 12%, ${from} 0%, transparent 62%)`,
+      `radial-gradient(120% 90% at 50% 12%, ${from} 0%, transparent 62%)`,
       `repeating-linear-gradient(45deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 12px)`,
       `repeating-linear-gradient(-45deg, rgb(255 255 255 / 0.04) 0 1px, transparent 1px 12px)`,
       `linear-gradient(160deg, ${from} 0%, ${to} 100%)`,
@@ -45,18 +45,25 @@ export function LocationCard({ location }: LocationCardProps) {
         className="pointer-events-none absolute inset-0 opacity-60 light:opacity-[0.1]"
         style={mapPlaceholderStyle(location.mapTexture)}
       />
-      {/* A faint accent wash so the clock reads as "alive", not a flat panel. */}
+      {/* A faint accent wash so the clock reads as "alive", not a flat panel.
+          Aimed at the top CENTRE, like the map layer, because the content is centred. */}
       <div
         aria-hidden="true"
+        data-testid="location-wash"
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           backgroundImage:
-            "radial-gradient(120% 90% at 85% 0%, color-mix(in oklab, var(--color-accent-cyan) 26%, transparent) 0%, transparent 60%)",
+            "radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--color-accent-cyan) 26%, transparent) 0%, transparent 60%)",
         }}
       />
 
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-center gap-2">
+      {/* Centred on the card's vertical centre line. The card is content-sized (no `grow`), so
+          only the horizontal axis needs centring — there is no spare height to distribute. */}
+      <div
+        data-testid="location-content"
+        className="relative flex h-full flex-col items-center text-center"
+      >
+        <div className="flex items-center justify-center gap-2">
           {/* A still arc-blue dot: green + motion now belongs only to the intro
               card's "Currently Active" status. */}
           <span
@@ -74,12 +81,19 @@ export function LocationCard({ location }: LocationCardProps) {
 
         <p
           data-testid="local-clock"
-          className="mt-[7px] mb-[11.5px] text-[30px] leading-none tabular-nums text-[var(--color-text-primary)]"
+          // mb tuned by measurement against the approved round-2 mockup (card 102px tall, 13px above
+          // and below): the earlier 11.5px matched the round-1 mockup, whose eyebrow sat in a block
+          // container with a line-box strut that this flex column does not have.
+          className="mt-[7px] mb-[6.25px] text-[30px] leading-none tabular-nums text-[var(--color-text-primary)]"
           style={{ fontFamily: "var(--font-mono)", letterSpacing: "-0.02em" }}
         >
           {localTime}
         </p>
-        <Eyebrow as="p">{`${location.utcLabel} · Manila`}</Eyebrow>
+        {/* .eyebrow's 0.2em letter-spacing leaves empty space after the last glyph; pull it back so
+            the VISIBLE text (not its box) is what sits on the axis. */}
+        <Eyebrow as="p" className="-mr-[0.2em]">
+          {`${location.utcLabel} · Manila`}
+        </Eyebrow>
       </div>
     </BentoCard>
   );
