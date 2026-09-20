@@ -34,11 +34,11 @@ describe("ConnectSign", () => {
     expect(link).not.toHaveAttribute("aria-label");
   });
 
-  it("hides the decorative arrow from assistive tech", () => {
+  it("carries no decorative ornament: the nudging arrow was one of the tells that made the sign look generated", () => {
     render(<ConnectSign email={EMAIL} />);
-    const arrow = screen.getByRole("link").querySelector("[aria-hidden='true']");
-    expect(arrow).not.toBeNull();
-    expect(arrow).toHaveTextContent("→");
+    const link = screen.getByRole("link");
+    expect(link.querySelector("[aria-hidden='true']")).toBeNull();
+    expect(link).not.toHaveTextContent("→");
   });
 
   it("carries the connect bento area exactly once and is not a glass card", () => {

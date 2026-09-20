@@ -1,16 +1,23 @@
 /*
- * The neon "Let's Connect" sign — values from the approved revamp mockup
- * (docs/reference/2026-09-19-revamp-mockup.html, the .sign rules).
+ * The neon "Let's Connect" sign — the approved round-3b "clean tube" polish of the round-2 plate.
  *
- * It sits on a DARK plate in BOTH themes: neon light does not read on a pale
- * surface, so like the hologram stage this is theme-independent by design.
+ * It is still a DARK neon plate in BOTH themes: neon light does not read on a pale surface, so like the
+ * hologram stage this is theme-independent by design.
  *
- * Legibility (owner request): the email's glow is a soft halo — three layers,
- * out to 12px — over near-white text, and the only "flicker" is one faint dip
- * per 9s. Motion is frozen by the global prefers-reduced-motion rule.
+ * What the polish removed (the tells that made it look generated): the two fake mounting screws, the nudging
+ * arrow, the 9-second flicker, a five-layer glow stack, a glowing text-shadow on the address, and glowing mono
+ * type for everything. What is left is what makes it neon: a lit tube ring and one soft bloom. The address is set
+ * in the site's sans, crisp, and only the small label stays in mono.
+ *
+ * It is exactly 42px tall (`min-height`, so a phone can still wrap it onto two lines). That matters: the
+ * hologram stage takes the height the sign leaves, and the stage's canvas size feeds the camera fit.
  */
 
 .connect-sign {
+  /* The tube ring and bloom strengths; hover raises both. Kept as variables so the hover rule stays one line. */
+  --tube: 0.78;
+  --bloom: 0.5;
+
   position: relative;
   flex: 0 0 auto;
   align-self: center;
@@ -20,23 +27,21 @@
   /* On a narrow phone the one-line sign would overflow: let it wrap instead. */
   flex-wrap: wrap;
   max-width: 100%;
-  gap: 2px 14px;
-  padding: 10px 32px;
-  border-radius: 14px;
+  gap: 2px 12px;
+  box-sizing: border-box;
+  min-height: 42px;
+  padding: 6px 26px;
+  border-radius: 12px;
   text-decoration: none;
-  font-family: var(--font-mono);
   /* Match the mockup, which had no inherited 1.5 line-height. */
   line-height: normal;
-  background:
-    radial-gradient(90% 140% at 50% 0%, rgba(30, 90, 200, 0.28), transparent 70%),
-    linear-gradient(180deg, #0a1436, #050a20);
-  /* Outer hairline, the lit "tube" border, an inner glow, then the outer halo. */
+  color: #eaf6ff;
+  /* A flat plate: the round-2 radial-plus-linear gradient stack is gone. */
+  background: #08132f;
+  /* Exactly two layers: the lit tube (an inset ring) and one soft outer bloom. */
   box-shadow:
-    0 0 0 1px rgba(94, 200, 255, 0.22),
-    inset 0 0 0 1.5px rgba(94, 200, 255, 0.85),
-    inset 0 0 12px rgba(94, 200, 255, 0.35),
-    0 0 16px -2px rgba(94, 200, 255, 0.55),
-    0 10px 26px -14px rgba(20, 60, 160, 0.7);
+    inset 0 0 0 1.5px rgba(94, 200, 255, var(--tube)),
+    0 0 14px -3px rgba(94, 200, 255, var(--bloom));
   /* `translate`, not `transform`: the entrance animation on .bento__col > *
      fills `transform: none` forever and would swallow a hover transform. */
   transition:
@@ -44,91 +49,33 @@
     translate 200ms ease;
 }
 
-/* Two mounting screws at the ends of the plate. */
-.connect-sign::before,
-.connect-sign::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  margin-top: -2px;
-  border-radius: 50%;
-  background: #0d1a44;
-  box-shadow: 0 0 0 1px rgba(94, 200, 255, 0.5);
-}
-.connect-sign::before {
-  left: 8px;
-}
-.connect-sign::after {
-  right: 8px;
-}
-
 .connect-sign__label {
-  font-size: 9.5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.3em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: #8fdcff;
-  text-shadow:
-    0 0 4px rgba(94, 200, 255, 0.55),
-    0 0 9px rgba(94, 200, 255, 0.3);
-}
-
-.connect-sign__arrow {
-  display: inline-block;
-  margin-left: 0.35em;
-  letter-spacing: 0;
-  animation: connect-nudge 1.6s ease-in-out infinite;
+  color: #7fd4ff;
 }
 
 .connect-sign__email {
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: #f4fcff;
-  text-shadow:
-    0 0 1px rgba(255, 255, 255, 0.85),
-    0 0 5px rgba(94, 200, 255, 0.5),
-    0 0 12px rgba(42, 168, 255, 0.28);
-  animation: connect-flicker 9s linear infinite;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: #eaf6ff;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .connect-sign:hover {
-    translate: 0 -1px;
-    box-shadow:
-      0 0 0 1px rgba(94, 200, 255, 0.3),
-      inset 0 0 0 1.5px #b5ecff,
-      inset 0 0 16px rgba(94, 200, 255, 0.5),
-      0 0 24px 0 rgba(94, 200, 255, 0.75),
-      0 10px 26px -14px rgba(20, 60, 160, 0.7);
-  }
+/* Keyed to a real mouse (`html[data-input="mouse"]`, src/lib/inputMode.ts), not a media query. `:where()` keeps
+   the attribute check at zero specificity. Hover locked on: nothing here is ever switched off by the Animations
+   toggle. */
+:where(:root[data-input="mouse"]) .connect-sign:hover {
+  translate: 0 -1px;
+  --tube: 0.98;
+  --bloom: 0.72;
 }
 
 .connect-sign:focus-visible {
   outline: 2px solid var(--arc);
   outline-offset: 3px;
-}
-
-@keyframes connect-nudge {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(3px);
-  }
-}
-
-@keyframes connect-flicker {
-  0%,
-  41%,
-  43%,
-  100% {
-    opacity: 1;
-  }
-  42% {
-    opacity: 0.9;
-  }
 }
