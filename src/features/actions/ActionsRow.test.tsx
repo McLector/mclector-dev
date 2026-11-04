@@ -125,9 +125,26 @@ describe("ActionsRow", () => {
 
     it("uses the primary look (the mockup's live preview), not the dimmed placeholder", () => {
       render(<ActionsRow profile={availableCv} />);
-      const cls = screen.getByRole("link", { name: LABEL }).className;
+      const cls = screen.getByRole("link", { name: LABEL }).querySelector(".cv-face")?.className ?? "";
       expect(cls).toContain("--btn-bg");
       expect(cls).not.toContain("--cv-dis");
+    });
+
+    it("keeps the link still: the pill look lives on an inner face, so the hover area never moves", () => {
+      render(<ActionsRow profile={availableCv} />);
+      const link = screen.getByRole("link", { name: LABEL });
+      const face = link.querySelector(".cv-face");
+      expect(link).toHaveClass("cv-link");
+      expect(face).not.toBeNull();
+      expect(face?.textContent).toBe(LABEL);
+      // Nothing on the link itself may translate, scale or restyle on hover.
+      expect(link.className).not.toMatch(/translate|scale|hover/);
+    });
+
+    it("does not clip its card, so the hover glow can fade out instead of ending in a hard edge", () => {
+      const { container } = render(<ActionsRow profile={availableCv} />);
+      const card = container.querySelector('[data-bento-area="actions"]');
+      expect(card?.className).not.toMatch(/overflow-hidden/);
     });
 
     it("is not marked disabled", () => {

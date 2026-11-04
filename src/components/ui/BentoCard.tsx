@@ -22,6 +22,9 @@ type BentoCardProps = {
   bare?: boolean;
   /** Grow to fill remaining space in its flex column (skills, projects, pass). */
   grow?: boolean;
+  /** Clip children to the rounded edge. Defaults to true; the action row turns it off so its hover glow can fade
+   *  out instead of ending in a hard edge at the card's boundary. */
+  clip?: boolean;
   as?: "div" | "section" | "article";
 };
 
@@ -38,6 +41,7 @@ export function BentoCard({
   padded = true,
   bare,
   grow,
+  clip = true,
   as: Component = "div",
 }: BentoCardProps) {
   // The badge cell is not a solid card: it stays transparent so the galaxy's
@@ -49,7 +53,8 @@ export function BentoCard({
     <Component
       data-bento-area={area}
       className={cn(
-        "relative overflow-hidden rounded-[var(--radius-card)]",
+        "relative rounded-[var(--radius-card)]",
+        clip && "overflow-hidden",
         "transition-[background-color,box-shadow,transform] duration-300",
         grow && "min-h-0 flex-1",
         isBare

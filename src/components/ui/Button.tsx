@@ -45,7 +45,9 @@ export function buttonClasses(
     // Tailwind 4 lifts with the standalone `translate` property and presses with `scale`, not `transform`:
     // list the properties that actually change, or the lift and press snap instead of easing.
     "transition-[translate,scale,box-shadow,background-color] duration-200 ease-out",
-    variant !== "download" && "hover-fine:-translate-y-0.5 active:scale-[0.97]",
+    // downloadReady has no hover of its own: its link drives the lift and glow so the hover area never moves
+    // (see src/features/actions/actions.css).
+    (variant === "primary" || variant === "secondary") && "hover-fine:-translate-y-0.5 active:scale-[0.97]",
     // Themed: primary is the high-contrast text colour as a solid pill (near-white
     // on dark, near-black on light); secondary is a quiet glass pill. Both read
     // correctly in either theme.
@@ -56,7 +58,7 @@ export function buttonClasses(
     variant === "download" &&
       "bg-[var(--cv-bg)] text-[var(--cv-fg)] ring-1 ring-inset ring-[var(--glass-border)] disabled:opacity-[var(--cv-dis)]",
     variant === "downloadReady" &&
-      "bg-[var(--btn-bg)] text-[var(--btn-ink)] shadow-[0_8px_26px_-12px_var(--color-text-primary)] hover-fine:shadow-[0_14px_34px_-12px_var(--color-text-primary)]",
+      "bg-[var(--btn-bg)] text-[var(--btn-ink)] shadow-[0_8px_26px_-12px_var(--color-text-primary)]",
     className,
   );
 }

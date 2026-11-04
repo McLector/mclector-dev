@@ -52,11 +52,12 @@ describe("Button hover transition", () => {
     });
   }
 
-  it("downloadReady: hover lifts and grows its glow, and never dims the pill", () => {
+  it("downloadReady: owns no hover of its own (its link drives the lift and glow) and never dims the pill", () => {
+    // The CV link must not move under the cursor, so the hover lives in src/features/actions/actions.css and
+    // acts on the inner face. A hover utility here would put it back on the element the cursor is testing.
     const cls = buttonClasses("downloadReady", { size: "slim" });
-    expect(cls).toContain("hover-fine:-translate-y-0.5");
-    expect(cls).toMatch(/hover-fine:shadow-\[/);
-    expect(cls).not.toMatch(/hover(-fine)?:opacity-/);
+    expect(cls).not.toMatch(/hover(-fine)?:/);
+    expect(cls).not.toMatch(/active:scale/);
   });
 
   it("every property a hover utility changes is listed in the transition", () => {

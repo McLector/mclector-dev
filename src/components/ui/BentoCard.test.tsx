@@ -32,6 +32,24 @@ describe("BentoCard", () => {
     expect(screen.getByText("work items").parentElement?.tagName).toBe("SECTION");
   });
 
+  it("clips its content to its rounded edge by default", () => {
+    render(
+      <BentoCard area="intro">
+        <p>clipped</p>
+      </BentoCard>,
+    );
+    expect(screen.getByText("clipped").parentElement?.className).toMatch(/\boverflow-hidden\b/);
+  });
+
+  it("does not clip when clip={false}, so a glow or lift can extend past the edge", () => {
+    render(
+      <BentoCard area="actions" clip={false}>
+        <p>unclipped</p>
+      </BentoCard>,
+    );
+    expect(screen.getByText("unclipped").parentElement?.className).not.toMatch(/overflow-hidden/);
+  });
+
   it("omits padding classes when padded=false", () => {
     render(
       <BentoCard area="pass" padded={false}>

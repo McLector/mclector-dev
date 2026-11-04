@@ -52,22 +52,57 @@ test.describe("with a real mouse", () => {
 test.describe("the Download CV button", () => {
   test.beforeEach(() => test.skip(desktopOnly(), "hover is desktop-only"));
 
-  const CV = '[data-bento-area="actions"] a';
+  const CARD = '[data-bento-area="actions"]';
+  const LINK = `${CARD} a`;
+  const FACE = `${LINK} .cv-face`;
 
-  test("lifts and grows its glow on hover, animating (not snapping), and never dims", async ({ page }) => {
+  test("the face lifts and grows its glow on hover, animating (not snapping), and never dims", async ({ page }) => {
     await open(page);
     // The properties that change on hover must be the ones in the transition. Tailwind 4 lifts with `translate`,
     // so a list naming only `transform` makes the lift snap.
-    const property = await style(page, CV, "transition-property");
+    const property = await style(page, FACE, "transition-property");
     expect(property).toContain("translate");
     expect(property).toContain("box-shadow");
-    expect(allNonZero(await style(page, CV, "transition-duration"))).toBe(true);
+    expect(allNonZero(await style(page, FACE, "transition-duration"))).toBe(true);
 
-    const restShadow = await style(page, CV, "box-shadow");
-    await page.locator(CV).hover();
-    await expect.poll(() => style(page, CV, "translate")).toMatch(/-2px/);
-    await expect.poll(() => style(page, CV, "box-shadow")).not.toBe(restShadow);
-    expect(await style(page, CV, "opacity")).toBe("1");
+    const restShadow = await style(page, FACE, "box-shadow");
+    await page.locator(LINK).hover();
+    await expect.poll(() => style(page, FACE, "translate")).toMatch(/-2px/);
+    await expect.poll(() => style(page, FACE, "box-shadow")).not.toBe(restShadow);
+    expect(await style(page, FACE, "opacity")).toBe("1");
+    // The link itself never moves: that is what keeps the hover area still under the cursor.
+    expect(await style(page, LINK, "translate")).toBe("none");
+  });
+
+  test("its card does not clip, so the glow can fade out instead of ending in a hard edge", async ({ page }) => {
+    await open(page);
+    expect(await style(page, CARD, "overflow")).toBe("visible");
+  });
+
+  test("the card is still exactly as tall as the pill, so the centre column does not shift", async ({ page }) => {
+    await open(page);
+    const card = (await page.locator(CARD).boundingBox())!;
+    const face = (await page.locator(FACE).boundingBox())!;
+    expect(Math.abs(card.height - face.height)).toBeLessThan(1);
+  });
+
+  test("a cursor wobbling on the pill's bottom edge does not make the hover flicker", async ({ page }) => {
+    await open(page);
+    const link = page.locator(LINK);
+    const box = (await link.boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height - 1; // 1px inside the bottom edge
+    await page.mouse.move(x, y);
+    let flips = 0;
+    let last: boolean | null = null;
+    for (let i = 0; i < 30; i += 1) {
+      await page.mouse.move(x + (i % 2 ? 1 : -1), y + (i % 3 === 0 ? 0.4 : -0.4));
+      await page.waitForTimeout(40);
+      const hovered = await link.evaluate((el) => el.matches(":hover"));
+      if (last !== null && hovered !== last) flips += 1;
+      last = hovered;
+    }
+    expect(flips, "hover flipped on and off while the cursor stayed on the pill").toBeLessThanOrEqual(1);
   });
 });
 

@@ -1,6 +1,8 @@
 import type { Profile } from "@/content/types";
 import { BentoCard } from "@/components/ui/BentoCard";
 import { Button, buttonClasses } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
+import "./actions.css";
 
 /**
  * Frozen contract (docs/contracts.md):
@@ -20,22 +22,22 @@ export function ActionsRow({ profile }: { profile: Profile }) {
 
   return (
     // Bare + unpadded: a free-floating pill, not a big glass box.
-    <BentoCard area="actions" as="section" bare padded={false}>
+    // `clip={false}`: the hover glow reaches past the pill, so the card must not cut it off at its own edge.
+    <BentoCard area="actions" as="section" bare padded={false} clip={false}>
       <div className="flex items-center justify-center">
         {cvReady ? (
           // A real link has to be an <a>, which <button> cannot semantically
-          // be — buttonClasses() keeps it visually consistent without
+          // be — buttonClasses() keeps the face visually consistent without
           // duplicating the class list. `download` saves the file instead of
           // opening it in a tab; the PDF is same-origin, so browsers honour it.
           // (vercel.json also serves it as an attachment, for in-app browsers
-          // that ignore the attribute.)
-          <a
-            href={cv.href}
-            download
-            className={buttonClasses("downloadReady", { size: "slim" })}
-          >
-            <DownloadIcon />
-            {cv.label}
+          // that ignore the attribute.) The link stays still and the inner
+          // face does the lift and glow: see actions.css.
+          <a href={cv.href} download className="cv-link inline-flex rounded-full">
+            <span className={cn(buttonClasses("downloadReady", { size: "slim" }), "cv-face")}>
+              <DownloadIcon />
+              {cv.label}
+            </span>
           </a>
         ) : (
           <Button

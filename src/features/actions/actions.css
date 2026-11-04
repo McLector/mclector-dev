@@ -1,0 +1,33 @@
+/*
+ * The Download CV link.
+ *
+ * The LINK never moves. The lift, glow and press all happen on the inner `.cv-face`, so the area the browser tests
+ * for `:hover` stays put under the cursor. When the link itself lifted, a cursor resting on the pill's bottom
+ * edge fell out from under it, hover dropped, the pill fell back, hover returned: a flicker loop.
+ *
+ * The face's rest look (colours, size, rest glow, and the `translate, scale, box-shadow, background-color`
+ * transition) comes from `buttonClasses("downloadReady")`; only the hover and press states live here.
+ *
+ * Keyed to a real mouse (`html[data-input="mouse"]`, src/lib/inputMode.ts), not a media query. `:where()` keeps the
+ * attribute check at zero specificity. Hover locked on: nothing here is ever switched off by the Animations toggle.
+ * The glow's colour is the theme's text colour, so it re-skins for light and dark on its own.
+ */
+
+.cv-link {
+  text-decoration: none;
+}
+
+:where(:root[data-input="mouse"]) .cv-link:hover .cv-face {
+  translate: 0 -2px;
+  box-shadow: 0 14px 34px -12px var(--color-text-primary);
+}
+
+/* The press squish is for any input, mouse or touch. */
+.cv-link:active .cv-face {
+  scale: 0.97;
+}
+
+.cv-link:focus-visible {
+  outline: 2px solid var(--arc);
+  outline-offset: 3px;
+}
