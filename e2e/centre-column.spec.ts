@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
 
 /**
@@ -101,8 +102,15 @@ test.describe("centre column", () => {
     const cv = page.locator(ACTIONS).getByRole("link", { name: "Download CV" });
     await expect(cv).toBeVisible();
     await expect(cv).toHaveAttribute("href", "/myre-morada-cv.pdf");
-    await expect(cv).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(cv).toHaveAttribute("download");
     await expect(page.locator(ACTIONS).getByRole("button", { name: "Download CV", includeHidden: true })).toHaveCount(0);
+
+    // Clicking saves the file: it must fire a real download, not open a tab.
+    const [download] = await Promise.all([page.waitForEvent("download"), cv.click()]);
+    expect(download.suggestedFilename()).toBe("myre-morada-cv.pdf");
+    const saved = await download.path();
+    expect(readFileSync(saved).subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    expect(page.context().pages()).toHaveLength(1);
 
     const res = await request.get("/myre-morada-cv.pdf");
     expect(res.status()).toBe(200);

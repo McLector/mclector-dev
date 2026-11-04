@@ -23,13 +23,15 @@ export function ActionsRow({ profile }: { profile: Profile }) {
     <BentoCard area="actions" as="section" bare padded={false}>
       <div className="flex items-center justify-center">
         {cvReady ? (
-          // A real navigation has to be an <a>, which <button> cannot
-          // semantically be — buttonClasses() keeps it visually consistent
-          // without duplicating the class list.
+          // A real link has to be an <a>, which <button> cannot semantically
+          // be — buttonClasses() keeps it visually consistent without
+          // duplicating the class list. `download` saves the file instead of
+          // opening it in a tab; the PDF is same-origin, so browsers honour it.
+          // (vercel.json also serves it as an attachment, for in-app browsers
+          // that ignore the attribute.)
           <a
             href={cv.href}
-            target="_blank"
-            rel="noopener noreferrer"
+            download
             className={buttonClasses("downloadReady", { size: "slim" })}
           >
             <DownloadIcon />

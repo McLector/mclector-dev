@@ -116,11 +116,11 @@ describe("ActionsRow", () => {
       expect(link).toHaveAttribute("href", "/files/cv.pdf");
     });
 
-    it("opens in a new tab with a safe rel", () => {
+    it("downloads the file instead of opening it in a tab", () => {
       render(<ActionsRow profile={availableCv} />);
       const link = screen.getByRole("link", { name: LABEL });
-      expect(link).toHaveAttribute("target", "_blank");
-      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      expect(link).toHaveAttribute("download");
+      expect(link).not.toHaveAttribute("target");
     });
 
     it("uses the primary look (the mockup's live preview), not the dimmed placeholder", () => {
