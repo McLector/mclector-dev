@@ -82,12 +82,32 @@ test.describe("centre column", () => {
     await expect(page.getByRole("button", { name: /contact me/i })).toHaveCount(0);
   });
 
-  test("Download CV is present but disabled while no CV exists", async ({ page }) => {
+  for (const [w, h] of [[1440, 900], [1280, 720], [390, 844]] as const) {
+    test(`the badge subtitle is shown in full, not truncated, at ${w}x${h}`, async ({ page }) => {
+      await open(page, w, h);
+      const subtitle = page.locator("[data-badge-subtitle]");
+      await subtitle.scrollIntoViewIfNeeded();
+      await expect(subtitle).toHaveText("CS Student · Full-Stack Mobile Dev");
+      const { clientWidth, scrollWidth } = await subtitle.evaluate((el) => ({
+        clientWidth: el.clientWidth,
+        scrollWidth: el.scrollWidth,
+      }));
+      expect(scrollWidth, "ellipsis would hide part of the subtitle").toBeLessThanOrEqual(clientWidth);
+    });
+  }
+
+  test("Download CV is a live link to the published PDF", async ({ page, request }) => {
     await open(page, 1440, 900);
-    const cv = page.locator(ACTIONS).getByRole("button", { name: "Download CV", includeHidden: true });
+    const cv = page.locator(ACTIONS).getByRole("link", { name: "Download CV" });
     await expect(cv).toBeVisible();
-    await expect(cv).toBeDisabled();
-    await expect(cv).toHaveAttribute("aria-disabled", "true");
+    await expect(cv).toHaveAttribute("href", "/myre-morada-cv.pdf");
+    await expect(cv).toHaveAttribute("rel", "noopener noreferrer");
+    await expect(page.locator(ACTIONS).getByRole("button", { name: "Download CV", includeHidden: true })).toHaveCount(0);
+
+    const res = await request.get("/myre-morada-cv.pdf");
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toContain("application/pdf");
+    expect((await res.body()).subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
   test("the neon sign is polished: still 42px tall, no screws, no motion, no glow on its text, at most a two-layer glow", async ({ page }) => {

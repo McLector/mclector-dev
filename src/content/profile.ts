@@ -24,7 +24,7 @@ export const profile: Profile = {
   },
   badge: {
     title: "Myre Lector",
-    subtitle: "CS Student · Mobile Dev",
+    subtitle: "CS Student · Full-Stack Mobile Dev",
     idLabel: "DLSL-2026",
     caption: "Digital Pass",
   },
@@ -45,7 +45,8 @@ export const profile: Profile = {
   },
   email: "moradamyre@gmail.com",
   cv: {
+    href: "/myre-morada-cv.pdf",
     label: "Download CV",
-    available: false,
+    available: true,
   },
 };
