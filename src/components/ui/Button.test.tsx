@@ -34,3 +34,37 @@ describe("Button size", () => {
     expect(screen.getByRole("button")).toHaveClass("extra");
   });
 });
+
+/**
+ * Tailwind 4 lifts with the standalone `translate` property and presses with `scale`, not `transform`, so a
+ * transition list that names only `transform` leaves the lift and the press snapping instantly. A hover that
+ * changes `opacity` is no better unless `opacity` is listed too.
+ */
+describe("Button hover transition", () => {
+  const transitionList = (cls: string) => /transition-\[([^\]]+)\]/.exec(cls)?.[1].split(",") ?? [];
+
+  for (const variant of ["primary", "secondary", "downloadReady"] as const) {
+    it(`${variant}: the transition covers the lift (translate) and the press (scale)`, () => {
+      const props = transitionList(buttonClasses(variant, { size: "slim" }));
+      expect(props).toContain("translate");
+      expect(props).toContain("scale");
+      expect(props).toContain("box-shadow");
+    });
+  }
+
+  it("downloadReady: hover lifts and grows its glow, and never dims the pill", () => {
+    const cls = buttonClasses("downloadReady", { size: "slim" });
+    expect(cls).toContain("hover-fine:-translate-y-0.5");
+    expect(cls).toMatch(/hover-fine:shadow-\[/);
+    expect(cls).not.toMatch(/hover(-fine)?:opacity-/);
+  });
+
+  it("every property a hover utility changes is listed in the transition", () => {
+    const cls = buttonClasses("downloadReady", { size: "slim" });
+    const props = transitionList(cls);
+    if (/hover(-fine)?:[^\s]*translate/.test(cls)) expect(props).toContain("translate");
+    if (/hover(-fine)?:shadow-/.test(cls)) expect(props).toContain("box-shadow");
+    if (/hover(-fine)?:opacity-/.test(cls)) expect(props).toContain("opacity");
+    if (/hover(-fine)?:bg-/.test(cls)) expect(props).toContain("background-color");
+  });
+});

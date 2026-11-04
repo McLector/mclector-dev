@@ -49,6 +49,28 @@ test.describe("with a real mouse", () => {
   });
 });
 
+test.describe("the Download CV button", () => {
+  test.beforeEach(() => test.skip(desktopOnly(), "hover is desktop-only"));
+
+  const CV = '[data-bento-area="actions"] a';
+
+  test("lifts and grows its glow on hover, animating (not snapping), and never dims", async ({ page }) => {
+    await open(page);
+    // The properties that change on hover must be the ones in the transition. Tailwind 4 lifts with `translate`,
+    // so a list naming only `transform` makes the lift snap.
+    const property = await style(page, CV, "transition-property");
+    expect(property).toContain("translate");
+    expect(property).toContain("box-shadow");
+    expect(allNonZero(await style(page, CV, "transition-duration"))).toBe(true);
+
+    const restShadow = await style(page, CV, "box-shadow");
+    await page.locator(CV).hover();
+    await expect.poll(() => style(page, CV, "translate")).toMatch(/-2px/);
+    await expect.poll(() => style(page, CV, "box-shadow")).not.toBe(restShadow);
+    expect(await style(page, CV, "opacity")).toBe("1");
+  });
+});
+
 test.describe("with the OS reduced-motion setting ON", () => {
   test.beforeEach(() => test.skip(desktopOnly(), "hover is desktop-only"));
 
