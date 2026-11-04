@@ -2,29 +2,34 @@ import { describe, expect, it } from "vitest";
 import * as THREE from "three";
 import {
   HOLO_FRAGMENT_SHADER,
+  HOLO_VERTEX_SHADER,
   HOLO_LOOK,
   createHoloMaterial,
   createHoloUniforms,
 } from "./holoMaterial";
 
 /**
- * Pins the approved round-2 look. THREE builds a ShaderMaterial without a GL context, so all
+ * Pins the current look (the "clearer photo, subtle holo" retune of the round-2 look). THREE builds a ShaderMaterial without a GL context, so all
  * of this runs in jsdom. The GLSL itself is checked as normalised text (whitespace removed).
  */
 const glsl = HOLO_FRAGMENT_SHADER.replace(/\s+/g, "");
 
-describe("HOLO_LOOK — the approved 'recommended' preset", () => {
-  it("is exactly the values the owner approved in the mockup", () => {
+describe("HOLO_LOOK — the retuned preset", () => {
+  it("is exactly the starting values of the clearer, subtler look", () => {
     expect(HOLO_LOOK).toEqual({
-      uColor: 0.85,
-      uSat: 1.35,
+      uColor: 0.93,
+      uSat: 1.1,
       uLift: 0.8,
-      uBody: 0.38,
-      uScan: 0.09,
-      uFringe: 0.003,
+      uBody: 0.62,
+      uScan: 0.05,
+      uFringe: 0.0008,
       uContrast: 2.0,
-      uFreq: 240,
-      uSpot: 0.7,
+      uFreq: 560,
+      uSpot: 0.35,
+      uSharp: 0.5,
+      uGrazing: 0.6,
+      uLight: 0.5,
+      uGlitch: 0.006,
     });
   });
 });
@@ -69,9 +74,23 @@ describe("createHoloMaterial", () => {
     shared.uColor.value = HOLO_LOOK.uColor;
   });
 
+  it("gives each face its own texel size, defaulting from the image when it is already decoded", () => {
+    expect(front.uniforms.uTexel).not.toBe(back.uniforms.uTexel);
+    const decoded = new THREE.Texture();
+    (decoded as { image: unknown }).image = { width: 2000, height: 1000 };
+    const m = createHoloMaterial(decoded, { mask: false }, shared);
+    expect(m.uniforms.uTexel.value.x).toBeCloseTo(1 / 2000, 8);
+    expect(m.uniforms.uTexel.value.y).toBeCloseTo(1 / 1000, 8);
+  });
+
   it("does not share the map or the mask between the faces", () => {
     expect(front.uniforms.map).not.toBe(back.uniforms.map);
     expect(front.uniforms.uMask).not.toBe(back.uniforms.uMask);
+  });
+
+  it("hands the shader the texture's own crop matrix (the SAME object, so a later crop flows through)", () => {
+    expect(front.uniforms.uvTransform.value).toBe(frontTex.matrix);
+    expect(back.uniforms.uvTransform.value).toBe(backTex.matrix);
   });
 
   it("is a transparent, depth-write-free material", () => {
@@ -87,8 +106,38 @@ describe("createHoloMaterial", () => {
 });
 
 describe("HOLO_FRAGMENT_SHADER", () => {
-  it("uses the FIXED scan band: a thin bright band, 0.45 strength", () => {
-    expect(glsl).toContain("smoothstep(0.,0.03,bd)*0.45");
+  it("uses the FIXED scan band: a thin bright band, faint at 0.15 strength", () => {
+    expect(glsl).toContain("smoothstep(0.,0.03,bd)*0.15");
+  });
+
+  it("no longer strobes: the flicker is a barely-there 1.5% breath, not a 34 Hz shimmer", () => {
+    expect(glsl).toContain("floatflick=0.975+0.015*sin(t*8.);");
+    expect(glsl).not.toContain("sin(t*34.)");
+  });
+
+  it("keeps the rim glow a thin line, not a wash", () => {
+    expect(glsl).toContain("smoothstep(0.06,0.,edge)*0.3");
+  });
+
+  it("sharpens the photograph with an unsharp mask over its own neighbours", () => {
+    expect(glsl).toContain("uniformvec2uTexel;");
+    expect(glsl).toContain("(tc.rgb-blur)*uSharp");
+  });
+
+  it("is lit from the projector below: brighter and cyan-warmer at the bottom edge, dimmer at the top", () => {
+    expect(glsl).toContain("col*=1.+uLight*(0.5-vU.y);");
+    expect(glsl).toContain("tint*uLight*0.35*pow(1.-vU.y,4.)");
+  });
+
+  it("has a thin interference band that slides up the picture and shears it sideways, never when frozen", () => {
+    expect(glsl).toContain("floatgy=fract(t*0.13);");
+    expect(glsl).toContain("step(0.001,t)");
+    expect(glsl).toContain("uGlitch*gm*sin(");
+  });
+
+  it("fades the picture at grazing view angles, like a projected image", () => {
+    expect(glsl).toContain("abs(dot(normalize(vN),normalize(vView)))");
+    expect(glsl).toContain("a*=mix(1.,smoothstep(0.1,0.7,nv),uGrazing);");
   });
 
   it("never returns to the inverted band that veiled the whole card white", () => {
@@ -121,5 +170,27 @@ describe("HOLO_FRAGMENT_SHADER", () => {
 
   it("takes the back face's silhouette from the photo's alpha", () => {
     expect(glsl).toContain("if(uMask>0.5)a=tc.a*clamp(0.78+0.22*lumA,0.,1.)*smoothstep(0.,0.02,edge);");
+  });
+});
+
+describe("the crop reaches the picture (regression: the shader used to ignore repeat/offset)", () => {
+  const vert = HOLO_VERTEX_SHADER.replace(/\s+/g, "");
+
+  it("transforms the UVs by uvTransform in the vertex shader", () => {
+    expect(vert).toContain("uniformmat3uvTransform;");
+    expect(vert).toContain("vT=(uvTransform*vec3(uv,1.)).xy;");
+  });
+
+  it("samples the photo at the CROPPED coordinate", () => {
+    expect(glsl).toContain("vec2vTg=vT+");
+    expect(glsl).toContain("texture2D(map,vTg)");
+    expect(glsl).not.toContain("texture2D(map,vU)");
+  });
+
+  it("keeps the card-space coordinate for the edge fade, spotlight and scanlines", () => {
+    // If these followed the crop, the rim glow would sit on the photo's edge instead of the card's.
+    expect(glsl).toContain("min(min(vU.x,1.-vU.x),min(vU.y,1.-vU.y))");
+    expect(glsl).toContain("length((vU-vec2(0.5,0.5))");
+    expect(glsl).toContain("sin(vU.y*uFreq");
   });
 });

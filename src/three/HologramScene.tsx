@@ -11,19 +11,22 @@ import {
   glintPoint,
   glintScale,
 } from "./cardFrame";
-import { createHoloMaterial, createHoloUniforms, type HoloUniforms } from "./holoMaterial";
+import { createHoloMaterial, createHoloUniforms, setTexelFromImage, type HoloUniforms } from "./holoMaterial";
 import { fitCamera } from "./math/fitCamera";
 import {
+  BACK_FRAMING,
   BOB,
   CARD_Y,
   DEP,
   FOV,
   FRAME_MARGIN,
+  FRONT_FRAMING,
   PED_Y,
   PH,
   PW,
   hologramFramePoints,
 } from "./sceneDims";
+import { makeMotes, stepMotes } from "./motes";
 import { loadPortraitTexture } from "./textures/portraitTexture";
 import portraitUrl from "@/assets/portfolio-pic.jpg";
 import formalUrl from "@/assets/formal-pic.webp";
@@ -36,6 +39,8 @@ const BEAM_Y0 = PED_Y + 0.09;
 const BEAM_H = 4.5;
 /** Beam intensity — the owner reviewed the mockup at its slider minimum and kept it. */
 const BEAM_GAIN = 0.4;
+/** How many dust motes drift through the beam. */
+const MOTE_COUNT = 70;
 
 function roundedRect(w: number, h: number, r: number): THREE.Shape {
   const s = new THREE.Shape();
@@ -160,6 +165,8 @@ type GlintSprite = { sprite: THREE.Sprite; k: number; side: 1 | -1 };
 
 type BuiltScene = {
   root: THREE.Group;
+  /** Dust drifting up the beam: the positions are mutated in place each frame. */
+  motes: { positions: Float32Array; attribute: THREE.BufferAttribute };
   cardGroup: THREE.Group;
   pedGroup: THREE.Group;
   /** Shared by both faces: one clock, one look. */
@@ -216,18 +223,26 @@ export default function HologramScene({
     // Frame tightly on the subject (the photo has a lot of dusk sky). focusX is
     // where the subject actually sits (≈ 0.49–0.50 of the photo's width), so they
     // land on the card's midline — and on the pedestal's axis.
-    const frontTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, {
-      zoom: 1.5,
-      focusX: 0.495,
-      focusY: 0.6,
-    });
+    // Each face's material is made below; the photo decodes after that, so its onReady finds it here.
+    const faceMaterials = new Map<THREE.Texture, THREE.ShaderMaterial>();
+    const onReady = (tex: THREE.Texture) => {
+      const m = faceMaterials.get(tex);
+      if (m) setTexelFromImage(m, tex);
+    };
+    const frontTex = loadPortraitTexture(
+      portraitUrl,
+      CARD_ASPECT,
+      FRONT_FRAMING,
+      onReady,
+    );
     // The formal portrait, background removed (src/assets/formalPic.test.ts pins that it is a
-    // real matte). It is square, so cover-cropping trims its sides; the head stays in frame.
-    const backTex = loadPortraitTexture(formalUrl, CARD_ASPECT, {
-      zoom: 1.12,
-      focusX: 0.5,
-      focusY: 0.52,
-    });
+    // real matte). It is square, so cover-cropping trims its sides; BACK_FRAMING keeps its full height.
+    const backTex = loadPortraitTexture(
+      formalUrl,
+      CARD_ASPECT,
+      BACK_FRAMING,
+      onReady,
+    );
     disposables.push(frontTex, backTex);
 
     // A faint smoked-glass body between the two faces, so each face has something to read
@@ -239,7 +254,7 @@ export default function HologramScene({
         new THREE.MeshBasicMaterial({
           color: 0x061020,
           transparent: true,
-          opacity: 0.18,
+          opacity: 0.32,
           side: THREE.DoubleSide,
           depthWrite: false,
         }),
@@ -255,13 +270,15 @@ export default function HologramScene({
       [frontTex, 1, false],
       [backTex, -1, true],
     ] as const) {
-      const screen = new THREE.Mesh(screenGeo, track(createHoloMaterial(texture, { mask }, holo)));
+      const faceMaterial = track(createHoloMaterial(texture, { mask }, holo));
+      faceMaterials.set(texture, faceMaterial);
+      const screen = new THREE.Mesh(screenGeo, faceMaterial);
       screen.position.z = side * FACE_Z.screen;
       if (side < 0) screen.rotation.y = Math.PI;
       cardGroup.add(screen);
     }
 
-    const bezShape = roundedRect(PW + 0.17, PH + 0.17, 0.2);
+    const bezShape = roundedRect(PW + 0.1, PH + 0.1, 0.17);
     bezShape.holes.push(roundedRect(PW - 0.03, PH - 0.03, 0.14));
     const bezGeo = track(
       new THREE.ExtrudeGeometry(bezShape, {
@@ -286,7 +303,7 @@ export default function HologramScene({
           clearcoat: 1,
           clearcoatRoughness: 0.08,
           emissive: new THREE.Color(0x0c2b52),
-          emissiveIntensity: 0.34,
+          emissiveIntensity: 0.1,
           envMapIntensity: 1.3,
         }),
       ),
@@ -602,7 +619,7 @@ export default function HologramScene({
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         depthTest: false,
-        opacity: 0.55,
+        opacity: 0.35,
       }),
     );
     const halo = new THREE.Sprite(haloMat);
@@ -611,7 +628,42 @@ export default function HologramScene({
     halo.renderOrder = -2;
     root.add(halo);
 
-    return { root, cardGroup, pedGroup, holo, rims, glints, glintPath, core, dots, beamUniforms, disposables };
+    // Dust motes drifting up through the beam, so the light reads as light in air.
+    const motePositions = makeMotes(MOTE_COUNT, BEAM_Y0, BEAM_H * 0.8);
+    const moteAttr = new THREE.BufferAttribute(motePositions, 3);
+    const moteGeo = track(new THREE.BufferGeometry());
+    moteGeo.setAttribute("position", moteAttr);
+    const motePoints = new THREE.Points(
+      moteGeo,
+      track(
+        new THREE.PointsMaterial({
+          color: 0xbfeaff,
+          size: 0.04,
+          transparent: true,
+          opacity: 0.5,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          sizeAttenuation: true,
+        }),
+      ),
+    );
+    motePoints.frustumCulled = false;
+    root.add(motePoints);
+
+    return {
+      root,
+      motes: { positions: motePositions, attribute: moteAttr },
+      cardGroup,
+      pedGroup,
+      holo,
+      rims,
+      glints,
+      glintPath,
+      core,
+      dots,
+      beamUniforms,
+      disposables,
+    };
   }, []);
 
   // Procedural environment for the metal/glass reflections.
@@ -712,9 +764,11 @@ export default function HologramScene({
     }
 
     if (animated) {
-      (built.core.material as THREE.MeshBasicMaterial).opacity = 0.85 + 0.15 * Math.sin(tt * 5);
+      stepMotes(built.motes.positions, dt, BEAM_Y0, BEAM_H * 0.8);
+      built.motes.attribute.needsUpdate = true;
+      (built.core.material as THREE.MeshBasicMaterial).opacity = 0.9 + 0.1 * Math.sin(tt * 2);
       for (const d of built.dots) {
-        (d.material as THREE.MeshBasicMaterial).opacity = 0.55 + 0.4 * Math.sin(tt * 2.5 + (d.userData.ph as number));
+        (d.material as THREE.MeshBasicMaterial).opacity = 0.7 + 0.2 * Math.sin(tt * 1.2 + (d.userData.ph as number));
       }
       built.pedGroup.rotation.y = tt * 0.05;
     }

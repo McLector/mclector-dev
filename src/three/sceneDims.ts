@@ -10,6 +10,14 @@ import { ringPoints, type Point3 } from "./math/fitCamera";
 export const PW = 1.95;
 export const PH = 2.45;
 export const DEP = 0.13;
+/**
+ * How each photo is framed on its face (see portraitTexture's focalCropUV). Both photos are close to square,
+ * so zoom 1 shows each one's full height and only trims the sides to fit the portrait card; the front
+ * subject sits near the middle (focusX), and the back is the formal portrait, head to tie.
+ */
+export const FRONT_FRAMING = { zoom: 1, focusX: 0.495, focusY: 0.5 } as const;
+export const BACK_FRAMING = { zoom: 1, focusX: 0.5, focusY: 0.5 } as const;
+
 /** Resting height of the card's centre, and how far it bobs each way. */
 export const CARD_Y = 0.55;
 export const BOB = 0.05;

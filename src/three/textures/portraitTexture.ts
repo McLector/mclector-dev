@@ -94,6 +94,8 @@ export function loadPortraitTexture(
       const { repeat, offset } = focalCropUV(img.width, img.height, targetAspect, zoom, focusX, focusY);
       loaded.repeat.set(repeat[0], repeat[1]);
       loaded.offset.set(offset[0], offset[1]);
+      // The holo shader reads `map.matrix` itself (nothing else refreshes it for a raw ShaderMaterial).
+      loaded.updateMatrix();
       loaded.needsUpdate = true;
       onReady?.(loaded);
     },
