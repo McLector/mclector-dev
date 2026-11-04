@@ -128,7 +128,7 @@ export const projects: Project[] = [
       "My role: lead developer, building most of the game and integrating teammates' pull requests. Verified with Luau unit tests and automated build checks.",
     ],
     role: "Lead developer",
-    status: "in-progress",
+    status: "complete",
     year: "2026",
     stack: ["Luau", "Roblox Studio"],
     thumbnail: {

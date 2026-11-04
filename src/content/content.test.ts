@@ -82,6 +82,7 @@ describe("content invariants", () => {
     expect(lipa).toBeDefined();
     expect(lipa?.title).toBe("Welcome to Lipa City");
     expect(lipa?.featured).toBe(false);
+    expect(lipa?.status).toBe("complete");
     expect(lipa?.role).toMatch(/lead developer/i);
     expect(lipa?.stack).toEqual(expect.arrayContaining(["Luau", "Roblox Studio"]));
     // The game is unpublished, so the only honest link is the public source repo.

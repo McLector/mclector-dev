@@ -21,7 +21,7 @@ The owner asked what the last piece of work was and what was still open. The loc
 | X / Instagram / TikTok / Upwork | Real URLs supplied and wired in. The Upwork share link's `?mp_source=share` tracker was dropped. |
 | CV | Published **as-is, phone number included**. The owner asked whether making the repo private would help; it would not, because the Download CV button serves the PDF from the live site. Repo stays public. |
 | Badge subtitle | `CS Student · Full-Stack Mobile Dev`, to match the resume. |
-| Welcome to Lipa City | Added to the site as a non-featured project. The resume was not touched. |
+| Welcome to Lipa City | Added to the site as a non-featured project, status `complete` (first shipped as `in-progress` on an assumption, corrected at the owner's word). The resume was not touched. |
 | Certifications | **Kept empty for now** by the owner, to be added later. |
 | Custom domain | Stay on `*.vercel.app`. |
 | Mockup images | Stay local and untracked. They were not on this machine (session 010 ran from `D:\Projects\mclector-dev`, which does not exist here). |
@@ -62,7 +62,6 @@ TDD: the new tests were watched fail for the right reason first (5 red in `conte
 
 - **The owner's phone checks** (session 010 §7 and §11), against https://mclector-dev.vercel.app.
 - **Certifications:** the resume lists 9 (freeCodeCamp ×2, DataCamp ×7); the card still shows "Coming soon". Needs proof/credential URLs.
-- **Welcome to Lipa City status** is set to `in-progress` as an assumption, from the repo's recent activity. Change `status` in `projects.ts` if the game is finished.
 - **Hologram canvas-size flake**: 4 webgl tests fail intermittently on this machine; CI has `retries: 2`.
 - Carried over: the 16px favicon; the README's "lanyard badge"; wide-phone and tablet-landscape overlap of the toggles at 861px and up; bundle size.
 - Custom domain `mclector.dev` is not bought; the owner chose to stay on `*.vercel.app`.
