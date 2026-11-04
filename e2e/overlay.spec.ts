@@ -32,6 +32,21 @@ test.describe("project detail overlay", () => {
     expect(errors, errors.join("\n")).toEqual([]);
   });
 
+  test("a non-featured project (Welcome to Lipa City) is reachable by deep link", async ({ page }) => {
+    const errors = collectPageErrors(page);
+
+    await page.goto("/#/project/welcome-to-lipa-city");
+
+    const dialog = page.locator(DIALOG);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("heading", { name: "Welcome to Lipa City" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: /repository/i })).toHaveAttribute(
+      "href",
+      "https://github.com/McLector/Lipa-Highlights-Rblx",
+    );
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+
   test("clicking a row opens the overlay and updates the URL hash", async ({ page }) => {
     await page.goto("/");
 

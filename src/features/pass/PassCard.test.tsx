@@ -70,7 +70,7 @@ describe("PassCard", () => {
     setMotion("on");
     render(<PassCard profile={profile} />);
     expect(screen.getByText("Myre Lector")).toBeInTheDocument();
-    expect(screen.getByText("CS Student · Mobile Dev")).toBeInTheDocument();
+    expect(screen.getByText("CS Student · Full-Stack Mobile Dev")).toBeInTheDocument();
     expect(screen.getByText("DLSL-2026")).toBeInTheDocument();
   });
 

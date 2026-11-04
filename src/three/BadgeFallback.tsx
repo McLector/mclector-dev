@@ -97,7 +97,10 @@ export function BadgeFallback({
           >
             {badge.title}
           </span>
-          <span className="truncate text-[0.625rem] font-medium text-[#eafaff]/75">
+          <span
+            data-badge-subtitle
+            className="truncate text-[0.625rem] font-medium text-[#eafaff]/75"
+          >
             {badge.subtitle}
           </span>
         </span>

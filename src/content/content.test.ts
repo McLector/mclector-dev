@@ -38,6 +38,20 @@ describe("content invariants", () => {
     }
   });
 
+  it("the CV is published: available, and its href is a root-relative PDF that exists in public/", () => {
+    const { cv } = content.profile;
+    expect(cv.available).toBe(true);
+    expect(cv.href).toMatch(/^\/[\w.-]+\.pdf$/);
+    // `src/` has no Node types, so ask Vite which files exist under public/. The PDF's bytes are
+    // checked by e2e/centre-column.spec.ts against the built site.
+    const publicPdfs = Object.keys(import.meta.glob("/public/*.pdf"));
+    expect(publicPdfs).toContain(`/public${cv.href}`);
+  });
+
+  it("the badge subtitle matches the resume's full-stack positioning", () => {
+    expect(content.profile.badge.subtitle).toBe("CS Student · Full-Stack Mobile Dev");
+  });
+
   it("has at least one skill and every skill has a stable id", () => {
     expect(content.skills.length).toBeGreaterThan(0);
     const ids = content.skills.map((s) => s.id);
@@ -63,6 +77,28 @@ describe("content invariants", () => {
     }
   });
 
+  it("lists Welcome to Lipa City as a non-featured Roblox project led by the owner", () => {
+    const lipa = content.projects.find((p) => p.id === "welcome-to-lipa-city");
+    expect(lipa).toBeDefined();
+    expect(lipa?.title).toBe("Welcome to Lipa City");
+    expect(lipa?.featured).toBe(false);
+    expect(lipa?.role).toMatch(/lead developer/i);
+    expect(lipa?.stack).toEqual(expect.arrayContaining(["Luau", "Roblox Studio"]));
+    // The game is unpublished, so the only honest link is the public source repo.
+    expect(lipa?.links).toEqual([
+      { label: "Repository", href: "https://github.com/McLector/Lipa-Highlights-Rblx", kind: "repo" },
+    ]);
+  });
+
+  it("the four featured projects are unchanged by adding more", () => {
+    expect(content.projects.filter((p) => p.featured).map((p) => p.id)).toEqual([
+      "eiyu-system",
+      "taskbuddy",
+      "stark-rent",
+      "esp32-study-monitor",
+    ]);
+  });
+
   it("every featured project has a thumbnail with alt text", () => {
     const featured = content.projects.filter((p) => p.featured);
     expect(featured.length).toBeGreaterThan(0);
@@ -82,10 +118,23 @@ describe("content invariants", () => {
     expect(new Set(indices).size).toBe(indices.length);
   });
 
-  it("every social has a valid href (mailto, https, or the '#' placeholder)", () => {
-    // '#' marks a link the owner has not supplied yet (x/instagram/upwork/tiktok).
+  it("every social has a real https href, with no '#' placeholder left", () => {
     for (const social of content.socials) {
-      expect(social.href).toMatch(/^(https:\/\/|mailto:|#$)/);
+      expect(social.href, social.id).toMatch(/^https:\/\//);
+    }
+  });
+
+  it("links the owner's real X, Instagram, TikTok and Upwork profiles", () => {
+    const hrefOf = (id: string) => content.socials.find((s) => s.id === id)?.href;
+    expect(hrefOf("x")).toBe("https://x.com/mclectorr");
+    expect(hrefOf("instagram")).toBe("https://www.instagram.com/maljamore/");
+    expect(hrefOf("tiktok")).toBe("https://www.tiktok.com/@mclectorr");
+    expect(hrefOf("upwork")).toBe("https://www.upwork.com/freelancers/~01894ee04fe2d6293e");
+  });
+
+  it("no social link carries a share-tracking query string", () => {
+    for (const social of content.socials) {
+      expect(social.href, social.id).not.toMatch(/mp_source|utm_|[?&]igsh/);
     }
   });
 
@@ -94,9 +143,9 @@ describe("content invariants", () => {
     expect(indices).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 
-  it("links Upwork (not YouTube) in the sixth hexagon, as a placeholder until the URL exists", () => {
+  it("links Upwork (not YouTube) in the sixth hexagon", () => {
     const upwork = content.socials.find((s) => s.id === "upwork");
-    expect(upwork).toMatchObject({ label: "Upwork", icon: "upwork", hexIndex: 5, href: "#" });
+    expect(upwork).toMatchObject({ label: "Upwork", icon: "upwork", hexIndex: 5 });
     expect(content.socials.some((s) => s.id === "youtube" || s.icon === ("youtube" as never))).toBe(
       false,
     );
