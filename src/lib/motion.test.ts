@@ -13,32 +13,32 @@ import {
 } from "./motion";
 
 describe("DEFAULT_MOTION", () => {
-  it("is on — ambient motion runs for every visitor unless they switch it off", () => {
-    expect(DEFAULT_MOTION).toBe("on");
+  it("is off — a first visit is calm; ambient motion is opt-in", () => {
+    expect(DEFAULT_MOTION).toBe("off");
   });
 });
 
 describe("resolveInitialMotion", () => {
-  it("is off only for an explicit stored 'off'", () => {
-    expect(resolveInitialMotion("off")).toBe("off");
-  });
-
-  it("is on when the visitor chose on, or nothing is stored", () => {
+  it("is on only for an explicit stored 'on'", () => {
     expect(resolveInitialMotion("on")).toBe("on");
-    expect(resolveInitialMotion(null)).toBe("on");
-    expect(resolveInitialMotion(undefined)).toBe("on");
   });
 
-  it("ignores a garbage stored value and stays on — a corrupt entry must not silently freeze the site", () => {
-    expect(resolveInitialMotion("banana")).toBe("on");
-    expect(resolveInitialMotion("")).toBe("on");
+  it("is off when the visitor chose off, or nothing is stored", () => {
+    expect(resolveInitialMotion("off")).toBe("off");
+    expect(resolveInitialMotion(null)).toBe("off");
+    expect(resolveInitialMotion(undefined)).toBe("off");
+  });
+
+  it("ignores a garbage stored value and stays off — a corrupt entry must not switch the motion on", () => {
+    expect(resolveInitialMotion("banana")).toBe("off");
+    expect(resolveInitialMotion("")).toBe("off");
     // Case matters: only the two exact names are valid choices.
-    expect(resolveInitialMotion("OFF")).toBe("on");
-    expect(resolveInitialMotion(" off")).toBe("on");
+    expect(resolveInitialMotion("ON")).toBe("off");
+    expect(resolveInitialMotion(" on")).toBe("off");
   });
 
   it("takes no OS signal: prefers-reduced-motion is deliberately not an input", () => {
-    // The rule is `stored === "off" ? "off" : "on"`. One parameter, and no matchMedia in sight.
+    // The rule is `stored === "on" ? "on" : "off"`. One parameter, and no matchMedia in sight.
     expect(resolveInitialMotion.length).toBe(1);
   });
 });
@@ -73,15 +73,15 @@ describe("the live setting (the <html data-motion> attribute is the single sourc
     vi.unstubAllGlobals();
   });
 
-  it("reads on when the attribute is absent, and on for a garbage attribute", () => {
-    expect(getMotion()).toBe("on");
+  it("reads off when the attribute is absent, and off for a garbage attribute", () => {
+    expect(getMotion()).toBe("off");
     root.setAttribute("data-motion", "sideways");
-    expect(getMotion()).toBe("on");
+    expect(getMotion()).toBe("off");
   });
 
-  it("reads off when the boot script (or a previous setMotion) put off on <html>", () => {
-    root.setAttribute("data-motion", "off");
-    expect(getMotion()).toBe("off");
+  it("reads on when the boot script (or a previous setMotion) put on on <html>", () => {
+    root.setAttribute("data-motion", "on");
+    expect(getMotion()).toBe("on");
   });
 
   it("setMotion writes the attribute AND persists the choice", () => {
@@ -97,18 +97,18 @@ describe("the live setting (the <html data-motion> attribute is the single sourc
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");
     });
-    expect(() => setMotion("off")).not.toThrow();
+    expect(() => setMotion("on")).not.toThrow();
     // The choice still applies for this visit, it just cannot be remembered.
-    expect(getMotion()).toBe("off");
+    expect(getMotion()).toBe("on");
   });
 
   it("notifies subscribers with the new value, once per real change", () => {
     const seen: string[] = [];
     subscribeMotion((m) => seen.push(m));
-    setMotion("off");
-    setMotion("off"); // no change — nothing to tell anyone
     setMotion("on");
-    expect(seen).toEqual(["off", "on"]);
+    setMotion("on"); // no change — nothing to tell anyone
+    setMotion("off");
+    expect(seen).toEqual(["on", "off"]);
   });
 
   it("stops notifying after unsubscribe, and other subscribers are unaffected", () => {
@@ -116,45 +116,45 @@ describe("the live setting (the <html data-motion> attribute is the single sourc
     const b: string[] = [];
     const offA = subscribeMotion((m) => a.push(m));
     subscribeMotion((m) => b.push(m));
-    setMotion("off");
-    offA();
     setMotion("on");
-    expect(a).toEqual(["off"]);
-    expect(b).toEqual(["off", "on"]);
+    offA();
+    setMotion("off");
+    expect(a).toEqual(["on"]);
+    expect(b).toEqual(["on", "off"]);
   });
 
   it("motionOn is true exactly while the setting is on", () => {
-    expect(motionOn()).toBe(true);
-    root.setAttribute("data-motion", "off");
     expect(motionOn()).toBe(false);
+    root.setAttribute("data-motion", "on");
+    expect(motionOn()).toBe(true);
   });
 
   it("initMotion seeds the attribute from the stored choice when the boot script did not", () => {
-    localStorage.setItem(MOTION_STORAGE_KEY, "off");
-    initMotion();
-    expect(root.getAttribute("data-motion")).toBe("off");
-  });
-
-  it("initMotion defaults to on when nothing valid is stored", () => {
+    localStorage.setItem(MOTION_STORAGE_KEY, "on");
     initMotion();
     expect(root.getAttribute("data-motion")).toBe("on");
+  });
+
+  it("initMotion defaults to off when nothing valid is stored", () => {
+    initMotion();
+    expect(root.getAttribute("data-motion")).toBe("off");
     root.removeAttribute("data-motion");
     localStorage.setItem(MOTION_STORAGE_KEY, "banana");
     initMotion();
-    expect(root.getAttribute("data-motion")).toBe("on");
+    expect(root.getAttribute("data-motion")).toBe("off");
   });
 
   it("initMotion leaves a value the boot script already set alone, even if storage disagrees", () => {
-    root.setAttribute("data-motion", "off");
-    localStorage.setItem(MOTION_STORAGE_KEY, "on");
+    root.setAttribute("data-motion", "on");
+    localStorage.setItem(MOTION_STORAGE_KEY, "off");
     initMotion();
-    expect(root.getAttribute("data-motion")).toBe("off");
+    expect(root.getAttribute("data-motion")).toBe("on");
   });
 
   it("initMotion replaces a garbage attribute", () => {
     root.setAttribute("data-motion", "sideways");
     initMotion();
-    expect(root.getAttribute("data-motion")).toBe("on");
+    expect(root.getAttribute("data-motion")).toBe("off");
   });
 
   it("never consults the OS reduced-motion setting, even when it is on", () => {
@@ -165,7 +165,7 @@ describe("the live setting (the <html data-motion> attribute is the single sourc
       removeEventListener: vi.fn(),
     }));
     vi.stubGlobal("matchMedia", matchMedia);
-    expect(getMotion()).toBe("on");
+    expect(getMotion()).toBe("off");
     setMotion("on");
     expect(getMotion()).toBe("on");
     expect(matchMedia).not.toHaveBeenCalled();

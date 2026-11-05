@@ -39,9 +39,9 @@
         var chrome = document.querySelector('meta[name="theme-color"]');
         if (chrome) chrome.setAttribute("content", theme === "light" ? "#91b6d7" : "#05060d");
 
-        // Animations: on for everyone unless the visitor switched them off. Mirrors src/lib/motion.ts
+        // Animations: OFF for everyone unless the visitor switched them on. Mirrors src/lib/motion.ts
         // (resolveInitialMotion). The OS reduced-motion setting is deliberately NOT an input.
-        root.setAttribute("data-motion", storedMotion === "off" ? "off" : "on");
+        root.setAttribute("data-motion", storedMotion === "on" ? "on" : "off");
 
         // Input mode: a first-paint HINT only (any input can hover -> mouse, else touch). Mirrors
         // src/lib/inputMode.ts (initialInputMode); real pointer events take over from there, so a browser that

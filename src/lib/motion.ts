@@ -2,24 +2,24 @@
  * The visitor's Animations setting (the toggle top-right). Same shape as `theme.ts`: pure decision logic
  * here, unit-tested directly; the toggle and the components that react to it live elsewhere.
  *
- * WHAT IT GOVERNS: ambient, decorative motion only: the starfield, falling code and drifting rocks, the
- * comet, pointer parallax, the hologram's autonomous spin, the status ripple, entrance staggers and the
- * project overlay's large open/close motion.
+ * WHAT IT GOVERNS: ambient, decorative motion only: the galaxy backdrop (starfield, falling code, drifting rocks,
+ * comet, pointer parallax), the status ripple, entrance staggers and the project overlay's large open/close motion.
+ * The hologram scene is independent of it (see `useSceneCapability`), so this one never touches it.
  *
  * WHAT IT NEVER TOUCHES: hover, focus and active transitions. They are locked on, in both states, for every
  * visitor. The `[data-motion="off"]` CSS rule freezes keyframe animations and nothing else.
  *
- * THE OS `prefers-reduced-motion` SETTING IS NOT AN INPUT (owner decision). The default is on for everyone;
- * this toggle is the visitor's only way to switch ambient motion off, which is why it is visible and labelled.
- * Seeding the default from the OS later would be a one-line change in {@link resolveInitialMotion}.
- * Keep the inline boot script in index.html in agreement with that rule.
+ * DEFAULT OFF (owner decision): a first visit is calm, because peers found the full backdrop overwhelming. It is
+ * opt-in, so the toggle stays visible and labelled. THE OS `prefers-reduced-motion` SETTING IS NOT AN INPUT (an
+ * earlier owner decision, unchanged): seeding the default from it later would be a one-line change in
+ * {@link resolveInitialMotion}. Keep the inline boot script in index.html in agreement with that rule.
  */
 
 export const MOTIONS = ["on", "off"] as const;
 export type Motion = (typeof MOTIONS)[number];
 
-/** What every visitor gets until they switch it off. */
-export const DEFAULT_MOTION: Motion = "on";
+/** What every visitor gets until they switch it on. */
+export const DEFAULT_MOTION: Motion = "off";
 
 /** localStorage key the visitor's explicit choice is persisted under. */
 export const MOTION_STORAGE_KEY = "mclector-motion";
@@ -29,11 +29,11 @@ export function isMotion(value: unknown): value is Motion {
 }
 
 /**
- * Resolve the setting to apply on first paint: "off" only for an explicit stored "off", otherwise "on".
- * A corrupt or unknown stored value falls back to on, so it can never silently freeze the site.
+ * Resolve the setting to apply on first paint: "on" only for an explicit stored "on", otherwise "off".
+ * A corrupt or unknown stored value falls back to off, so it can never silently switch the motion on.
  */
 export function resolveInitialMotion(stored: string | null | undefined): Motion {
-  return stored === "off" ? "off" : "on";
+  return stored === "on" ? "on" : "off";
 }
 
 /** The other setting: what the toggle switches to. */
@@ -57,9 +57,9 @@ function readStored(): string | null {
   }
 }
 
-/** The current setting. An absent or unrecognised attribute means on. */
+/** The current setting. An absent or unrecognised attribute means off. */
 export function getMotion(root: HTMLElement = document.documentElement): Motion {
-  return root.dataset.motion === "off" ? "off" : "on";
+  return root.dataset.motion === "on" ? "on" : "off";
 }
 
 /** True while ambient motion should run. */

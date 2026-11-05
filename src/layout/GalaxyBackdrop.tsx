@@ -7,8 +7,9 @@ import { makeAsteroids, makeRainColumns, type Asteroid, type RainColumn } from "
  * star layers (in index.css), plus a 2D canvas of drifting asteroids, an
  * occasional comet, and a faint binary data-rain — and mouse parallax on the
  * star layers. The ambient motion here (rain, rocks, comet, parallax; the CSS star layers) follows the
- * Animations toggle (src/lib/motion.ts). The OS reduced-motion setting is deliberately not read. The draw
- * loop checks the setting on every frame, so switching it needs no teardown and no restart.
+ * Animations toggle (src/lib/motion.ts), which is OFF by default. The OS reduced-motion setting is
+ * deliberately not read. While it is off no frame loop runs at all: the canvas gets one still paint (rocks at
+ * rest), repainted on resize, and the loop starts and stops as the setting changes, with no teardown.
  */
 export function GalaxyBackdrop() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,7 +39,6 @@ export function GalaxyBackdrop() {
       cols = makeRainColumns(w, colW, 60);
     };
     size();
-    window.addEventListener("resize", size);
 
     // Theme-reactive rain colour.
     let rainCol = "";
@@ -55,10 +55,9 @@ export function GalaxyBackdrop() {
     let ct = 0;
     let raf = 0;
 
-    const draw = () => {
+    /** One paint. `animate` false is the still frame: the rocks where they are, no rain, no comet. */
+    const paint = (animate: boolean) => {
       ctx.clearRect(0, 0, w, h);
-      // Live: a plain attribute read, so the toggle takes effect on the very next frame.
-      const animate = motionOn();
 
       // data rain (stable glyph per cell → no flicker)
       if (animate) {
@@ -141,9 +140,35 @@ export function GalaxyBackdrop() {
         }
       }
 
-      raf = requestAnimationFrame(draw);
     };
-    raf = requestAnimationFrame(draw);
+
+    const frame = () => {
+      paint(true);
+      raf = requestAnimationFrame(frame);
+    };
+    const start = () => {
+      if (!raf) raf = requestAnimationFrame(frame);
+    };
+    const stop = () => {
+      cancelAnimationFrame(raf);
+      raf = 0;
+      comet = null; // never resume mid-streak
+    };
+    /** Match the canvas to the setting: run the loop when on, otherwise one still frame. */
+    const sync = () => {
+      if (motionOn()) {
+        start();
+      } else {
+        stop();
+        paint(false);
+      }
+    };
+    sync();
+    const onResize = () => {
+      size(); // resizing clears the canvas, so a still scene must be painted again
+      if (!motionOn()) paint(false);
+    };
+    window.addEventListener("resize", onResize);
 
     // parallax
     const onMove = (e: PointerEvent) => {
@@ -156,12 +181,13 @@ export function GalaxyBackdrop() {
     // Switching off must not leave the star layers stranded at their last parallax offset.
     const offMotion = subscribeMotion((next) => {
       if (next === "off" && parallaxRef.current) parallaxRef.current.style.transform = "";
+      sync();
     });
 
     return () => {
       offMotion();
       cancelAnimationFrame(raf);
-      window.removeEventListener("resize", size);
+      window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onMove);
       themeObserver.disconnect();
     };

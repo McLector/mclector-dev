@@ -62,6 +62,8 @@ beforeEach(resetHash);
 afterEach(() => {
   resetHash();
   document.body.style.overflow = "";
+  document.documentElement.removeAttribute("data-motion");
+  localStorage.clear();
   vi.restoreAllMocks();
 });
 
@@ -183,6 +185,7 @@ describe("ProjectOverlay — open via a known slug", () => {
   });
 
   it("carries the shared-layout id matching the card row's thumbnail", () => {
+    setMotion("on"); // the morph is opt-in now: animations default to off
     render(<ProjectOverlay projects={projects} />);
     expect(screen.getByTestId("project-overlay-thumb")).toHaveAttribute(
       "data-layout-id",
@@ -307,8 +310,17 @@ describe("ProjectOverlay — the Animations toggle", () => {
     expect(screen.getByTestId("project-overlay-thumb")).not.toHaveAttribute("data-layout-id");
   });
 
-  it("keeps the shared-layout morph by default, even when the OS asks for reduced motion", () => {
-    // The OS setting is deliberately ignored (owner decision): the visible toggle is the only way to opt out.
+  it("has no shared-layout morph by default: a first visit is calm", () => {
+    window.location.hash = "#/project/eiyu-system";
+    render(<ProjectOverlay projects={projects} />);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("project-overlay-thumb")).not.toHaveAttribute("data-layout-id");
+  });
+
+  it("keeps the shared-layout morph once switched on, even when the OS asks for reduced motion", () => {
+    // The OS setting is deliberately ignored (owner decision): the visible toggle is the only input.
+    setMotion("on");
     const matchMedia = vi.fn().mockImplementation((query: string) => ({
       matches: query.includes("prefers-reduced-motion"),
       media: query,
