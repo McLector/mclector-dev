@@ -10,7 +10,6 @@ import {
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
     hasWebGL: true,
-    motionOff: false,
     devicePixelRatio: 2,
     hardwareConcurrency: 8,
     deviceMemory: 8,
@@ -22,12 +21,6 @@ function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals 
 describe("resolveQualityTier", () => {
   it("returns 'unsupported' when WebGL is unavailable", () => {
     expect(resolveQualityTier(signals({ hasWebGL: false }))).toBe("unsupported");
-  });
-
-  it("returns 'unsupported' when the visitor has switched animations off", () => {
-    expect(resolveQualityTier(signals({ motionOff: true }))).toBe(
-      "unsupported",
-    );
   });
 
   it("returns 'unsupported' when GPU tier is 0 even with WebGL present", () => {
@@ -83,10 +76,6 @@ describe("TIER_CONFIG", () => {
 });
 
 describe("resolveSceneMode", () => {
-  it("renders static (not fallback) when the visitor has switched animations off", () => {
-    expect(resolveSceneMode(signals({ motionOff: true }))).toBe("static");
-  });
-
   it("falls back only without WebGL or a usable GPU", () => {
     expect(resolveSceneMode(signals({ hasWebGL: false }))).toBe("fallback");
     expect(resolveSceneMode(signals({ gpuTier: 0 }))).toBe("fallback");
@@ -109,10 +98,13 @@ describe("readCapabilitySignals", () => {
     vi.unstubAllGlobals();
   });
 
-  it("reports motion as on for a fresh visitor, and off once the Animations toggle is off", () => {
-    expect(readCapabilitySignals().motionOff).toBe(false);
+  it("carries no motion signal: the Animations toggle governs the backdrop, never the hologram", () => {
+    const fresh = readCapabilitySignals();
+    expect(fresh).not.toHaveProperty("motionOff");
     root.setAttribute("data-motion", "off");
-    expect(readCapabilitySignals().motionOff).toBe(true);
+    expect(readCapabilitySignals()).toEqual(fresh);
+    root.setAttribute("data-motion", "on");
+    expect(readCapabilitySignals()).toEqual(fresh);
   });
 
   it("does not consult the OS reduced-motion setting, even when it is on", () => {
@@ -123,7 +115,7 @@ describe("readCapabilitySignals", () => {
       removeEventListener: vi.fn(),
     }));
     vi.stubGlobal("matchMedia", matchMedia);
-    expect(readCapabilitySignals().motionOff).toBe(false);
+    readCapabilitySignals();
     expect(matchMedia).not.toHaveBeenCalled();
   });
 });

@@ -7,7 +7,6 @@ import { fallbackReason, useSceneCapability } from "./useSceneCapability";
 function signals(overrides: Partial<CapabilitySignals> = {}): CapabilitySignals {
   return {
     hasWebGL: true,
-    motionOff: false,
     devicePixelRatio: 2,
     hardwareConcurrency: 8,
     deviceMemory: 8,
@@ -29,9 +28,6 @@ describe("fallbackReason", () => {
     expect(fallbackReason(signals({ gpuTier: 0 }))).toBe("low-tier");
   });
 
-  it("does NOT fall back merely because animations are off (renders static instead)", () => {
-    expect(fallbackReason(signals({ motionOff: true }))).toBeNull();
-  });
 });
 
 describe("useSceneCapability", () => {
@@ -65,26 +61,23 @@ describe("useSceneCapability", () => {
     expect(result.current.config?.maxDpr).toBeGreaterThan(0);
   });
 
-  it("renders STATIC 3D (not the 2D fallback) when the visitor has switched animations off", () => {
+  it("stays full and animated with Animations off, which is the default for a first visit", () => {
     stubWebGL(true);
     setMotion("off");
     const { result } = renderHook(() => useSceneCapability());
-    expect(result.current.mode).toBe("static");
-    expect(result.current.animated).toBe(false);
-    expect(result.current.config).not.toBeNull();
+    expect(result.current.mode).toBe("full");
+    expect(result.current.animated).toBe(true);
     expect(result.current.reason).toBeNull();
   });
 
-  it("re-resolves between full and static when the toggle changes at runtime — live, no reload", () => {
+  it("is unmoved by the toggle changing at runtime: the hologram has its own switch", () => {
     stubWebGL(true);
     const { result } = renderHook(() => useSceneCapability());
     expect(result.current.mode).toBe("full");
 
-    act(() => setMotion("off"));
-    expect(result.current.mode).toBe("static");
-    expect(result.current.animated).toBe(false);
-
     act(() => setMotion("on"));
+    expect(result.current.mode).toBe("full");
+    act(() => setMotion("off"));
     expect(result.current.mode).toBe("full");
     expect(result.current.animated).toBe(true);
   });

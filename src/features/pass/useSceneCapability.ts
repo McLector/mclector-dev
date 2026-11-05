@@ -8,7 +8,6 @@ import {
   type SceneMode,
   type TierConfig,
 } from "@/lib/capability";
-import { useMotion } from "@/lib/useMotion";
 
 /** Why the 2D fallback is shown, when it is. */
 export type FallbackReason = "no-webgl" | "low-tier" | "loading" | "offscreen";
@@ -47,12 +46,10 @@ export function fallbackReason(signals: CapabilitySignals): FallbackReason | nul
  * `gpuTier` to 2 — "unknown but presumed capable" — and the real GPU tier is
  * folded in later, inside the lazy chunk, by the scene's GPU gate.
  *
- * It follows the Animations toggle live: switching it off drops the scene to `static` (rendered, no autonomous
- * spin) and switching it back on restores `full`, with no reload.
+ * It does NOT follow the Animations toggle (that governs the backdrop; the hologram has its own switch), so a
+ * first visit, where animations default to off, still gets the live hologram.
  */
 export function useSceneCapability(): SceneCapability {
-  const { motion } = useMotion();
-
   const resolve = useCallback((overrides?: Partial<CapabilitySignals>): SceneCapability => {
     const signals = { ...readCapabilitySignals(), ...overrides };
     const mode = resolveSceneMode(signals);
@@ -67,5 +64,5 @@ export function useSceneCapability(): SceneCapability {
     };
   }, []);
 
-  return useMemo(() => resolve({ motionOff: motion === "off" }), [resolve, motion]);
+  return useMemo(() => resolve(), [resolve]);
 }
