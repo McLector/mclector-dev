@@ -8,8 +8,8 @@ import { test, expect } from "@playwright/test";
  * so it is masked out of both baselines and everything outside that rectangle
  * is compared pixel-for-pixel. The `place` area is masked too: its clock ticks.
  *
- * Animations are frozen (`animations: "disabled"`) so the galaxy drift and
- * nebula animations in src/styles/index.css cannot shift the baseline.
+ * Animations are frozen (`animations: "disabled"`) so the star drift and the
+ * horizon glow's breath in src/styles/index.css cannot shift the baseline.
  *
  * DETERMINISM: the suite runs with 3D APIs disabled and the site's Animations toggle
  * off (playwright.config.ts), so the hologram cell settles on the static fallback
