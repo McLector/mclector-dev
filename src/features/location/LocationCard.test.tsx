@@ -117,12 +117,13 @@ describe("LocationCard", () => {
     });
   });
 
-  describe("light theme (steel)", () => {
-    it("fades the dark map texture almost out, so it does not read as a grey smudge on the cool-white card", () => {
+  describe("light theme (white)", () => {
+    it("hides the dark map texture, so the card stays as white as its siblings instead of a grey smudge", () => {
+      // Even at 3.5% the near-black map tinted the opaque white card grey next to the pure-white cards around it.
       render(<LocationCard location={fixture()} />);
       const map = screen.getByTestId("map-placeholder");
-      expect(map).toHaveClass("opacity-60", "light:opacity-[0.035]");
-      expect(map.className).not.toContain("light:opacity-[0.1]");
+      expect(map).toHaveClass("opacity-60", "light:opacity-0");
+      expect(map.className).not.toContain("light:opacity-[0.035]");
     });
 
     it("dims the accent wash a little in light", () => {

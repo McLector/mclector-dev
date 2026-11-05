@@ -105,14 +105,12 @@
     --cv-dis: 0.42;
   }
 
-  /* Light theme. The backdrop tokens (sky, stars, horizon glow) are the approved white mock-up's
-     (docs/reference/2026-11-05-background-white-theme-mockup.html): a plain white page, a faint arc-blue wash along
-     the bottom and sparse steel-blue dust. The rest of this block is still the steel theme: one cool-blue hue
-     family (hue ~250) at low chroma, so the window glass, the cards and the text read as one place. The arc blue is
-     the only saturated colour, and the hologram bay is a deep blue of the SAME hue, so it reads as part of the page
-     rather than a hole in it. Those values are the approved round-3b mockup's `steel` preset, ported verbatim from its generator
-     (docs/reference/2026-09-20-revamp-round-3b-mockup.html, "Resolved tokens"). Contrast is enforced by
-     contrast.test.ts against the hand-synced table in contrast.ts. */
+  /* Light theme: the approved white mock-up (docs/reference/2026-11-05-background-white-theme-mockup.html), its
+     values used verbatim. A plain white page with a faint arc-blue wash along the bottom and sparse steel-blue dust;
+     a near-white window; opaque white cards drawn by a hairline and a soft shadow instead of glass; pale tiles; a
+     pale bay for the hologram. The ink text tokens are the earlier steel theme's (they read on white too), the arc
+     blue is the only saturated colour, and the "Let's Connect" sign stays the one dark object on the page.
+     Contrast is enforced by contrast.test.ts against the hand-synced table in contrast.ts. */
   :root[data-theme="light"] {
     --sky-top: #fff;
     --sky-mid: #fff;
@@ -121,45 +119,48 @@
     --horizon-glow: 0.3;
     --star-strength: 0.6;
 
-    --color-surface: oklch(0.96 0.01 250);
-    --color-surface-raised: oklch(0.99 0.005 250);
+    --color-surface: #fff;
+    --color-surface-raised: #fff;
     --color-text-primary: oklch(0.21 0.04 262);
     --color-text-secondary: oklch(0.34 0.04 262);
     --color-text-muted: oklch(0.43 0.04 262);
 
-    --glass-bg: rgba(255, 255, 255, 0.88);
-    --glass-border: oklch(0.4 0.08 250 / 0.2);
-    --glass-highlight: rgba(255, 255, 255, 0.95);
-    --glass-shadow: 0 22px 46px -22px oklch(0.28 0.1 250 / 0.5);
+    /* Cards: opaque white on a hairline and a soft shadow. No lit top edge (--card-accent: 0) and no inner
+       highlight, as in the mock-up's .wm-card. */
+    --glass-bg: #fff;
+    --glass-border: oklch(0.4 0.05 250 / 0.14);
+    --glass-highlight: rgba(255, 255, 255, 0);
+    --glass-shadow: 0 8px 22px -14px oklch(0.3 0.06 250 / 0.3);
 
-    --panel: oklch(0.42 0.1 250 / 0.338);
-    --panel-edge: rgba(255, 255, 255, 0.5);
-    --window-shadow: 0 40px 110px -28px oklch(0.28 0.1 250 / 0.5);
+    /* The window: the mock-up's .wm-win, near-white with its own hairline (the same --line as the cards). */
+    --panel: oklch(0.985 0.004 250 / 0.9);
+    --panel-edge: oklch(0.4 0.05 250 / 0.14);
+    --window-shadow: 0 40px 90px -34px oklch(0.3 0.06 250 / 0.3);
     --arc: #1a86f5;
     --arc-soft: rgba(94, 200, 255, 0.9);
     --green: #0f9a63;
     --green-ink: #0b6b46;
 
-    --card-accent: 0.85;
-    --tile-bg: color-mix(in oklab, var(--arc) 12%, rgba(255, 255, 255, 0.72));
-    --tile-ring: color-mix(in oklab, var(--arc) 34%, transparent);
+    --card-accent: 0;
+    --tile-bg: oklch(0.97 0.008 250);
+    --tile-ring: oklch(0.4 0.05 250 / 0.14);
     --btn-bg: oklch(0.21 0.04 262);
     --btn-ink: #f4f6ff;
-    /* The hologram stage is pale steel glass of the page's own hue, not a dark hole in it. Added (additive) light
-       washes out on a pale ground, so the scene draws ink here instead (src/three/palette.ts). The darkest stop
-       of this gradient, oklch(0.8 0.06 250), is the worst case the stage text is contrast-checked against
-       (src/lib/contrast.ts). */
+    /* The hologram stage is a pale bay of the page's own hue, white at the top fading to a light blue, not a dark
+       hole in the page. Added (additive) light washes out on a pale ground, so the scene draws ink here instead
+       (src/three/palette.ts). The darkest stop of this gradient, oklch(0.93 0.025 250) at the bottom, is the worst
+       case the stage text is contrast-checked against (src/lib/contrast.ts). */
     --stage-bg:
-      radial-gradient(60% 40% at 50% 34%, rgba(255, 255, 255, 0.55), transparent 72%),
-      linear-gradient(180deg, oklch(0.9 0.045 250), oklch(0.8 0.06 250));
-    --stage-edge: oklch(0.4 0.08 250 / 0.28);
+      radial-gradient(60% 40% at 50% 34%, #fff, transparent 72%),
+      linear-gradient(180deg, oklch(0.985 0.008 250), oklch(0.93 0.025 250));
+    --stage-edge: oklch(0.4 0.08 250 / 0.2);
     --stage-caption: oklch(0.28 0.05 262);
     --cv-bg: rgba(255, 255, 255, 0.82);
     --cv-fg: oklch(0.21 0.04 262);
     --cv-dis: 0.66;
 
-    /* A steel-tinted scrim: black over a blue sky reads as a hole, not a dim. */
-    --scrim: oklch(0.25 0.05 250 / 0.45);
+    /* A neutral ink scrim: a blue tint reads as haze over a white page, black as a hole. */
+    --scrim: oklch(0.25 0.03 262 / 0.4);
   }
 
   html,

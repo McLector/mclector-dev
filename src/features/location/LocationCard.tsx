@@ -42,7 +42,7 @@ export function LocationCard({ location }: LocationCardProps) {
       <div
         aria-hidden="true"
         data-testid="map-placeholder"
-        className="pointer-events-none absolute inset-0 opacity-60 light:opacity-[0.035]"
+        className="pointer-events-none absolute inset-0 opacity-60 light:opacity-0"
         style={mapPlaceholderStyle(location.mapTexture)}
       />
       {/* A faint accent wash so the clock reads as "alive", not a flat panel.

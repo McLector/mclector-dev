@@ -109,6 +109,18 @@ describe("the quiet backdrop CSS", () => {
     expect(decl(rules("body"), "background-color")).toBe("var(--sky-bottom)");
   });
 
+  it("the light theme is white, not steel", () => {
+    const light = rules(LIGHT);
+    // The window, the cards and the tiles are the white mock-up's: opaque white cards on hairlines and soft
+    // shadows, not translucent glass over a steel panel.
+    expect(decl(light, "--panel")).toBe("oklch(0.985 0.004 250 / 0.9)");
+    expect(decl(light, "--glass-bg")).toBe("#fff");
+    expect(decl(light, "--glass-border")).toBe("oklch(0.4 0.05 250 / 0.14)");
+    expect(decl(light, "--tile-bg")).toBe("oklch(0.97 0.008 250)");
+    // The old steel window panel is gone from the light block.
+    expect(light).not.toContain("oklch(0.42 0.1 250 / 0.338)");
+  });
+
   it("keeps the sky to one top radial over the vertical gradient", () => {
     const sky = decl(rules(".galaxy"), "background") ?? "";
     expect(count(sky, "radial-gradient(")).toBe(1);
