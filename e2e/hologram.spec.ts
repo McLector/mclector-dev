@@ -114,7 +114,7 @@ test.describe("hologram at a scaled viewport", () => {
  * Every threshold was CALIBRATED by breaking the thing and measuring, not assumed. Canvas is
  * 546×596 at 1440×900. The scene is the borderless corners-only card on the reference projector, seen from 12°
  * above. It runs in BOTH themes, because they are different looks: the dark theme's deep-navy bay (added light), and
- * the light theme's pale steel-glass bay (ink). Each is pinned in the test.
+ * the light theme's pale glass bay (ink). Each is pinned in the test.
  *
  *                              nonBlue%   lumaP5   back margins (mean luma)
  *   dark, as approved            7.77      46.9      31-35                  (face 144: contrast +108)

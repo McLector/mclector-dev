@@ -24,8 +24,9 @@ const ORIGIN = `http://localhost:${PORT}`;
 
 /**
  * The suite runs with the site's own Animations toggle switched OFF (`localStorage["mclector-motion"] = "off"`).
- * That freezes AMBIENT motion (keyframes: the horizon glow and star drift, the hologram spin), which is what
- * keeps the visual baselines and the hologram picture guards deterministic. It used to be done with Playwright's
+ * That freezes AMBIENT motion (keyframes: the horizon glow and star drift), which keeps the
+ * visual baselines deterministic. The hologram is not governed by the toggle; its picture guards get their
+ * determinism from `--disable-3d-apis`. It used to be done with Playwright's
  * `reducedMotion: "reduce"`, but the site no longer reads the OS setting (owner decision), so that lever is gone.
  *
  * It never affects hover: hover and focus transitions are locked on in both states of the toggle. A spec that

@@ -43,8 +43,7 @@ export function nextMotion(motion: Motion): Motion {
 
 /* ---------------------------------------------------------------------------------------------------------
  * The live setting. The `<html data-motion>` attribute is the single source of truth: the inline boot script
- * sets it before first paint, CSS keys off it, and everything else reads it. Reading it is a plain property
- * access.
+ * sets it before first paint, CSS keys off it, and everything else reads it.
  * ------------------------------------------------------------------------------------------------------- */
 
 const listeners = new Set<(motion: Motion) => void>();

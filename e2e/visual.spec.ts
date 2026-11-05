@@ -19,7 +19,7 @@ import { test, expect } from "@playwright/test";
  *
  * THEME: each baseline pins `data-theme` explicitly (stored choice) so the
  * snapshot never depends on the OS colour-scheme fallback. Dark is the default
- * look; a light (white) desktop baseline covers the second theme.
+ * look; a light desktop baseline covers the second theme.
  *
  * Baselines are captured on the desktop chromium project only; the
  * mobile-chrome project emulates a different DPR/device, which would double

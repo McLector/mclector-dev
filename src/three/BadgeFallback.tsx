@@ -12,7 +12,7 @@ import { initialsFrom } from "./textures/initials";
  * rather than the retired lanyard badge, so the swap to the live scene doesn't change the object.
  *
  * It sits on the hologram's projection bay (the stage background PassCard draws from `--stage-bg`), which is
- * deep navy in the dark theme and pale steel glass in the light one. So its text, brackets and scanline wash
+ * deep navy in the dark theme and pale glass in the light one. So its text, brackets and scanline wash
  * each carry a `light:` twin: pale on the dark bay, ink on the pale one.
  *
  * Unlike the rest of `src/three/**` this file is pure DOM and is genuinely
