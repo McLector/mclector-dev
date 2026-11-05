@@ -27,6 +27,8 @@ export const PED_Y = -1.9;
 
 /** Vertical field of view, degrees. */
 export const FOV = 32;
+/** How far the camera looks down at the hologram, degrees: the owner's "slight tilt", so the base reads as an open ellipse. */
+export const CAMERA_PITCH_DEG = 12;
 /** Breathing room kept around the framed object, as a fraction of the frame. */
 export const FRAME_MARGIN = 0.06;
 

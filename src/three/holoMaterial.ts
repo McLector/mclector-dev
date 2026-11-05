@@ -39,10 +39,12 @@ export const HOLO_LOOK = {
   uSharp: 0.5,
   /** How far the picture fades when the card turns edge-on, as a projected image would. */
   uGrazing: 0.6,
-  /** Lit from the projector below: brighter and cyan-warmer at the bottom edge, dimmer at the top. */
-  uLight: 0.5,
+  /** Lit from the projector below: brighter and cyan-warmer at the bottom edge, dimmer at the top. Gentle: 0.5 read as too strong. */
+  uLight: 0.2,
   /** Sideways shear, in UV, of the thin interference band that slides up the picture. */
   uGlitch: 0.006,
+  /** Width of the card's edge fade, in card space (0.5 is the centre). With no frame, the picture melts into the dark over this. */
+  uFeather: 0.04,
 } as const;
 
 type Uniform<T> = { value: T };
@@ -78,7 +80,7 @@ export const HOLO_VERTEX_SHADER =
  */
 export const HOLO_FRAGMENT_SHADER = `varying vec2 vU; varying vec2 vT; varying vec3 vN; varying vec3 vView; uniform sampler2D map; uniform float t; uniform vec3 tint;
       uniform vec2 uTexel;
-      uniform float uColor, uSat, uLift, uBody, uScan, uFringe, uContrast, uMask, uFreq, uSpot, uSharp, uGrazing, uLight, uGlitch;
+      uniform float uColor, uSat, uLift, uBody, uScan, uFringe, uContrast, uMask, uFreq, uSpot, uSharp, uGrazing, uLight, uGlitch, uFeather;
       float lum(vec3 c){ return dot(c, vec3(0.299,0.587,0.114)); }
       void main(){
         // A thin band slides up the picture and shears it sideways; never when frozen (t = 0).
@@ -115,8 +117,8 @@ export const HOLO_FRAGMENT_SHADER = `varying vec2 vU; varying vec2 vT; varying v
         col += tint * uLight * 0.35 * pow(1. - vU.y, 4.);
         float edge = min(min(vU.x,1.-vU.x),min(vU.y,1.-vU.y)); col += tint*smoothstep(0.06,0.,edge)*0.3;
         float lumA = clamp(l*1.3+0.1,0.,1.);
-        float a = clamp(lumA + uColor*uBody, 0., 1.) * smoothstep(0.,0.02,edge);
-        if (uMask > 0.5) a = tc.a * clamp(0.78 + 0.22*lumA, 0., 1.) * smoothstep(0.,0.02,edge);
+        float a = clamp(lumA + uColor*uBody, 0., 1.) * smoothstep(0.,uFeather,edge);
+        if (uMask > 0.5) a = tc.a * clamp(0.78 + 0.22*lumA, 0., 1.) * smoothstep(0.,uFeather,edge);
         // A projected image thins out as the card turns edge-on.
         float nv = abs(dot(normalize(vN), normalize(vView)));
         a *= mix(1., smoothstep(0.1, 0.7, nv), uGrazing);

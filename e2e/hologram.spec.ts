@@ -4,9 +4,8 @@ import { test, expect, type Page } from "@playwright/test";
  * Regression guard for the bug that started the redesign: a visitor with
  * the reduced-motion setting (or a modest GPU) was shown the FLAT 2D card instead
  * of the 3D object, because the capability gate conflated "render 3D" with
- * "animate 3D". The site no longer reads the OS setting; the same guard now covers the
- * visible Animations toggle: switched OFF (which is how this whole suite runs, see
- * playwright.config.ts) the hologram must still render, just static.
+ * "animate 3D". The site no longer reads the OS setting. The visible Animations toggle (OFF for this whole
+ * suite, see playwright.config.ts) governs the backdrop only: the hologram ignores it and must still render.
  *
  * This is the only spec that runs with WebGL available (the `webgl` project in
  * playwright.config.ts); every other spec runs with 3D APIs disabled so the
@@ -14,7 +13,7 @@ import { test, expect, type Page } from "@playwright/test";
  * a <canvas> — not pixels: headless software GL cannot settle the scene, and
  * the live look is checked on a real GPU.
  */
-test.describe("hologram with animations off", () => {
+test.describe("hologram with the animations toggle off", () => {
   // Software-rendered WebGL is slow to mount; two parallel workers can starve it past 30s.
   test.describe.configure({ timeout: 120_000 });
 
@@ -107,36 +106,44 @@ test.describe("hologram at a scaled viewport", () => {
 /**
  * Pixel guards for the PICTURE on the card. The rest of this file proves the canvas mounts and is
  * sized; nothing above would notice if the portrait rendered as flat cyan, veiled white, or if
- * the back face were an opaque slab. With the Animations toggle off the scene is static (rotation 0, t = 0),
- * so its pixels are deterministic.
+ * the back face were an opaque slab. The hologram follows its own capability gate, not the Animations toggle, so a
+ * capable machine spins the card and the picture would never hold still. The test therefore reports 2 CPU cores:
+ * that is the low tier, which renders the scene STATIC (rotation 0, t = 0, no autonomous motion), so its pixels are
+ * deterministic. (The low tier also turns antialiasing off and caps dpr at 1; the numbers below are measured that way.)
  *
  * Every threshold was CALIBRATED by breaking the thing and measuring, not assumed. Canvas is
- * 546×596 at 1440×900 in the LIGHT theme (pinned in the test), whose stage is the deep-navy bay:
+ * 546×596 at 1440×900 in the LIGHT theme (pinned in the test), whose stage is the deep-navy bay. The scene is the
+ * borderless corners-only card on the reference projector, seen from 12° above:
  *
  *                              nonBlue%   lumaP5   back margins (mean luma)
- *   as approved                  2.76      63.8      50 top / 67 sides
- *   colour off (uColor 0)        0.00      69.6        —
- *   legacy veiled scan band      1.32     147.4        —
- *   opaque back photo             —         —        204–223 (a bright slab; the face is 106)
+ *   as approved                  7.53      49.0      35 top / 41-43 sides   (face 144: contrast +101)
+ *   colour off (uColor 0)        0.00      45.4        —
+ *   legacy veiled scan band      1.32     147.4        —   (measured on the previous bezel framing)
+ *   opaque back photo             —         —        204–223 (a bright slab; the face was 106; same framing)
  *
- * (Switching the mask off ALONE changes nothing — margins 46–56, the same as approved: under a real
- * cutout the texture is black behind the transparent pixels, so the luminance alpha hides them anyway.
- * The regression that matters is shipping the OPAQUE photo, which is the last row, and which
- * src/assets/formalPic.test.ts also pins at the file level.)
+ * (The last two rows were measured on the previous bezel framing and not repeated for this one; they are far from
+ * the thresholds below, which sit between the approved row and them.)
+ *
+ * (Switching the mask off ALONE changes nothing — under a real cutout the texture is black behind the
+ * transparent pixels, so the luminance alpha hides them anyway. The regression that matters is shipping the
+ * OPAQUE photo, which is the last row, and which src/assets/formalPic.test.ts also pins at the file level.)
  */
 type Region = readonly [x0: number, x1: number, y0: number, y1: number];
 type Stats = { meanLuma: number; lumaP5: number; nonBluePct: number };
 
-/** Fractions of the canvas. The photo area of the front screen; and empty margins / the face on the back. */
-const PHOTO: Region = [0.297, 0.703, 0.131, 0.601];
+/**
+ * Fractions of the canvas. The photo area of the front screen (inside its soft edge); and the empty margins beside
+ * the bust, inside the card's bounds, and the face on the back.
+ */
+const PHOTO: Region = [0.31, 0.69, 0.11, 0.53];
 const BACK_MARGINS: Record<string, Region> = {
-  topLeft: [0.31, 0.375, 0.145, 0.205],
-  topRight: [0.625, 0.69, 0.145, 0.205],
-  leftSide: [0.31, 0.345, 0.3, 0.4],
-  rightSide: [0.655, 0.69, 0.3, 0.4],
+  topLeft: [0.3, 0.34, 0.1, 0.16],
+  topRight: [0.66, 0.7, 0.1, 0.16],
+  leftSide: [0.3, 0.34, 0.25, 0.37],
+  rightSide: [0.655, 0.7, 0.25, 0.37],
 };
 const FACE: Region = [0.46, 0.54, 0.3, 0.4];
-/** Approved margins measure 46–67. Set from the opaque-photo measurement above. */
+/** Approved margins measure 35–43. Set from the opaque-photo measurement above. */
 const MASK_MARGIN_MAX = 100;
 
 /** Decode a screenshot in the page (a canvas needs no image library) and measure regions of it. */
@@ -184,6 +191,8 @@ test.describe("hologram picture", () => {
     // The thresholds below were calibrated on the LIGHT theme's stage (the deep-navy bay). Pin it
     // explicitly: the app's default is now dark, and this must not depend on any default or OS setting.
     await page.addInitScript(() => localStorage.setItem("mclector-theme", "light"));
+    // Two cores is the low tier, which renders the scene static. See the note above.
+    await page.addInitScript(() => Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 2 }));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
@@ -207,11 +216,11 @@ test.describe("hologram picture", () => {
             message: "no warm/green pixels: the portrait is rendering as the flat cyan ramp",
           },
         )
-        .toBeGreaterThan(1.0); // approved 2.76, colour off 0.00
+        .toBeGreaterThan(1.0); // approved 7.53, colour off 0.00
     });
 
     await test.step("front: no white veil over the portrait", async () => {
-      // The legacy scan band added +0.5 white to every pixel, lifting the 5th-percentile luminance to ~147.
+      // The legacy scan band added +0.5 white to every pixel, lifting the 5th-percentile luminance to ~147 (approved: 49).
       expect(front!.lumaP5, "the darkest 5% of the portrait is washed out — a white veil").toBeLessThan(105);
     });
 
@@ -239,7 +248,7 @@ test.describe("hologram picture", () => {
               message: "no bust stands out from the back face's margins: an opaque slab, or nothing loaded",
             },
           )
-          .toBeGreaterThan(20); // approved ≈ +40
+          .toBeGreaterThan(20); // approved ≈ +100
         for (const name of Object.keys(BACK_MARGINS)) {
           expect(back[name].meanLuma, `back margin "${name}" is bright — the background was not removed`).toBeLessThan(
             MASK_MARGIN_MAX,

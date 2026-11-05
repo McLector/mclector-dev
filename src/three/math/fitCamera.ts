@@ -108,3 +108,45 @@ export function fitCamera(
 
   return { y: centre(far), z: far };
 }
+
+export type PitchedFit = {
+  /** Where the camera sits. */
+  position: Point3;
+  /** A point straight ahead of it (one unit along its view direction): what to `lookAt`. */
+  lookAt: Point3;
+  /** How far the fit is from the object along the view axis (the level fit's `z`). */
+  distance: number;
+};
+
+/**
+ * The same nearest-fit camera as `fitCamera`, but tilted down by `pitchDeg` (the camera sits above the
+ * object and looks down at it, so a flat floor reads as an open ellipse instead of a thin line).
+ *
+ * No search is needed. Turning the world about the x axis by the pitch makes this camera level, which is
+ * exactly the case `fitCamera` already solves; the answer is turned back to place the real camera. The
+ * rotation is rigid and the camera's view axis keeps pointing at the same spot, so the fit is exact and
+ * costs one level fit.
+ */
+export function fitCameraPitched(
+  points: readonly Point3[],
+  fovDeg: number,
+  aspect: number,
+  margin: number,
+  pitchDeg: number,
+): PitchedFit {
+  if (points.length === 0) throw new RangeError("fitCameraPitched: no points to frame");
+  if (!Number.isFinite(pitchDeg) || Math.abs(pitchDeg) >= 90) {
+    throw new RangeError(`fitCameraPitched: pitch must be within (-90, 90) degrees, got ${pitchDeg}`);
+  }
+  const theta = (pitchDeg * Math.PI) / 180;
+  const c = Math.cos(theta);
+  const s = Math.sin(theta);
+
+  // World → the level frame the camera would be in with no pitch: a turn about x by +pitch.
+  const level = points.map((p) => ({ x: p.x, y: p.y * c - p.z * s, z: p.y * s + p.z * c }));
+  const fit = fitCamera(level, fovDeg, aspect, margin);
+
+  // And back: a camera at (0, y, z) in the level frame is at (0, y·c + z·s, z·c − y·s) in the world.
+  const toWorld = (y: number, z: number): Point3 => ({ x: 0, y: y * c + z * s, z: z * c - y * s });
+  return { position: toWorld(fit.y, fit.z), lookAt: toWorld(fit.y, fit.z - 1), distance: fit.z };
+}

@@ -476,6 +476,19 @@
     -webkit-mask-image: radial-gradient(130% 100% at 50% 38%, black 30%, transparent 85%);
     mask-image: radial-gradient(130% 100% at 50% 38%, black 30%, transparent 85%);
   }
+
+  /* The 2D stand-in for the hologram card has no frame: its picture melts into the stage at the edges, as the
+     3D card's does (uFeather in src/three/holoMaterial.ts). Two fades, one across and one down, intersected. */
+  .badge-picture-mask {
+    -webkit-mask-image:
+      linear-gradient(to right, transparent, black 7%, black 93%, transparent),
+      linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+    mask-image:
+      linear-gradient(to right, transparent, black 7%, black 93%, transparent),
+      linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+  }
 }
 
 @layer utilities {

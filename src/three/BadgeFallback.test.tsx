@@ -117,13 +117,42 @@ describe("BadgeFallback", () => {
     expect(title!.className).toMatch(/truncate|line-clamp/);
   });
 
-  it("is a slim arc-reactor hologram frame, not a lanyard (no strap, no punch hole)", () => {
+  it("is a borderless projection, not a lanyard (no strap, no punch hole) and not a bordered card", () => {
     const { container } = render(<BadgeFallback profile={makeProfile()} />);
     const surface = container.querySelector<HTMLElement>("[data-badge-surface]");
     expect(surface).not.toBeNull();
-    expect(surface!.className).toContain("var(--arc)");
+    // The 3D hologram has no frame, so its stand-in must not draw one: no ring, no inset hairline.
+    expect(surface!.className).not.toMatch(/(^| )ring-/);
+    expect(surface!.style.boxShadow).not.toContain("inset");
     expect(container.querySelector("[data-badge-strap]")).toBeNull();
     expect(container.querySelector("[data-badge-punch]")).toBeNull();
+  });
+
+  it("marks the picture with four corner brackets, one per corner, hidden from assistive tech", () => {
+    const { container } = render(<BadgeFallback profile={makeProfile()} />);
+    const corners = [...container.querySelectorAll<HTMLElement>("[data-badge-corner]")];
+    expect(corners.map((c) => c.dataset.badgeCorner).sort()).toEqual(["bl", "br", "tl", "tr"]);
+    for (const c of corners) expect(c).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("keeps the corners inside the badge surface, so they move with the picture", () => {
+    const { container } = render(<BadgeFallback profile={makeProfile()} />);
+    const surface = container.querySelector("[data-badge-surface]")!;
+    expect(surface.querySelectorAll("[data-badge-corner]")).toHaveLength(4);
+  });
+
+  it("melts the picture's edges into the stage with a mask instead of a hard rectangle", () => {
+    const profile = makeProfile();
+    profile.avatar = { ...profile.avatar, src: "/me.png" };
+    const { container } = render(<BadgeFallback profile={profile} />);
+    const picture = container.querySelector<HTMLElement>("[data-badge-picture]");
+    expect(picture).not.toBeNull();
+    expect(picture!.className).toMatch(/mask/);
+  });
+
+  it("still shows the picture's scanline overlay inside the masked picture", () => {
+    const { container } = render(<BadgeFallback profile={makeProfile()} />);
+    expect(container.querySelector("[data-badge-picture] [data-badge-scanlines]")).not.toBeNull();
   });
 
   it("puts the photo inside the frame with a scanline overlay when an avatar src exists", () => {

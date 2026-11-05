@@ -3,21 +3,27 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import type { TierConfig } from "@/lib/capability";
-import {
-  FACE_Z,
-  GLINT_TRAIL,
-  frameOpacities,
-  glintOpacity,
-  glintPoint,
-  glintScale,
-} from "./cardFrame";
+import { BRACKET, FACE_Z, bracketCorners } from "./cardFrame";
 import { createHoloMaterial, createHoloUniforms, setTexelFromImage, type HoloUniforms } from "./holoMaterial";
-import { fitCamera } from "./math/fitCamera";
+import { fitCameraPitched } from "./math/fitCamera";
+import {
+  BASE_RADIUS,
+  DASH_RING,
+  SHAFT,
+  SHAFT_BASE_Y,
+  dashRing,
+  dotFloor,
+  projectorMotion,
+  ringSpecs,
+  shaftSpecs,
+  tickSets,
+  tickTransforms,
+} from "./projector";
 import {
   BACK_FRAMING,
   BOB,
+  CAMERA_PITCH_DEG,
   CARD_Y,
-  DEP,
   FOV,
   FRAME_MARGIN,
   FRONT_FRAMING,
@@ -26,37 +32,14 @@ import {
   PW,
   hologramFramePoints,
 } from "./sceneDims";
-import { makeMotes, stepMotes } from "./motes";
+import { createShaftGeometry, createShaftMaterial } from "./shaftMaterial";
 import { loadPortraitTexture } from "./textures/portraitTexture";
 import portraitUrl from "@/assets/portfolio-pic.jpg";
 import formalUrl from "@/assets/formal-pic.webp";
 
 const ARC = 0x5ec8ff;
 const CARD_ASPECT = PW / PH;
-
-/** Where the projector beam starts (just above the pedestal plate) and how tall it is. */
-const BEAM_Y0 = PED_Y + 0.09;
-const BEAM_H = 4.5;
-/** Beam intensity — the owner reviewed the mockup at its slider minimum and kept it. */
-const BEAM_GAIN = 0.4;
-/** How many dust motes drift through the beam. */
-const MOTE_COUNT = 70;
-
-function roundedRect(w: number, h: number, r: number): THREE.Shape {
-  const s = new THREE.Shape();
-  const x = -w / 2;
-  const y = -h / 2;
-  s.moveTo(x + r, y);
-  s.lineTo(x + w - r, y);
-  s.quadraticCurveTo(x + w, y, x + w, y + r);
-  s.lineTo(x + w, y + h - r);
-  s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  s.lineTo(x + r, y + h);
-  s.quadraticCurveTo(x, y + h, x, y + h - r);
-  s.lineTo(x, y + r);
-  s.quadraticCurveTo(x, y, x + r, y);
-  return s;
-}
+const ADDITIVE = THREE.AdditiveBlending;
 
 /** A 128×128 radial-gradient texture from `[offset, css colour]` stops. */
 function radialTexture(stops: Array<[number, string]>): THREE.CanvasTexture {
@@ -92,106 +75,234 @@ function envTexture(): THREE.Texture {
   return t;
 }
 
-/**
- * One shell of the projector beam. A truncated cone (narrow emitter at the
- * pedestal, fanning wide upward), shaded with three interleaved sets of thin
- * rays, a vertical falloff that reaches zero before the rim, a hot base, a soft
- * limb, and a horizontal edge fade so the fan never hard-cuts against the frame.
- * The rays are keyed to the angle around the axis, so they read as straight
- * shafts of light springing from the emitter.
- */
-function beamMaterial(
-  shared: BeamUniforms,
-  strength: number,
-  freq: number,
-): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    // Drawn BEHIND the card (see renderOrder) — the light must not streak the portrait.
-    depthTest: false,
-    blending: THREE.AdditiveBlending,
-    side: THREE.DoubleSide,
-    uniforms: { ...shared, uStr: { value: strength }, uFreq: { value: freq } },
-    vertexShader: `
-      varying vec3 vPos; varying vec3 vN; varying vec3 vW; varying vec3 vView; varying float vV;
-      uniform float uY0; uniform float uH;
-      void main(){
-        vPos = position;
-        vN = normalize(normalMatrix * normal);
-        vec4 w = modelMatrix * vec4(position, 1.);
-        vW = w.xyz;
-        vV = (w.y - uY0) / uH;
-        vec4 mv = viewMatrix * w;
-        vView = -mv.xyz;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      varying vec3 vPos; varying vec3 vN; varying vec3 vW; varying vec3 vView; varying float vV;
-      uniform float t; uniform vec3 tint; uniform float uGain; uniform float uEdge;
-      uniform float uStr; uniform float uFreq;
-      void main(){
-        float a = atan(vPos.z, vPos.x);
-        // Striation: three interleaved ray sets, slowly drifting.
-        float r = 0.;
-        r += pow(abs(sin(a * uFreq * 0.5 + 0.7 + t * 0.05)), 5.) * 0.9;
-        r += pow(abs(sin(a * uFreq * 1.1 + 2.1 - t * 0.07)), 9.) * 0.75;
-        r += pow(abs(sin(a * uFreq * 1.9 + 4.3 + t * 0.03)), 14.) * 0.6;
-        float v = clamp(vV, 0., 1.);
-        float fall = pow(1. - smoothstep(0., 0.9, v), 1.3);
-        float hot = exp(-v * 4.5);
-        float nv = abs(dot(normalize(vN), normalize(vView)));
-        float limb = mix(0.5, 1., nv);
-        float edge = 1. - smoothstep(uEdge * 0.70, uEdge * 0.97, abs(vW.x));
-        float base = (0.16 + r) * fall + hot * 0.55;
-        float alpha = base * limb * edge * smoothstep(0., 0.03, v) * uStr * uGain;
-        vec3 col = mix(tint, vec3(0.86, 0.97, 1.), clamp(hot * 0.9 + r * 0.12, 0., 1.));
-        gl_FragColor = vec4(col, alpha);
-      }`,
-  });
-}
-
-type BeamUniforms = {
-  t: { value: number };
-  tint: { value: THREE.Color };
-  uGain: { value: number };
-  uEdge: { value: number };
-  uY0: { value: number };
-  uH: { value: number };
-};
-
-/** One sprite of the rim glint: `k` 0 is the bright head, the rest trail behind it. */
-type GlintSprite = { sprite: THREE.Sprite; k: number; side: 1 | -1 };
+type Disposable = { dispose: () => void };
 
 type BuiltScene = {
   root: THREE.Group;
-  /** Dust drifting up the beam: the positions are mutated in place each frame. */
-  motes: { positions: Float32Array; attribute: THREE.BufferAttribute };
   cardGroup: THREE.Group;
-  pedGroup: THREE.Group;
   /** Shared by both faces: one clock, one look. */
   holo: HoloUniforms;
-  rims: { inner: THREE.LineBasicMaterial; outer: THREE.LineBasicMaterial };
-  glints: GlintSprite[];
-  glintPath: THREE.Vector2[];
-  core: THREE.Mesh;
-  dots: THREE.Mesh[];
-  beamUniforms: BeamUniforms;
-  disposables: Array<{ dispose: () => void }>;
+  /** Shared by every shaft of light. */
+  shaftClock: { value: number };
+  /** The three ring sets that turn slowly (see `projectorMotion`). */
+  rings: { outer: THREE.Group; inner: THREE.Group; dash: THREE.Group };
+  disposables: Disposable[];
 };
 
 /**
- * A two-sided holographic ID card floating over a sci-fi projector pedestal, lit by a
- * fanned, striated light cone that spreads UP and out from a hot emitter — the
- * way a real hologram projector reads. The front projects the portfolio photo in
- * real colour; the back projects the formal portrait with its background removed, so it
- * reads as a floating bust. Built imperatively (ported from the approved mockup) and
- * mounted via <primitive>; `useFrame` drives motion, gated by `animated` (false =
- * static, for reduced-motion / low-end).
+ * The projector under the card, built from the data in ./projector: HUD rings and tick marks on the floor, a
+ * domed emitter with a ring of dashes, a dotted floor that fades out, and shafts of light rising behind the
+ * card. Returns the group and the three ring sets that turn.
+ */
+function buildProjector(track: <T extends Disposable>(o: T) => T) {
+  const group = new THREE.Group();
+  const flat = (color: number, opacity: number) =>
+    track(
+      new THREE.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity,
+        blending: ADDITIVE,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      }),
+    );
+  const floorDisc = (radius: number, texture: THREE.Texture, opacity: number, y: number) => {
+    const m = new THREE.Mesh(
+      track(new THREE.PlaneGeometry(radius * 2, radius * 2)),
+      track(
+        new THREE.MeshBasicMaterial({
+          map: texture,
+          transparent: true,
+          blending: ADDITIVE,
+          depthWrite: false,
+          opacity,
+        }),
+      ),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = y;
+    return m;
+  };
+  const lathe = (profile: Array<[number, number]>, material: THREE.Material) =>
+    new THREE.Mesh(
+      track(
+        new THREE.LatheGeometry(
+          profile.map(([r, y]) => new THREE.Vector2(r, y)),
+          72,
+        ),
+      ),
+      material,
+    );
+
+  // ---- HUD rings: the thin outer ring, thick arcs, inner arcs and hairlines ----
+  const outer = new THREE.Group();
+  const inner = new THREE.Group();
+  for (const spec of ringSpecs(BASE_RADIUS)) {
+    const segments = Math.max(8, Math.ceil(spec.sweep * 24));
+    const arc = new THREE.Mesh(
+      track(new THREE.RingGeometry(spec.rIn, spec.rOut, segments, 1, spec.start, spec.sweep)),
+      flat(spec.color, spec.opacity),
+    );
+    arc.rotation.x = -Math.PI / 2;
+    arc.position.y = PED_Y + 0.006;
+    (spec.group === "outer" ? outer : inner).add(arc);
+  }
+
+  // ---- tick marks: one InstancedMesh per run ----
+  const quaternion = new THREE.Quaternion();
+  const up = new THREE.Vector3(0, 1, 0);
+  const matrix = new THREE.Matrix4();
+  const unit = new THREE.Vector3(1, 1, 1);
+  for (const set of tickSets(BASE_RADIUS)) {
+    const placements = tickTransforms(set);
+    const ticks = new THREE.InstancedMesh(
+      track(new THREE.BoxGeometry(set.length, 0.004, set.width)),
+      flat(set.color, set.opacity),
+      placements.length,
+    );
+    placements.forEach((p, i) => {
+      quaternion.setFromAxisAngle(up, p.rotationY);
+      matrix.compose(new THREE.Vector3(p.x, PED_Y + 0.008, p.z), quaternion, unit);
+      ticks.setMatrixAt(i, matrix);
+    });
+    ticks.instanceMatrix.needsUpdate = true;
+    track(ticks);
+    inner.add(ticks);
+  }
+  group.add(outer, inner);
+
+  // ---- the emitter: a dark bezel, a white dome, a ring of dashes and a hot centre ----
+  const lip = lathe(
+    [
+      [0.3, 0],
+      [0.54, 0],
+      [0.54, 0.05],
+      [0.3, 0.07],
+    ],
+    track(
+      new THREE.MeshStandardMaterial({
+        color: 0x0b2233,
+        metalness: 0.85,
+        roughness: 0.35,
+        emissive: new THREE.Color(0x0a2c44),
+        emissiveIntensity: 0.6,
+        envMapIntensity: 0.15,
+      }),
+    ),
+  );
+  lip.position.y = PED_Y;
+  group.add(lip);
+
+  const lipEdge = new THREE.Mesh(
+    track(new THREE.TorusGeometry(0.54, 0.014, 12, 96)),
+    track(new THREE.MeshBasicMaterial({ color: 0xa6e6ff, transparent: true, opacity: 0.9 })),
+  );
+  lipEdge.rotation.x = Math.PI / 2;
+  lipEdge.position.y = PED_Y + 0.055;
+  group.add(lipEdge);
+
+  const dome = new THREE.Mesh(
+    track(new THREE.SphereGeometry(0.3, 32, 16)),
+    track(new THREE.MeshBasicMaterial({ color: 0xeafcff })),
+  );
+  dome.scale.set(1, 0.42, 1);
+  dome.position.y = PED_Y + 0.06;
+  group.add(dome);
+
+  const dash = new THREE.Group();
+  const dashGeometry = track(new THREE.BoxGeometry(DASH_RING.length, 0.01, DASH_RING.width));
+  const dashMaterial = flat(0xbfe6ff, DASH_RING.opacity);
+  for (const p of dashRing()) {
+    const d = new THREE.Mesh(dashGeometry, dashMaterial);
+    d.position.set(p.x, PED_Y + 0.01, p.z);
+    d.rotation.y = p.rotationY;
+    dash.add(d);
+  }
+  group.add(dash);
+
+  const lipGlow = new THREE.Mesh(
+    track(new THREE.RingGeometry(0.6, 0.8, 80)),
+    flat(0x9fdcff, 0.12),
+  );
+  lipGlow.rotation.x = -Math.PI / 2;
+  lipGlow.position.y = PED_Y + 0.004;
+  group.add(lipGlow);
+  group.add(
+    floorDisc(
+      BASE_RADIUS * 0.55,
+      track(
+        radialTexture([
+          [0, "rgba(170,236,255,1)"],
+          [0.32, "rgba(90,200,255,.45)"],
+          [1, "rgba(0,0,0,0)"],
+        ]),
+      ),
+      0.6,
+      PED_Y + 0.02,
+    ),
+    floorDisc(
+      0.8,
+      track(
+        radialTexture([
+          [0, "rgba(255,255,255,1)"],
+          [0.28, "rgba(190,240,255,.7)"],
+          [1, "rgba(0,0,0,0)"],
+        ]),
+      ),
+      0.9,
+      PED_Y + 0.09,
+    ),
+  );
+
+  // ---- the dotted floor, fading out with distance ----
+  const dots = dotFloor(BASE_RADIUS);
+  for (let i = 1; i < dots.positions.length; i += 3) dots.positions[i] = PED_Y + 0.003;
+  const dotGeometry = track(new THREE.BufferGeometry());
+  dotGeometry.setAttribute("position", new THREE.BufferAttribute(dots.positions, 3));
+  dotGeometry.setAttribute("color", new THREE.BufferAttribute(dots.colors, 3));
+  group.add(
+    new THREE.Points(
+      dotGeometry,
+      track(
+        new THREE.PointsMaterial({
+          size: 0.04,
+          vertexColors: true,
+          transparent: true,
+          blending: ADDITIVE,
+          depthWrite: false,
+          sizeAttenuation: true,
+        }),
+      ),
+    ),
+  );
+
+  // ---- shafts of light, drawn first so the card sits on top ----
+  const shaftClock = { value: 0 };
+  for (const spec of shaftSpecs(SHAFT.count, SHAFT.seed, SHAFT.spread)) {
+    const shaft = new THREE.Mesh(
+      track(createShaftGeometry(spec.width, SHAFT.height)),
+      track(createShaftMaterial(spec, shaftClock)),
+    );
+    shaft.position.set(spec.x, SHAFT_BASE_Y, spec.z);
+    shaft.rotation.z = spec.lean;
+    shaft.renderOrder = -1;
+    group.add(shaft);
+  }
+
+  return { group, shaftClock, rings: { outer, inner, dash } };
+}
+
+/**
+ * A two-sided holographic ID card floating over a HUD projector: thick blue arcs, tick marks and a domed
+ * emitter on the floor, with soft shafts of light rising behind the card. The card has no frame, only four
+ * corner brackets. The front projects the portfolio photo in real colour; the back projects the formal
+ * portrait with its background removed, so it reads as a floating bust. Built imperatively (ported from the
+ * approved mock-up) and mounted via <primitive>; `useFrame` drives motion, gated by `animated` (false = still,
+ * for low-end devices).
  *
- * The camera is not hand-placed: it is fitted to the object's real 3D extent
- * for the canvas's current aspect (see math/fitCamera), so the hologram sits
- * centred with headroom at any size.
+ * The camera is not hand-placed: it is fitted to the object's real 3D extent for the canvas's current aspect
+ * and tilted down a little (see math/fitCamera), so the hologram sits centred with headroom at any size.
  */
 export default function HologramScene({
   profile: _profile,
@@ -206,8 +317,8 @@ export default function HologramScene({
   const size = useThree((s) => s.size);
 
   const built = useMemo<BuiltScene>(() => {
-    const disposables: Array<{ dispose: () => void }> = [];
-    const track = <T extends { dispose: () => void }>(o: T): T => {
+    const disposables: Disposable[] = [];
+    const track = <T extends Disposable>(o: T): T => {
       disposables.push(o);
       return o;
     };
@@ -222,46 +333,19 @@ export default function HologramScene({
 
     // Frame tightly on the subject (the photo has a lot of dusk sky). focusX is
     // where the subject actually sits (≈ 0.49–0.50 of the photo's width), so they
-    // land on the card's midline — and on the pedestal's axis.
+    // land on the card's midline — and on the projector's axis.
     // Each face's material is made below; the photo decodes after that, so its onReady finds it here.
     const faceMaterials = new Map<THREE.Texture, THREE.ShaderMaterial>();
     const onReady = (tex: THREE.Texture) => {
       const m = faceMaterials.get(tex);
       if (m) setTexelFromImage(m, tex);
     };
-    const frontTex = loadPortraitTexture(
-      portraitUrl,
-      CARD_ASPECT,
-      FRONT_FRAMING,
-      onReady,
-    );
+    const frontTex = loadPortraitTexture(portraitUrl, CARD_ASPECT, FRONT_FRAMING, onReady);
     // The formal portrait, background removed (src/assets/formalPic.test.ts pins that it is a
     // real matte). It is square, so cover-cropping trims its sides; BACK_FRAMING keeps its full height.
-    const backTex = loadPortraitTexture(
-      formalUrl,
-      CARD_ASPECT,
-      BACK_FRAMING,
-      onReady,
-    );
-    disposables.push(frontTex, backTex);
-
-    // A faint smoked-glass body between the two faces, so each face has something to read
-    // against and neither is seen straight through to the other. It draws no depth (the faces
-    // are 0.03 apart) and stays mostly see-through — the hologram reads as light, not a photo.
-    const backing = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(PW + 0.18, PH + 0.18)),
-      track(
-        new THREE.MeshBasicMaterial({
-          color: 0x061020,
-          transparent: true,
-          opacity: 0.32,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        }),
-      ),
-    );
-    backing.position.z = FACE_Z.backing;
-    cardGroup.add(backing);
+    const backTex = loadPortraitTexture(formalUrl, CARD_ASPECT, BACK_FRAMING, onReady);
+    track(frontTex);
+    track(backTex);
 
     // Front screen at +z, back screen at −z rotated π so it faces backwards (and is not
     // mirrored). Both are FrontSide, so culling keeps each face from showing through the other.
@@ -278,395 +362,41 @@ export default function HologramScene({
       cardGroup.add(screen);
     }
 
-    const bezShape = roundedRect(PW + 0.1, PH + 0.1, 0.17);
-    bezShape.holes.push(roundedRect(PW - 0.03, PH - 0.03, 0.14));
-    const bezGeo = track(
-      new THREE.ExtrudeGeometry(bezShape, {
-        depth: DEP,
-        bevelEnabled: true,
-        bevelThickness: 0.03,
-        bevelSize: 0.03,
-        bevelSegments: 4,
-        steps: 1,
-        curveSegments: 28,
-      }),
-    );
-    bezGeo.center();
-    // Lit steel rather than a dark slab, so the frame reads as hardware catching the light.
-    const bezel = new THREE.Mesh(
-      bezGeo,
-      track(
-        new THREE.MeshPhysicalMaterial({
-          color: 0x4a566e,
-          metalness: 0.72,
-          roughness: 0.15,
-          clearcoat: 1,
-          clearcoatRoughness: 0.08,
-          emissive: new THREE.Color(0x0c2b52),
-          emissiveIntensity: 0.1,
-          envMapIntensity: 1.3,
-        }),
-      ),
-    );
-    cardGroup.add(bezel);
-
-    // The glass sheen over each photo.
-    const sheenGeo = track(new THREE.PlaneGeometry(PW, PH));
-    const sheenMat = track(
-      new THREE.MeshPhysicalMaterial({
-        color: 0xbfeaff,
-        metalness: 0,
-        roughness: 0.05,
-        clearcoat: 1,
-        clearcoatRoughness: 0.03,
+    // Corner brackets on both faces: the card's only frame.
+    const bracketMaterial = track(
+      new THREE.LineBasicMaterial({
+        color: ARC,
         transparent: true,
-        opacity: 0.05,
-        envMapIntensity: 1.7,
-        depthWrite: false,
+        opacity: BRACKET.opacity,
+        blending: ADDITIVE,
       }),
     );
-    for (const side of [1, -1] as const) {
-      const sheen = new THREE.Mesh(sheenGeo, sheenMat);
-      sheen.position.z = side * FACE_Z.sheen;
-      if (side < 0) sheen.rotation.y = Math.PI;
-      cardGroup.add(sheen);
-    }
-
-    // A double-stroke rim on both faces: a hot thin inner line and a wider, dimmer outer one,
-    // so the edge reads as a lit tube rather than a hairline. Opacities pulse in `useFrame`.
-    const additiveLine = (opacity: number) =>
-      track(
-        new THREE.LineBasicMaterial({
-          color: ARC,
-          transparent: true,
-          opacity,
-          blending: THREE.AdditiveBlending,
-        }),
+    for (const corner of bracketCorners()) {
+      const geometry = track(
+        new THREE.BufferGeometry().setFromPoints(corner.map((p) => new THREE.Vector3(p.x, p.y, 0))),
       );
-    const still = frameOpacities(0, false);
-    const rims = { inner: additiveLine(still.rimInner), outer: additiveLine(still.rimOuter) };
-    const rimInnerGeo = track(
-      new THREE.BufferGeometry().setFromPoints(roundedRect(PW + 0.02, PH + 0.02, 0.14).getPoints(120)),
-    );
-    const rimOuterGeo = track(
-      new THREE.BufferGeometry().setFromPoints(roundedRect(PW + 0.085, PH + 0.085, 0.18).getPoints(120)),
-    );
-    for (const side of [1, -1] as const) {
-      for (const [geo, mat] of [
-        [rimInnerGeo, rims.inner],
-        [rimOuterGeo, rims.outer],
-      ] as const) {
-        const rim = new THREE.LineLoop(geo, mat);
-        rim.position.z = side * FACE_Z.rim;
-        cardGroup.add(rim);
-      }
-    }
-
-    // Corner brackets, also double-stroked, on both faces.
-    const bracketInner = additiveLine(0.95);
-    const bracketOuter = additiveLine(still.bracketOuter);
-    const bracket = (
-      cx: number,
-      cy: number,
-      sx: number,
-      sy: number,
-      length: number,
-      material: THREE.LineBasicMaterial,
-      z: number,
-    ) => {
-      const g = track(
-        new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(cx, cy - sy * length, 0),
-          new THREE.Vector3(cx, cy, 0),
-          new THREE.Vector3(cx - sx * length, cy, 0),
-        ]),
-      );
-      const l = new THREE.Line(g, material);
-      l.position.z = z;
-      cardGroup.add(l);
-    };
-    const hw = (PW + 0.06) / 2;
-    const hh = (PH + 0.06) / 2;
-    for (const side of [1, -1] as const) {
-      for (const [sx, sy] of [
-        [1, 1],
-        [-1, 1],
-        [1, -1],
-        [-1, -1],
-      ] as const) {
-        bracket(sx * hw, sy * hh, sx, sy, 0.26, bracketInner, side * FACE_Z.bracket);
-        bracket(sx * (hw + 0.028), sy * (hh + 0.028), sx, sy, 0.2, bracketOuter, side * FACE_Z.bracket);
-      }
-    }
-
-    // A travelling glint: one bright head and a short trail running the rim on a slow loop,
-    // on both faces. Positioned every frame in `useFrame`; frozen there when not animating.
-    const glintPath = roundedRect(PW + 0.06, PH + 0.06, 0.17).getPoints(300);
-    const glintTex = track(
-      radialTexture([
-        [0, "rgba(255,255,255,1)"],
-        [0.25, "rgba(170,236,255,.85)"],
-        [1, "rgba(0,0,0,0)"],
-      ]),
-    );
-    const glints: GlintSprite[] = [];
-    for (const side of [1, -1] as const) {
-      for (let k = 0; k < GLINT_TRAIL; k++) {
-        const sprite = new THREE.Sprite(
-          track(
-            new THREE.SpriteMaterial({
-              map: glintTex,
-              transparent: true,
-              blending: THREE.AdditiveBlending,
-              depthWrite: false,
-              opacity: glintOpacity(k),
-            }),
-          ),
-        );
-        sprite.scale.setScalar(glintScale(k));
-        const p = glintPoint(glintPath, 0, k, false);
-        sprite.position.set(p.x, p.y, side * FACE_Z.glint);
-        cardGroup.add(sprite);
-        glints.push({ sprite, k, side });
+      for (const side of [1, -1] as const) {
+        const line = new THREE.Line(geometry, bracketMaterial);
+        line.position.z = side * FACE_Z.bracket;
+        cardGroup.add(line);
       }
     }
     root.add(cardGroup);
 
-    // ---- pedestal ----
-    const pedGroup = new THREE.Group();
-    pedGroup.position.y = PED_Y;
-    const plate = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(1.75, 1.9, 0.12, 64)),
-      track(
-        new THREE.MeshStandardMaterial({
-          color: 0x0e1c30,
-          metalness: 0.85,
-          roughness: 0.35,
-          emissive: new THREE.Color(0x08172c),
-          emissiveIntensity: 0.3,
-        }),
-      ),
-    );
-    pedGroup.add(plate);
-
-    const rimTorus = new THREE.Mesh(
-      track(new THREE.TorusGeometry(1.68, 0.05, 16, 80)),
-      track(
-        new THREE.MeshStandardMaterial({
-          color: 0x1a3a5c,
-          metalness: 0.9,
-          roughness: 0.25,
-          emissive: new THREE.Color(ARC),
-          emissiveIntensity: 0.8,
-        }),
-      ),
-    );
-    rimTorus.rotation.x = Math.PI / 2;
-    rimTorus.position.y = 0.07;
-    pedGroup.add(rimTorus);
-
-    const ringLine = (rad: number, op: number) => {
-      const r = new THREE.Mesh(
-        track(new THREE.RingGeometry(rad - 0.012, rad + 0.012, 80)),
-        track(
-          new THREE.MeshBasicMaterial({
-            color: ARC,
-            transparent: true,
-            opacity: op,
-            blending: THREE.AdditiveBlending,
-            side: THREE.DoubleSide,
-          }),
-        ),
-      );
-      r.rotation.x = -Math.PI / 2;
-      r.position.y = 0.075;
-      pedGroup.add(r);
-    };
-    ringLine(1.3, 0.55);
-    ringLine(0.95, 0.5);
-    ringLine(0.55, 0.45);
-
-    const dashMat = track(
-      new THREE.MeshBasicMaterial({ color: ARC, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending }),
-    );
-    const dashGeo = track(new THREE.BoxGeometry(0.06, 0.006, 0.02));
-    for (let d = 0; d < 40; d++) {
-      const a = (d / 40) * Math.PI * 2;
-      const seg = new THREE.Mesh(dashGeo, dashMat);
-      seg.position.set(Math.cos(a) * 1.12, 0.08, Math.sin(a) * 1.12);
-      seg.rotation.y = -a;
-      pedGroup.add(seg);
-    }
-
-    const dots: THREE.Mesh[] = [];
-    const dotGeo = track(new THREE.SphereGeometry(0.045, 10, 10));
-    for (let p = 0; p < 18; p++) {
-      const a = (p / 18) * Math.PI * 2;
-      const dm = track(
-        new THREE.MeshBasicMaterial({ color: ARC, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }),
-      );
-      const ds = new THREE.Mesh(dotGeo, dm);
-      ds.position.set(Math.cos(a) * 1.62, 0.1, Math.sin(a) * 1.62);
-      ds.userData.ph = p * 0.5;
-      dots.push(ds);
-      pedGroup.add(ds);
-    }
-
-    // A hotter emitter: a wide soft pool of light on the plate, and a white-hot
-    // core at its centre — the source the beam visibly springs from.
-    const pool = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(3.7, 3.7)),
-      track(
-        new THREE.MeshBasicMaterial({
-          map: track(
-            radialTexture([
-              [0, "rgba(170,236,255,1)"],
-              [0.32, "rgba(90,200,255,.45)"],
-              [1, "rgba(0,0,0,0)"],
-            ]),
-          ),
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        }),
-      ),
-    );
-    pool.rotation.x = -Math.PI / 2;
-    pool.position.y = 0.09;
-    pedGroup.add(pool);
-
-    const core = new THREE.Mesh(
-      track(new THREE.PlaneGeometry(1.5, 1.5)),
-      track(
-        new THREE.MeshBasicMaterial({
-          map: track(
-            radialTexture([
-              [0, "rgba(255,255,255,1)"],
-              [0.28, "rgba(190,240,255,.7)"],
-              [1, "rgba(0,0,0,0)"],
-            ]),
-          ),
-          transparent: true,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-        }),
-      ),
-    );
-    core.rotation.x = -Math.PI / 2;
-    core.position.y = 0.1;
-    pedGroup.add(core);
-    root.add(pedGroup);
-
-    // ---- projector beam: narrow emitter fanning wide UPWARD, behind the card ----
-    const beamUniforms: BeamUniforms = {
-      t: { value: 0 },
-      tint: { value: new THREE.Color(ARC) },
-      uGain: { value: BEAM_GAIN },
-      uEdge: { value: 2.2 }, // set from the camera fit, once the canvas size is known
-      uY0: { value: BEAM_Y0 },
-      uH: { value: BEAM_H },
-    };
-    const outer = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(3.0, 1.0, BEAM_H, 96, 1, true)),
-      track(beamMaterial(beamUniforms, 0.2, 30)),
-    );
-    outer.position.y = BEAM_Y0 + BEAM_H / 2;
-    outer.renderOrder = -1;
-    root.add(outer);
-
-    const inner = new THREE.Mesh(
-      track(new THREE.CylinderGeometry(1.35, 0.55, BEAM_H * 0.8, 64, 1, true)),
-      track(beamMaterial(beamUniforms, 0.26, 18)),
-    );
-    inner.position.y = BEAM_Y0 + BEAM_H * 0.4;
-    inner.renderOrder = -1;
-    root.add(inner);
-
-    // A soft vertical bloom along the axis and a halo behind the card. Sprites
-    // always face the camera; both are drawn first so the card sits on top.
-    const bloomMat = track(
-      new THREE.SpriteMaterial({
-        map: track(
-          radialTexture([
-            [0, "rgba(150,225,255,.8)"],
-            [0.4, "rgba(80,190,255,.22)"],
-            [1, "rgba(0,0,0,0)"],
-          ]),
-        ),
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        depthTest: false,
-        opacity: 0.5 * BEAM_GAIN,
-      }),
-    );
-    const bloom = new THREE.Sprite(bloomMat);
-    bloom.scale.set(2.6, 5.4, 1);
-    bloom.position.set(0, -0.15, -0.5);
-    bloom.renderOrder = -2;
-    root.add(bloom);
-
-    const haloMat = track(
-      new THREE.SpriteMaterial({
-        map: track(
-          radialTexture([
-            [0, "rgba(120,210,255,.55)"],
-            [0.5, "rgba(60,150,255,.14)"],
-            [1, "rgba(0,0,0,0)"],
-          ]),
-        ),
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        depthTest: false,
-        opacity: 0.35,
-      }),
-    );
-    const halo = new THREE.Sprite(haloMat);
-    halo.scale.set(4.6, 4.9, 1);
-    halo.position.set(0, CARD_Y, -0.7);
-    halo.renderOrder = -2;
-    root.add(halo);
-
-    // Dust motes drifting up through the beam, so the light reads as light in air.
-    const motePositions = makeMotes(MOTE_COUNT, BEAM_Y0, BEAM_H * 0.8);
-    const moteAttr = new THREE.BufferAttribute(motePositions, 3);
-    const moteGeo = track(new THREE.BufferGeometry());
-    moteGeo.setAttribute("position", moteAttr);
-    const motePoints = new THREE.Points(
-      moteGeo,
-      track(
-        new THREE.PointsMaterial({
-          color: 0xbfeaff,
-          size: 0.04,
-          transparent: true,
-          opacity: 0.5,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false,
-          sizeAttenuation: true,
-        }),
-      ),
-    );
-    motePoints.frustumCulled = false;
-    root.add(motePoints);
+    const projector = buildProjector(track);
+    root.add(projector.group);
 
     return {
       root,
-      motes: { positions: motePositions, attribute: moteAttr },
       cardGroup,
-      pedGroup,
       holo,
-      rims,
-      glints,
-      glintPath,
-      core,
-      dots,
-      beamUniforms,
+      shaftClock: projector.shaftClock,
+      rings: projector.rings,
       disposables,
     };
   }, []);
 
-  // Procedural environment for the metal/glass reflections.
+  // Procedural environment for the emitter's metal.
   useEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
     pmrem.compileEquirectangularShader();
@@ -682,20 +412,18 @@ export default function HologramScene({
     };
   }, [gl, scene, built]);
 
-  // Fit the camera to the object's real 3D extent for the current canvas aspect,
-  // so the hologram is centred with headroom at any size. `size` is the layout
+  // Fit the camera to the object's real 3D extent for the current canvas aspect, tilted down by
+  // CAMERA_PITCH_DEG, so the hologram is centred with headroom at any size. `size` is the layout
   // box (Canvas is told to ignore the window's scale transform).
   const framePoints = useMemo(() => hologramFramePoints(), []);
   useLayoutEffect(() => {
     const aspect = size.width / size.height;
     if (!Number.isFinite(aspect) || aspect <= 0) return;
-    const fit = fitCamera(framePoints, FOV, aspect, FRAME_MARGIN);
-    camera.position.set(0, fit.y, fit.z);
-    camera.lookAt(0, fit.y, 0);
+    const fit = fitCameraPitched(framePoints, FOV, aspect, FRAME_MARGIN, CAMERA_PITCH_DEG);
+    camera.position.set(fit.position.x, fit.position.y, fit.position.z);
+    camera.lookAt(fit.lookAt.x, fit.lookAt.y, fit.lookAt.z);
     camera.updateProjectionMatrix();
-    // The beam fades out before the frame's edge at the beam's depth.
-    built.beamUniforms.uEdge.value = Math.tan((FOV * Math.PI) / 360) * aspect * fit.z;
-  }, [camera, built, framePoints, size.width, size.height]);
+  }, [camera, framePoints, size.width, size.height]);
 
   // Dispose everything on unmount.
   useEffect(() => {
@@ -745,8 +473,9 @@ export default function HologramScene({
     const dt = Math.min(delta, 1 / 30);
     t.current += dt;
     const tt = t.current;
+    // One clock for the picture shader and every shaft; held at 0 when not animating, which freezes their flicker.
     built.holo.t.value = animated ? tt : 0;
-    built.beamUniforms.t.value = animated ? tt : 0;
+    built.shaftClock.value = animated ? tt : 0;
 
     if (!drag.current.active) {
       built.cardGroup.rotation.y += animated ? 0.0022 + drag.current.vx : drag.current.vx;
@@ -754,24 +483,11 @@ export default function HologramScene({
     }
     built.cardGroup.position.y = CARD_Y + (animated ? Math.sin(tt * 1.1) * BOB : 0);
 
-    // The rim pulses and the glint runs — both frozen (see cardFrame) when not animating.
-    const frame = frameOpacities(tt, animated);
-    built.rims.inner.opacity = frame.rimInner;
-    built.rims.outer.opacity = frame.rimOuter;
-    for (const { sprite, k, side } of built.glints) {
-      const p = glintPoint(built.glintPath, tt, k, animated);
-      sprite.position.set(p.x, p.y, side * FACE_Z.glint);
-    }
-
-    if (animated) {
-      stepMotes(built.motes.positions, dt, BEAM_Y0, BEAM_H * 0.8);
-      built.motes.attribute.needsUpdate = true;
-      (built.core.material as THREE.MeshBasicMaterial).opacity = 0.9 + 0.1 * Math.sin(tt * 2);
-      for (const d of built.dots) {
-        (d.material as THREE.MeshBasicMaterial).opacity = 0.7 + 0.2 * Math.sin(tt * 1.2 + (d.userData.ph as number));
-      }
-      built.pedGroup.rotation.y = tt * 0.05;
-    }
+    // The arcs and the dash ring turn slowly (all exactly still when not animating).
+    const motion = projectorMotion(tt, animated);
+    built.rings.outer.rotation.y = motion.outer;
+    built.rings.inner.rotation.y = motion.inner;
+    built.rings.dash.rotation.y = motion.dash;
   });
 
   return (

@@ -8,8 +8,8 @@ import { initialsFrom } from "./textures/initials";
  * while the 3D chunk downloads, and the pre-load "offscreen" state. Keeping it
  * single is deliberate — near-identical fallbacks would drift out of sync with
  * `profile.badge` within a release. It is a flat rendition of the 3D hologram
- * (slim arc-reactor frame, the photo, scanlines) rather than the retired
- * lanyard badge, so the swap to the live scene doesn't change the object.
+ * (the photo with soft edges, four corner brackets and scanlines; no frame, like the 3D card)
+ * rather than the retired lanyard badge, so the swap to the live scene doesn't change the object.
  *
  * It always sits on the hologram's dark projection bay (the stage background
  * PassCard draws from `--stage-bg`), so its light-on-dark text is intentionally
@@ -44,49 +44,72 @@ export function BadgeFallback({
         role="img"
         aria-label={`${displayName} — ${badge.subtitle || badge.caption}`}
         data-badge-surface
-        className="relative flex w-full max-w-[15.5rem] flex-col overflow-hidden rounded-[14px] p-2 ring-1 ring-[color-mix(in_oklab,var(--arc)_70%,transparent)]"
+        className="relative flex w-full max-w-[15.5rem] flex-col"
         style={{
-          // A faint accent glow under a dark glass pane: both accent colours
-          // stay literally present as the glow's colour stops.
-          backgroundColor: "rgba(8, 14, 30, 0.86)",
+          // No frame and no pane, like the 3D card. A faint accent wash sits INSIDE the picture's bounds, clear of
+          // its feathered edges, so it is covered and never shows as a coloured rim: both accent colours stay
+          // literally present as its stops.
           backgroundImage: [
             `radial-gradient(120% 70% at 50% 0%, ${to} 0%, transparent 60%)`,
             `linear-gradient(160deg, ${from} 0%, transparent 70%)`,
           ].join(", "),
+          backgroundSize: "86% 45%",
+          backgroundPosition: "50% 12%",
+          backgroundRepeat: "no-repeat",
           aspectRatio: "0.8",
-          boxShadow:
-            "0 0 34px -8px var(--arc-soft), inset 0 0 0 1px rgba(94, 200, 255, 0.18)",
         }}
       >
-        {/* The projected portrait: fills the frame, cover-cropped. */}
-        <span className="relative grid min-h-0 flex-1 place-items-center overflow-hidden rounded-[9px] bg-[#0a1220]">
-          {avatar.src ? (
-            <img
-              src={avatar.src}
-              alt={avatar.alt}
-              className="h-full w-full object-cover object-[48%_35%] [filter:saturate(0.55)_contrast(1.1)_brightness(1.05)_hue-rotate(160deg)]"
-              loading="lazy"
-              decoding="async"
-            />
-          ) : (
+        <span className="relative flex min-h-0 flex-1">
+          {/* The projected portrait: fills the card, cover-cropped, its edges melting into the stage. */}
+          <span
+            data-badge-picture
+            className="badge-picture-mask relative grid min-h-0 flex-1 place-items-center overflow-hidden bg-[#0a1220]"
+          >
+            {avatar.src ? (
+              <img
+                src={avatar.src}
+                alt={avatar.alt}
+                className="h-full w-full object-cover object-[48%_35%] [filter:saturate(0.55)_contrast(1.1)_brightness(1.05)_hue-rotate(160deg)]"
+                loading="lazy"
+                decoding="async"
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="text-3xl font-semibold text-[#eafaff] drop-shadow-[0_1px_6px_rgb(0_0_0/0.6)]"
+              >
+                {monogram}
+              </span>
+            )}
+
+            {/* Cyan wash + scanlines: the "projected light" look. */}
             <span
               aria-hidden="true"
-              className="text-3xl font-semibold text-[#eafaff] drop-shadow-[0_1px_6px_rgb(0_0_0/0.6)]"
-            >
-              {monogram}
-            </span>
-          )}
+              data-badge-scanlines
+              className="pointer-events-none absolute inset-0 mix-blend-screen"
+              style={{
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(94,200,255,0.18), rgba(94,200,255,0.05)), repeating-linear-gradient(0deg, rgba(94,200,255,0.16) 0 1px, transparent 1px 3px)",
+              }}
+            />
+          </span>
 
-          {/* Cyan wash + scanlines: the "projected light" look. */}
-          <span
-            aria-hidden="true"
-            data-badge-scanlines
-            className="pointer-events-none absolute inset-0 mix-blend-screen"
-            style={{
-              backgroundImage:
-                "linear-gradient(180deg, rgba(94,200,255,0.18), rgba(94,200,255,0.05)), repeating-linear-gradient(0deg, rgba(94,200,255,0.16) 0 1px, transparent 1px 3px)",
-            }}
-          />
+          {/* Four corner brackets, just outside the picture: the only mark of the card, as in 3D. */}
+          {(
+            [
+              ["tl", "-top-1 -left-1 border-t border-l"],
+              ["tr", "-top-1 -right-1 border-t border-r"],
+              ["bl", "-bottom-1 -left-1 border-b border-l"],
+              ["br", "-bottom-1 -right-1 border-b border-r"],
+            ] as const
+          ).map(([corner, edges]) => (
+            <span
+              key={corner}
+              aria-hidden="true"
+              data-badge-corner={corner}
+              className={`pointer-events-none absolute h-[12%] w-[15%] border-[#5ec8ff]/90 ${edges}`}
+            />
+          ))}
         </span>
 
         <span className="flex w-full flex-col gap-0.5 px-1 pt-2 pb-0.5 text-center">

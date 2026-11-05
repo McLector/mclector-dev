@@ -28,9 +28,20 @@ describe("HOLO_LOOK — the retuned preset", () => {
       uSpot: 0.35,
       uSharp: 0.5,
       uGrazing: 0.6,
-      uLight: 0.5,
+      uLight: 0.2,
       uGlitch: 0.006,
+      uFeather: 0.04,
     });
+  });
+
+  it("lights the photo gently from below: the owner found 0.5 too strong", () => {
+    expect(HOLO_LOOK.uLight).toBeLessThanOrEqual(0.25);
+    expect(HOLO_LOOK.uLight).toBeGreaterThan(0);
+  });
+
+  it("feathers the edge over a real width: smoothstep with equal edges is undefined in GLSL", () => {
+    expect(HOLO_LOOK.uFeather).toBeGreaterThan(0);
+    expect(HOLO_LOOK.uFeather).toBeLessThan(0.5); // the centre of the card is at 0.5
   });
 });
 
@@ -169,7 +180,12 @@ describe("HOLO_FRAGMENT_SHADER", () => {
   });
 
   it("takes the back face's silhouette from the photo's alpha", () => {
-    expect(glsl).toContain("if(uMask>0.5)a=tc.a*clamp(0.78+0.22*lumA,0.,1.)*smoothstep(0.,0.02,edge);");
+    expect(glsl).toContain("if(uMask>0.5)a=tc.a*clamp(0.78+0.22*lumA,0.,1.)*smoothstep(0.,uFeather,edge);");
+  });
+
+  it("fades the card's edge over uFeather on BOTH faces, not over a hard-coded 2%", () => {
+    expect(glsl).toContain("floata=clamp(lumA+uColor*uBody,0.,1.)*smoothstep(0.,uFeather,edge);");
+    expect(glsl).not.toContain("smoothstep(0.,0.02,edge)");
   });
 });
 
