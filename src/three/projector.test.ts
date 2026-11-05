@@ -13,6 +13,7 @@ import {
   tickTransforms,
 } from "./projector";
 import { PED_Y } from "./sceneDims";
+import { holoPalette } from "./palette";
 
 /**
  * The projector under the card, as pure data: the HUD rings, the dotted floor and the shafts of light.
@@ -282,5 +283,32 @@ describe("projectorMotion", () => {
   it("starts exactly at zero (not minus zero) when animated at t = 0", () => {
     const m = projectorMotion(0, true);
     for (const v of Object.values(m)) expect(Object.is(v, 0)).toBe(true);
+  });
+});
+
+describe("ringSpecs with a palette", () => {
+  const R = 1.9;
+  const dark = holoPalette("dark");
+  const light = holoPalette("light");
+  const outerPieces = (specs: ReturnType<typeof ringSpecs>) => specs.filter((s) => s.group === "outer");
+  const innerPieces = (specs: ReturnType<typeof ringSpecs>) => specs.filter((s) => s.group === "inner");
+
+  it("draws exactly what it always has when no palette is given, and for the dark palette", () => {
+    expect(ringSpecs(R, dark)).toEqual(ringSpecs(R));
+    for (const s of outerPieces(ringSpecs(R))) expect(s.color).toBe(0x38b6ff);
+  });
+
+  it("colours the outer ring and the thick arcs with the light palette's ink", () => {
+    for (const s of outerPieces(ringSpecs(R, light))) expect(s.color).toBe(light.hud);
+  });
+
+  it("leaves the inner arcs and hairlines in their pale blues, as approved (only the outer set changes)", () => {
+    const colours = innerPieces(ringSpecs(R, light)).map((s) => s.color);
+    expect(colours).toEqual(innerPieces(ringSpecs(R)).map((s) => s.color));
+  });
+
+  it("changes only colours: radii, sweeps and opacities are identical between themes", () => {
+    const strip = (specs: ReturnType<typeof ringSpecs>) => specs.map(({ color: _color, ...rest }) => rest);
+    expect(strip(ringSpecs(R, light))).toEqual(strip(ringSpecs(R, dark)));
   });
 });

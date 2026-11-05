@@ -11,9 +11,9 @@ import { initialsFrom } from "./textures/initials";
  * (the photo with soft edges, four corner brackets and scanlines; no frame, like the 3D card)
  * rather than the retired lanyard badge, so the swap to the live scene doesn't change the object.
  *
- * It always sits on the hologram's dark projection bay (the stage background
- * PassCard draws from `--stage-bg`), so its light-on-dark text is intentionally
- * theme-independent.
+ * It sits on the hologram's projection bay (the stage background PassCard draws from `--stage-bg`), which is
+ * deep navy in the dark theme and pale steel glass in the light one. So its text, brackets and scanline wash
+ * each carry a `light:` twin: pale on the dark bay, ink on the pale one.
  *
  * Unlike the rest of `src/three/**` this file is pure DOM and is genuinely
  * unit-testable; see BadgeFallback.test.tsx and the note in
@@ -86,11 +86,7 @@ export function BadgeFallback({
             <span
               aria-hidden="true"
               data-badge-scanlines
-              className="pointer-events-none absolute inset-0 mix-blend-screen"
-              style={{
-                backgroundImage:
-                  "linear-gradient(180deg, rgba(94,200,255,0.18), rgba(94,200,255,0.05)), repeating-linear-gradient(0deg, rgba(94,200,255,0.16) 0 1px, transparent 1px 3px)",
-              }}
+              className="badge-scanlines pointer-events-none absolute inset-0"
             />
           </span>
 
@@ -107,7 +103,7 @@ export function BadgeFallback({
               key={corner}
               aria-hidden="true"
               data-badge-corner={corner}
-              className={`pointer-events-none absolute h-[12%] w-[15%] border-[#5ec8ff]/90 ${edges}`}
+              className={`pointer-events-none absolute h-[12%] w-[15%] border-[#5ec8ff]/90 light:border-[#1a86f5] ${edges}`}
             />
           ))}
         </span>
@@ -115,21 +111,21 @@ export function BadgeFallback({
         <span className="flex w-full flex-col gap-0.5 px-1 pt-2 pb-0.5 text-center">
           <span
             data-badge-title
-            className="truncate text-sm font-bold text-[#eafaff]"
+            className="truncate text-sm font-bold text-[#eafaff] light:text-[oklch(0.21_0.04_262)]"
             title={badge.title}
           >
             {badge.title}
           </span>
           <span
             data-badge-subtitle
-            className="truncate text-[0.625rem] font-medium text-[#eafaff]/75"
+            className="truncate text-[0.625rem] font-medium text-[#eafaff]/75 light:text-[oklch(0.34_0.04_262)]"
           >
             {badge.subtitle}
           </span>
         </span>
 
         {badge.idLabel ? (
-          <span className="mx-auto mb-0.5 rounded-full bg-black/40 px-2 py-0.5 font-mono text-[0.625rem] tracking-wider text-[#eafaff]/90 ring-1 ring-[color-mix(in_oklab,var(--arc)_40%,transparent)]">
+          <span className="mx-auto mb-0.5 rounded-full bg-black/40 px-2 py-0.5 font-mono text-[0.625rem] tracking-wider text-[#eafaff]/90 ring-1 ring-[color-mix(in_oklab,var(--arc)_40%,transparent)] light:bg-white/55 light:text-[oklch(0.21_0.04_262)]">
             {badge.idLabel}
           </span>
         ) : null}

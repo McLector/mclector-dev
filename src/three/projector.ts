@@ -1,3 +1,4 @@
+import { HOLO_PALETTES, type HoloPalette } from "./palette";
 import { PED_Y } from "./sceneDims";
 
 /**
@@ -51,13 +52,16 @@ export type ArcSpec = {
   opacity: number;
 };
 
-const HUD_BLUE = 0x38b6ff;
 const INNER_ARC_BLUE = 0x59c8ff;
 const TICK_BLUE = 0x7fd6ff;
 const HAIRLINE_BLUE = 0x8fdcff;
 
-/** The thin outer ring, three thick arcs, two inner arcs and two hairline rings, all scaled to base radius `R`. */
-export function ringSpecs(R: number): ArcSpec[] {
+/**
+ * The thin outer ring, three thick arcs, two inner arcs and two hairline rings, all scaled to base radius `R`.
+ * The outer ring and thick arcs take `palette.hud`; the inner arcs and hairlines keep their pale blues in
+ * every theme. Dark by default, so a caller that passes nothing gets what the site always drew.
+ */
+export function ringSpecs(R: number, palette: HoloPalette = HOLO_PALETTES.dark): ArcSpec[] {
   requirePositive("base radius", R);
   const hairline = (radius: number, opacity: number): ArcSpec => ({
     group: "inner",
@@ -74,7 +78,7 @@ export function ringSpecs(R: number): ArcSpec[] {
     rOut: R * 0.995,
     start,
     sweep,
-    color: HUD_BLUE,
+    color: palette.hud,
     opacity,
   });
   const innerArc = (start: number, sweep: number): ArcSpec => ({
@@ -87,7 +91,7 @@ export function ringSpecs(R: number): ArcSpec[] {
     opacity: 0.85,
   });
   return [
-    { group: "outer", rIn: R - 0.008, rOut: R + 0.008, start: 0, sweep: TWO_PI, color: HUD_BLUE, opacity: 0.7 },
+    { group: "outer", rIn: R - 0.008, rOut: R + 0.008, start: 0, sweep: TWO_PI, color: palette.hud, opacity: 0.7 },
     thick(0.15, 1.15, 0.95),
     thick(3.5, 0.55, 0.95),
     thick(5.2, 0.85, 0.8),

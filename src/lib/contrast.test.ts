@@ -45,6 +45,12 @@ describe("design-token contrast budget — coverage", () => {
     }
   });
 
+  it("covers the light-theme hologram bay: its caption, and the fallback badge's title and subtitle", () => {
+    for (const part of ["stage caption", "hologram badge title", "hologram badge subtitle"]) {
+      expect(names.some((n) => n.startsWith(`light: ${part} on the hologram bay`)), part).toBe(true);
+    }
+  });
+
   it("covers a light-theme chip pair, not just dark", () => {
     expect(names.some((n) => n.startsWith("light: chip"))).toBe(true);
   });

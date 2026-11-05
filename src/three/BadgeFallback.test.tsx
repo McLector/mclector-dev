@@ -163,4 +163,49 @@ describe("BadgeFallback", () => {
     expect(frame.querySelector("img")).toHaveAttribute("src", "/me.png");
     expect(frame.querySelector("[data-badge-scanlines]")).not.toBeNull();
   });
+
+  describe("on the light theme's pale bay", () => {
+    // Tailwind's `light:` variant keys off <html data-theme="light">. jsdom has no stylesheet, so these check the
+    // classes: each light-on-dark colour must have a dark-on-light twin, or the text vanishes on the pale bay.
+    const classOf = (container: HTMLElement, selector: string) => container.querySelector<HTMLElement>(selector)!.className;
+
+    it("gives the title, subtitle and id label dark ink under the light variant, and keeps the pale text for dark", () => {
+      const { container } = render(<BadgeFallback profile={makeProfile()} />);
+      const title = classOf(container, "[data-badge-title]");
+      const subtitle = classOf(container, "[data-badge-subtitle]");
+      expect(title).toMatch(/(^| )text-\[#eafaff\]/);
+      expect(title).toMatch(/(^| )light:text-\[/);
+      expect(subtitle).toMatch(/(^| )text-\[#eafaff\]\/75/);
+      expect(subtitle).toMatch(/(^| )light:text-\[/);
+      const label = screen.getByText("DLSL-2026");
+      expect(label.className).toMatch(/(^| )light:text-\[/);
+      expect(label.className).toMatch(/(^| )light:bg-/);
+    });
+
+    it("does not leave the id label's dark pill on a pale bay", () => {
+      render(<BadgeFallback profile={makeProfile()} />);
+      expect(screen.getByText("DLSL-2026").className).toMatch(/(^| )light:bg-/);
+    });
+
+    it("draws the corner brackets in the light theme's ink blue, on all four corners", () => {
+      const { container } = render(<BadgeFallback profile={makeProfile()} />);
+      const corners = [...container.querySelectorAll<HTMLElement>("[data-badge-corner]")];
+      expect(corners).toHaveLength(4);
+      for (const c of corners) expect(c.className).toMatch(/(^| )light:border-\[#1a86f5\]/);
+    });
+
+    it("swaps the scanline wash for one that shows on a pale bay, via a class rather than an inline style", () => {
+      const { container } = render(<BadgeFallback profile={makeProfile()} />);
+      const scan = container.querySelector<HTMLElement>("[data-badge-scanlines]")!;
+      expect(scan.className).toMatch(/(^| )badge-scanlines( |$)/);
+      expect(scan.style.backgroundImage).toBe("");
+      expect(scan.className).not.toMatch(/mix-blend-screen/);
+    });
+
+    it("still renders with empty badge copy: the light classes never depend on the text", () => {
+      const profile = makeProfile();
+      profile.badge = { title: "", subtitle: "", idLabel: "", caption: "" };
+      expect(() => render(<BadgeFallback profile={profile} />)).not.toThrow();
+    });
+  });
 });

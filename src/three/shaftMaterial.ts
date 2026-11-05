@@ -1,15 +1,13 @@
 import * as THREE from "three";
 import type { ShaftSpec } from "./projector";
+import { HOLO_PALETTES, blendingFor, type HoloPalette } from "./palette";
 import { CARD_Y, PH } from "./sceneDims";
 
 /**
- * One teal shaft of light: a thin additive plane, brightest at the emitter and fading upward, with a gentle
+ * One shaft of light: a thin plane (added light in the dark theme, ink in the light one), brightest at the emitter and fading upward, with a gentle
  * flicker. Above the card's bottom edge it is dimmed to a faint floor, so the light rises BESIDE and below the
  * card but never streaks across the photo (the card is part see-through, so un-dimmed shafts showed through it).
  */
-
-const TEAL = 0x2fd9c8;
-const BLUE = 0x3db8ff;
 
 /** How much of a shaft's light is left above the card's bottom edge. Soft, not a hard cut, and never black. */
 export const SHAFT_CUT_FLOOR = 0.12;
@@ -32,8 +30,15 @@ export const SHAFT_FRAGMENT_SHADER = `varying vec2 vU; varying float vWy; unifor
           gl_FragColor = vec4(mix(col, vec3(0.85, 1., 1.), core * 0.35), core * up * op * fl * cut);
         }`;
 
-/** A shaft's material. `clock` is the one `{ value }` every shaft shares, so one tick moves them all. */
-export function createShaftMaterial(spec: ShaftSpec, clock: { value: number }): THREE.ShaderMaterial {
+/**
+ * A shaft's material. `clock` is the one `{ value }` every shaft shares, so one tick moves them all. The colour and
+ * blend mode come from `palette` (dark, the neon, by default).
+ */
+export function createShaftMaterial(
+  spec: ShaftSpec,
+  clock: { value: number },
+  palette: HoloPalette = HOLO_PALETTES.dark,
+): THREE.ShaderMaterial {
   if (!(spec.opacity > 0 && spec.opacity <= 1)) {
     throw new RangeError(`shaft opacity must be in (0, 1], got ${spec.opacity}`);
   }
@@ -45,13 +50,13 @@ export function createShaftMaterial(spec: ShaftSpec, clock: { value: number }): 
     depthWrite: false,
     // Drawn BEHIND the card (see renderOrder in the scene), so the light is never occluded by or over it.
     depthTest: false,
-    blending: THREE.AdditiveBlending,
+    blending: blendingFor(palette),
     side: THREE.DoubleSide,
     uniforms: {
       uCutY: { value: shaftCutY() },
       uCutF: { value: SHAFT_CUT_FLOOR },
       t: clock,
-      col: { value: new THREE.Color(spec.teal ? TEAL : BLUE) },
+      col: { value: new THREE.Color(spec.teal ? palette.shaftTeal : palette.shaftBlue) },
       op: { value: spec.opacity },
       ph: { value: spec.phase },
       sp: { value: spec.speed },

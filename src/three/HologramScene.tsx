@@ -3,9 +3,11 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Profile } from "@/content/types";
 import type { TierConfig } from "@/lib/capability";
+import { useDocumentTheme } from "@/lib/useDocumentTheme";
 import { BRACKET, FACE_Z, bracketCorners } from "./cardFrame";
 import { createHoloMaterial, createHoloUniforms, setTexelFromImage, type HoloUniforms } from "./holoMaterial";
 import { fitCameraPitched } from "./math/fitCamera";
+import { blendingFor, holoPalette, type HoloPalette } from "./palette";
 import {
   BASE_RADIUS,
   DASH_RING,
@@ -37,9 +39,7 @@ import { loadPortraitTexture } from "./textures/portraitTexture";
 import portraitUrl from "@/assets/portfolio-pic.jpg";
 import formalUrl from "@/assets/formal-pic.webp";
 
-const ARC = 0x5ec8ff;
 const CARD_ASPECT = PW / PH;
-const ADDITIVE = THREE.AdditiveBlending;
 
 /** A 128×128 radial-gradient texture from `[offset, css colour]` stops. */
 function radialTexture(stops: Array<[number, string]>): THREE.CanvasTexture {
@@ -92,17 +92,19 @@ type BuiltScene = {
 /**
  * The projector under the card, built from the data in ./projector: HUD rings and tick marks on the floor, a
  * domed emitter with a ring of dashes, a dotted floor that fades out, and shafts of light rising behind the
- * card. Returns the group and the three ring sets that turn.
+ * card. Returns the group and the three ring sets that turn. `palette` sets the outer ring and shaft colours and
+ * whether the light is added (dark theme) or drawn as ink (light theme).
  */
-function buildProjector(track: <T extends Disposable>(o: T) => T) {
+function buildProjector(track: <T extends Disposable>(o: T) => T, palette: HoloPalette) {
   const group = new THREE.Group();
+  const blending = blendingFor(palette);
   const flat = (color: number, opacity: number) =>
     track(
       new THREE.MeshBasicMaterial({
         color,
         transparent: true,
         opacity,
-        blending: ADDITIVE,
+        blending,
         depthWrite: false,
         side: THREE.DoubleSide,
       }),
@@ -114,7 +116,7 @@ function buildProjector(track: <T extends Disposable>(o: T) => T) {
         new THREE.MeshBasicMaterial({
           map: texture,
           transparent: true,
-          blending: ADDITIVE,
+          blending,
           depthWrite: false,
           opacity,
         }),
@@ -138,7 +140,7 @@ function buildProjector(track: <T extends Disposable>(o: T) => T) {
   // ---- HUD rings: the thin outer ring, thick arcs, inner arcs and hairlines ----
   const outer = new THREE.Group();
   const inner = new THREE.Group();
-  for (const spec of ringSpecs(BASE_RADIUS)) {
+  for (const spec of ringSpecs(BASE_RADIUS, palette)) {
     const segments = Math.max(8, Math.ceil(spec.sweep * 24));
     const arc = new THREE.Mesh(
       track(new THREE.RingGeometry(spec.rIn, spec.rOut, segments, 1, spec.start, spec.sweep)),
@@ -269,7 +271,7 @@ function buildProjector(track: <T extends Disposable>(o: T) => T) {
           size: 0.04,
           vertexColors: true,
           transparent: true,
-          blending: ADDITIVE,
+          blending,
           depthWrite: false,
           sizeAttenuation: true,
         }),
@@ -282,7 +284,7 @@ function buildProjector(track: <T extends Disposable>(o: T) => T) {
   for (const spec of shaftSpecs(SHAFT.count, SHAFT.seed, SHAFT.spread)) {
     const shaft = new THREE.Mesh(
       track(createShaftGeometry(spec.width, SHAFT.height)),
-      track(createShaftMaterial(spec, shaftClock)),
+      track(createShaftMaterial(spec, shaftClock, palette)),
     );
     shaft.position.set(spec.x, SHAFT_BASE_Y, spec.z);
     shaft.rotation.z = spec.lean;
@@ -315,8 +317,12 @@ export default function HologramScene({
 }) {
   const { gl, camera, scene } = useThree();
   const size = useThree((s) => s.size);
+  // The scene is rebuilt when the theme flips: the light theme draws ink, not added light, so it is a different
+  // set of materials rather than a recolour. A toggle is rare, so the rebuild (and the photos' reload) is fine.
+  const theme = useDocumentTheme();
 
   const built = useMemo<BuiltScene>(() => {
+    const palette = holoPalette(theme);
     const disposables: Disposable[] = [];
     const track = <T extends Disposable>(o: T): T => {
       disposables.push(o);
@@ -329,7 +335,7 @@ export default function HologramScene({
     const cardGroup = new THREE.Group();
     cardGroup.position.y = CARD_Y;
 
-    const holo = createHoloUniforms(ARC);
+    const holo = createHoloUniforms(palette.arc);
 
     // Frame tightly on the subject (the photo has a lot of dusk sky). focusX is
     // where the subject actually sits (≈ 0.49–0.50 of the photo's width), so they
@@ -365,10 +371,10 @@ export default function HologramScene({
     // Corner brackets on both faces: the card's only frame.
     const bracketMaterial = track(
       new THREE.LineBasicMaterial({
-        color: ARC,
+        color: palette.arc,
         transparent: true,
         opacity: BRACKET.opacity,
-        blending: ADDITIVE,
+        blending: blendingFor(palette),
       }),
     );
     for (const corner of bracketCorners()) {
@@ -383,7 +389,7 @@ export default function HologramScene({
     }
     root.add(cardGroup);
 
-    const projector = buildProjector(track);
+    const projector = buildProjector(track, palette);
     root.add(projector.group);
 
     return {
@@ -394,7 +400,7 @@ export default function HologramScene({
       rings: projector.rings,
       disposables,
     };
-  }, []);
+  }, [theme]);
 
   // Procedural environment for the emitter's metal.
   useEffect(() => {

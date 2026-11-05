@@ -112,17 +112,20 @@ test.describe("hologram at a scaled viewport", () => {
  * deterministic. (The low tier also turns antialiasing off and caps dpr at 1; the numbers below are measured that way.)
  *
  * Every threshold was CALIBRATED by breaking the thing and measuring, not assumed. Canvas is
- * 546×596 at 1440×900 in the LIGHT theme (pinned in the test), whose stage is the deep-navy bay. The scene is the
- * borderless corners-only card on the reference projector, seen from 12° above:
+ * 546×596 at 1440×900. The scene is the borderless corners-only card on the reference projector, seen from 12°
+ * above. It runs in BOTH themes, because they are different looks: the dark theme's deep-navy bay (added light), and
+ * the light theme's pale steel-glass bay (ink). Each is pinned in the test.
  *
  *                              nonBlue%   lumaP5   back margins (mean luma)
- *   as approved                  7.53      49.0      35 top / 41-43 sides   (face 144: contrast +101)
- *   colour off (uColor 0)        0.00      45.4        —
- *   legacy veiled scan band      1.32     147.4        —   (measured on the previous bezel framing)
- *   opaque back photo             —         —        204–223 (a bright slab; the face was 106; same framing)
+ *   dark, as approved            7.77      46.9      31-35                  (face 144: contrast +108)
+ *   light, as approved           6.29      67.5      218-223 (the pale bay) (face 149: margins brighter by +69)
+ *   colour off (uColor 0)        0.00      45.4        —                     (measured in the earlier navy light theme)
+ *   legacy veiled scan band      1.32     147.4        —                     (measured on the previous bezel framing)
+ *   opaque back photo             —         —        204–223 (a bright slab; the face was 106; previous bezel framing)
  *
- * (The last two rows were measured on the previous bezel framing and not repeated for this one; they are far from
- * the thresholds below, which sit between the approved row and them.)
+ * (The last three rows were measured earlier and not repeated; they are far from the thresholds below, which sit
+ * between the approved rows and them. On the light bay the back face's margins are as bright as a leftover photo
+ * background would be, so only the dark run can tell an opaque slab from a cutout by brightness.)
  *
  * (Switching the mask off ALONE changes nothing — under a real cutout the texture is black behind the
  * transparent pixels, so the luminance alpha hides them anyway. The regression that matters is shipping the
@@ -143,7 +146,7 @@ const BACK_MARGINS: Record<string, Region> = {
   rightSide: [0.655, 0.7, 0.25, 0.37],
 };
 const FACE: Region = [0.46, 0.54, 0.3, 0.4];
-/** Approved margins measure 35–43. Set from the opaque-photo measurement above. */
+/** Approved dark-theme margins measure 31–35. Set from the opaque-photo measurement above. */
 const MASK_MARGIN_MAX = 100;
 
 /** Decode a screenshot in the page (a canvas needs no image library) and measure regions of it. */
@@ -182,20 +185,20 @@ async function measure(page: Page, png: Buffer, regions: Record<string, Region>)
   );
 }
 
-test.describe("hologram picture", () => {
+for (const theme of ["dark", "light"] as const) {
+test.describe(`hologram picture (${theme} theme)`, () => {
   // Static scene, with software-GL patience: each screenshot is slow.
   test.describe.configure({ timeout: 300_000 });
 
   // ONE test with steps: every mount is slow under software WebGL, so all three guards share one page.
   test("front shows real colour without a white veil; back is a cutout, not a slab", async ({ page }) => {
-    // The thresholds below were calibrated on the LIGHT theme's stage (the deep-navy bay). Pin it
-    // explicitly: the app's default is now dark, and this must not depend on any default or OS setting.
-    await page.addInitScript(() => localStorage.setItem("mclector-theme", "light"));
+    // Pin the theme explicitly: this must not depend on any default or OS setting.
+    await page.addInitScript((t) => localStorage.setItem("mclector-theme", t), theme);
     // Two cores is the low tier, which renders the scene static. See the note above.
     await page.addInitScript(() => Object.defineProperty(navigator, "hardwareConcurrency", { get: () => 2 }));
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
-    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
     const canvas = page.locator('[data-pass-variant="webgl"] canvas');
     await expect(canvas, "the WebGL canvas never mounted").toHaveCount(1, { timeout: 60_000 });
 
@@ -234,13 +237,16 @@ test.describe("hologram picture", () => {
       try {
         const marginsOf = (m: Record<string, Stats>) => Object.keys(BACK_MARGINS).map((k) => m[k].meanLuma);
         let back!: Record<string, Stats>;
-        // Poll the bust's CONTRAST with its margins, not the margins alone: an empty stage is dark too,
-        // so "dark margins" would pass before the back texture had even loaded.
+        // Poll the bust's CONTRAST with its margins, not the margins alone: an empty stage looks like the margins
+        // too, so "margins that look right" would pass before the back texture had even loaded. On the dark bay
+        // the face is BRIGHTER than the margins; on the pale light bay it is DARKER, so the sign flips.
         await expect
           .poll(
             async () => {
               back = await measure(page, await shoot(), { ...BACK_MARGINS, face: FACE });
-              return back.face.meanLuma - Math.max(...marginsOf(back));
+              return theme === "dark"
+                ? back.face.meanLuma - Math.max(...marginsOf(back))
+                : Math.min(...marginsOf(back)) - back.face.meanLuma;
             },
             {
               timeout: 120_000,
@@ -249,10 +255,15 @@ test.describe("hologram picture", () => {
             },
           )
           .toBeGreaterThan(20); // approved ≈ +100
-        for (const name of Object.keys(BACK_MARGINS)) {
-          expect(back[name].meanLuma, `back margin "${name}" is bright — the background was not removed`).toBeLessThan(
-            MASK_MARGIN_MAX,
-          );
+        // The margins-are-dark check only means something on the dark bay. On the pale bay a leftover photo
+        // background is as bright as the bay itself, so an opaque slab cannot be told apart by brightness there:
+        // the dark-theme run guards it (and src/assets/formalPic.test.ts pins the matte in the file).
+        if (theme === "dark") {
+          for (const name of Object.keys(BACK_MARGINS)) {
+            expect(back[name].meanLuma, `back margin "${name}" is bright — the background was not removed`).toBeLessThan(
+              MASK_MARGIN_MAX,
+            );
+          }
         }
       } finally {
         await page.mouse.up();
@@ -260,3 +271,4 @@ test.describe("hologram picture", () => {
     });
   });
 });
+}

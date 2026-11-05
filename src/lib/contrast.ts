@@ -126,6 +126,25 @@ export const TOKEN_CONTRAST_PAIRS: TokenContrastPair[] = [
     minimumRatio: 4.5,
   },
   // --- Light theme (steel) ---
+  // The hologram bay in the light theme: the darkest stop of its glass gradient, oklch(0.8 0.06 250).
+  {
+    name: "light: stage caption on the hologram bay",
+    foreground: "#1b2942",
+    background: "#a1c1e4",
+    minimumRatio: 4.5,
+  },
+  {
+    name: "light: hologram badge title on the hologram bay",
+    foreground: "#0e182b",
+    background: "#a1c1e4",
+    minimumRatio: 4.5,
+  },
+  {
+    name: "light: hologram badge subtitle on the hologram bay",
+    foreground: "#2d384d",
+    background: "#a1c1e4",
+    minimumRatio: 4.5,
+  },
   {
     name: "light: text-primary on card",
     foreground: "#0e182b",

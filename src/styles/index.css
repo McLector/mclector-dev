@@ -158,14 +158,15 @@
     --tile-ring: color-mix(in oklab, var(--arc) 34%, transparent);
     --btn-bg: oklch(0.21 0.04 262);
     --btn-ink: #f4f6ff;
-    /* A hologram is light-emitting, so its stage stays a deep bay in this theme — additive cyan washes out on a
-       pale surface — but a bay of the page's own hue, not a separate navy. */
+    /* The hologram stage is pale steel glass of the page's own hue, not a dark hole in it. Added (additive) light
+       washes out on a pale ground, so the scene draws ink here instead (src/three/palette.ts). The darkest stop
+       of this gradient, oklch(0.8 0.06 250), is the worst case the stage text is contrast-checked against
+       (src/lib/contrast.ts). */
     --stage-bg:
-      radial-gradient(60% 42% at 50% 30%, rgba(94, 200, 255, 0.2), transparent 70%),
-      radial-gradient(70% 55% at 50% 88%, rgba(60, 140, 255, 0.34), transparent 74%),
-      linear-gradient(180deg, oklch(0.25 0.09 250), oklch(0.17 0.08 250));
-    --stage-edge: rgba(255, 255, 255, 0.14);
-    --stage-caption: oklch(0.82 0.05 250);
+      radial-gradient(60% 40% at 50% 34%, rgba(255, 255, 255, 0.55), transparent 72%),
+      linear-gradient(180deg, oklch(0.9 0.045 250), oklch(0.8 0.06 250));
+    --stage-edge: oklch(0.4 0.08 250 / 0.28);
+    --stage-caption: oklch(0.28 0.05 262);
     --cv-bg: rgba(255, 255, 255, 0.82);
     --cv-fg: oklch(0.21 0.04 262);
     --cv-dis: 0.66;
@@ -488,6 +489,21 @@
       linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
     -webkit-mask-composite: source-in;
     mask-composite: intersect;
+  }
+
+  /* The fallback card's "projected light" wash and scanlines. On the dark bay they are added light (screen); on the
+     pale light-theme bay screen would vanish, so they are drawn as faint ink instead. */
+  .badge-scanlines {
+    background-image:
+      linear-gradient(180deg, rgba(94, 200, 255, 0.18), rgba(94, 200, 255, 0.05)),
+      repeating-linear-gradient(0deg, rgba(94, 200, 255, 0.16) 0 1px, transparent 1px 3px);
+    mix-blend-mode: screen;
+  }
+  :root[data-theme="light"] .badge-scanlines {
+    background-image:
+      linear-gradient(180deg, rgba(26, 134, 245, 0.1), rgba(26, 134, 245, 0.03)),
+      repeating-linear-gradient(0deg, rgba(26, 134, 245, 0.14) 0 1px, transparent 1px 3px);
+    mix-blend-mode: normal;
   }
 }
 

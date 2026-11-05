@@ -10,6 +10,7 @@ import {
 } from "./shaftMaterial";
 import { CARD_Y, PH } from "./sceneDims";
 import type { ShaftSpec } from "./projector";
+import { holoPalette } from "./palette";
 
 /**
  * One teal shaft of light: a thin additive plane that is brightest at the emitter, fades upward, and is
@@ -129,5 +130,37 @@ describe("createShaftGeometry", () => {
     [0.2, Infinity],
   ])("rejects a width of %s and a height of %s", (w, h) => {
     expect(() => createShaftGeometry(w, h)).toThrow(RangeError);
+  });
+});
+
+describe("createShaftMaterial with a palette", () => {
+  const clock = { value: 0 };
+  const light = holoPalette("light");
+  const dark = holoPalette("dark");
+
+  it("is unchanged without a palette: additive, with the neon teal and blue", () => {
+    expect(createShaftMaterial(spec, clock).blending).toBe(THREE.AdditiveBlending);
+    expect(createShaftMaterial(spec, clock).uniforms.col.value.getHex()).toBe(0x2fd9c8);
+    expect(createShaftMaterial({ ...spec, teal: false }, clock).uniforms.col.value.getHex()).toBe(0x3db8ff);
+  });
+
+  it("draws with normal blending under the light palette: added light would vanish on a pale bay", () => {
+    expect(createShaftMaterial(spec, clock, light).blending).toBe(THREE.NormalBlending);
+    expect(createShaftMaterial(spec, clock, dark).blending).toBe(THREE.AdditiveBlending);
+  });
+
+  it("takes its teal and blue from the palette", () => {
+    expect(createShaftMaterial(spec, clock, light).uniforms.col.value.getHex()).toBe(light.shaftTeal);
+    expect(createShaftMaterial({ ...spec, teal: false }, clock, light).uniforms.col.value.getHex()).toBe(light.shaftBlue);
+  });
+
+  it("stays behind the card in both palettes: no depth test, no depth write, two-sided", () => {
+    for (const palette of [light, dark]) {
+      const m = createShaftMaterial(spec, clock, palette);
+      expect(m.depthTest).toBe(false);
+      expect(m.depthWrite).toBe(false);
+      expect(m.transparent).toBe(true);
+      expect(m.side).toBe(THREE.DoubleSide);
+    }
   });
 });
