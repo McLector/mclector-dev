@@ -11,15 +11,25 @@ const sources = import.meta.glob<string>("/src/features/social/social.css", {
   import: "default",
   eager: true,
 });
-const css = (Object.values(sources)[0] ?? "").replace(/\/\*[\s\S]*?\*\//g, "");
+const raw = Object.values(sources)[0] ?? "";
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();
-const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
-  sel: squash(sel),
-  body: squash(body),
-}));
-const body = (selector: string) => rules.filter((r) => r.sel === selector).map((r) => r.body);
 
-describe("social hexagons in the light theme", () => {
+/** Parses the stylesheet text; CRLF checkouts (Windows autocrlf) are normalised so nothing depends on line endings. */
+function parse(text: string) {
+  const css = text.replace(/\r\n/g, "\n").replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, sel, body]) => ({
+    sel: squash(sel),
+    body: squash(body),
+  }));
+  return { css, rules, body: (selector: string) => rules.filter((r) => r.sel === selector).map((r) => r.body) };
+}
+
+describe.each([
+  ["LF", raw],
+  ["CRLF", raw.replace(/\r?\n/g, "\r\n")],
+])("social hexagons in the light theme (%s line endings)", (_name, text) => {
+  const { css, rules, body } = parse(text);
+
   it("loads the real stylesheet", () => {
     expect(body(".hexgrid__link").length).toBeGreaterThan(0);
   });
