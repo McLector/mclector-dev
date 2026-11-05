@@ -39,10 +39,11 @@ export function nextTheme(theme: Theme): Theme {
 }
 
 /**
- * The browser chrome colour to advertise per theme (drives `theme-color`). Light is the steel sky's mid stop
- * (`--sky-mid`, oklch(0.76 0.062 246)); keep it in step with src/styles/index.css.
+ * The browser chrome colour to advertise per theme (drives `theme-color`). Light is plain white, matching the
+ * white light-theme page; keep it in step with the light background in src/styles/index.css and with the inline
+ * boot script in index.html.
  */
 export const THEME_COLOR: Record<Theme, string> = {
   dark: "#05060d",
-  light: "#91b6d7",
+  light: "#ffffff",
 };

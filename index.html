@@ -37,7 +37,7 @@
         // Browser chrome colour (the phone's status bar): right on first paint, not after React boots. Mirrors
         // THEME_COLOR in src/lib/theme.ts (e2e/boot.spec.ts asserts the two agree).
         var chrome = document.querySelector('meta[name="theme-color"]');
-        if (chrome) chrome.setAttribute("content", theme === "light" ? "#91b6d7" : "#05060d");
+        if (chrome) chrome.setAttribute("content", theme === "light" ? "#ffffff" : "#05060d");
 
         // Animations: OFF for everyone unless the visitor switched them on. Mirrors src/lib/motion.ts
         // (resolveInitialMotion). The OS reduced-motion setting is deliberately NOT an input.
