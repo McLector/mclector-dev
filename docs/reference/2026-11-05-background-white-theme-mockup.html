@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>2026-11-05-background-white-theme-mockup.html</title></head>
+<body style="font-family:system-ui,sans-serif;margin:24px;background:#f4f5f8;color:#14182b">
+<h2>Whole white theme, full page</h2>
+<p class="subtitle">Your real layout, copy and 1200×770 window, in the white theme with the A3+A5 effect behind it. Skill logos are lettered stand-ins and the hologram is a drawn approximation (the real one is live WebGL), so judge the colour, depth and contrast, not the icons.</p>
+
+<style>
+  .wm { --arc:#1a86f5; --ink: oklch(0.21 0.04 262); --ink2: oklch(0.34 0.04 262); --muted: oklch(0.43 0.04 262);
+    --line: oklch(0.4 0.05 250 / 0.14); --green:#0f9a63; --green-ink:#0b6b46;
+    --tile: oklch(0.97 0.008 250); --shadow: 0 8px 22px -14px oklch(0.3 0.06 250 / 0.3); }
+  .wm-bar { display:flex; flex-wrap:wrap; gap:18px; margin:12px 0 14px; align-items:center; }
+  .wm-grp { display:flex; gap:6px; align-items:center; }
+  .wm-grp span { font-size:11px; letter-spacing:.12em; text-transform:uppercase; opacity:.6; margin-right:4px; }
+  .wm-grp button { padding:5px 12px; border-radius:999px; border:1px solid currentColor; background:transparent; color:inherit; cursor:pointer; opacity:.6; font-size:13px; }
+  .wm-grp button.on { opacity:1; font-weight:600; }
+
+  /* The "viewport": 16:10 white page with the effect behind a scaled 1200x770 window. */
+  .wm-host { position:relative; width:100%; max-width:1180px; aspect-ratio:16/10; overflow:hidden; border-radius:14px; background:#fff; isolation:isolate; box-shadow:0 0 0 1px oklch(0.5 0.02 250 / 0.35); }
+  .wm-l { position:absolute; inset:0; pointer-events:none; }
+  .wm-wash { background: radial-gradient(90% 40% at 50% 108%, color-mix(in oklab, var(--arc) 30%, transparent), transparent 72%); }
+  .wm-line { top:auto; bottom:4%; height:1px; background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--arc) 40%, transparent), transparent); }
+  .wm-dust { inset:-10%; opacity:.6; -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 74%); mask-image: linear-gradient(to bottom, black 20%, transparent 74%);
+    background-image:
+      radial-gradient(2px 2px at 12% 18%, oklch(0.55 0.08 250) 99%, transparent), radial-gradient(2px 2px at 78% 12%, oklch(0.55 0.08 250) 99%, transparent),
+      radial-gradient(2px 2px at 34% 36%, oklch(0.55 0.08 250) 99%, transparent), radial-gradient(2px 2px at 91% 40%, oklch(0.55 0.08 250) 99%, transparent),
+      radial-gradient(2px 2px at 6% 58%, oklch(0.55 0.08 250) 99%, transparent), radial-gradient(2px 2px at 62% 48%, oklch(0.55 0.08 250) 99%, transparent),
+      radial-gradient(2px 2px at 48% 8%, oklch(0.55 0.08 250) 99%, transparent), radial-gradient(2px 2px at 96% 66%, oklch(0.55 0.08 250) 99%, transparent);
+    background-size: 46% 46%; }
+  .wm[data-fx="almost"] .wm-dust { display:none; }
+  .wm[data-fx="almost"] .wm-wash { opacity:.4; }
+  .wm[data-fx="almost"] .wm-line { opacity:.5; }
+  .wm[data-fx="none"] .wm-dust, .wm[data-fx="none"] .wm-wash, .wm[data-fx="none"] .wm-line { display:none; }
+  @keyframes wm-drift { from { transform:translate3d(0,0,0); } to { transform:translate3d(-5%,-3%,0); } }
+  @keyframes wm-breathe { 0%,100% { opacity:.75; } 50% { opacity:1; } }
+  .wm[data-mo="anim"] .wm-dust { animation: wm-drift 70s linear infinite alternate; }
+  .wm[data-mo="anim"] .wm-wash { animation: wm-breathe 14s ease-in-out infinite; }
+
+  /* The window: 1200x770, scaled by script. */
+  .wm-win { position:absolute; left:50%; top:50%; width:1200px; height:770px; transform-origin:center center; padding:18px; border-radius:30px; z-index:2; box-sizing:border-box;
+    background: oklch(0.985 0.004 250 / 0.9); box-shadow: 0 40px 90px -34px oklch(0.3 0.06 250 / 0.3), inset 0 0 0 1px var(--line); color:var(--ink);
+    font-family:"Sora Variable","Sora",system-ui,sans-serif; line-height:1.4; }
+  .wm-win * { box-sizing:border-box; }
+  .wm-bento { display:grid; height:100%; gap:14px; grid-template-columns:290px minmax(0,1fr) 300px; }
+  .wm-col { display:flex; flex-direction:column; gap:14px; min-height:0; }
+
+  .wm-card { position:relative; overflow:hidden; background:#fff; border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow); padding:16px; }
+  .wm-grow { flex:1 1 0; min-height:0; }
+  .wm-eyebrow { display:inline-flex; align-items:center; gap:7px; font-size:10.5px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color: color-mix(in oklab, var(--ink) 62%, var(--arc) 38%); }
+  .wm-eyebrow::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--arc); box-shadow:0 0 6px color-mix(in oklab, var(--arc) 60%, transparent); }
+  .wm-eyebrow.nodot::before { display:none; }
+  .wm-count { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .wm-mono { font-family:"Space Mono",ui-monospace,monospace; }
+
+  /* Intro */
+  .wm-intro { padding:15px 16px; display:flex; flex-direction:column; gap:8px; }
+  .wm-rowb { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .wm-mark { width:18px; height:18px; border-radius:5px; background:linear-gradient(135deg, var(--arc), oklch(0.55 0.2 270)); display:inline-block; }
+  .wm-active { display:inline-flex; align-items:center; gap:6px; padding:3px 9px 3px 7px; border-radius:999px; white-space:nowrap; font:700 8.5px/1.3 "Space Mono",monospace; letter-spacing:.11em; text-transform:uppercase; color:var(--green-ink);
+    background: color-mix(in oklab, var(--green) 15%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--green) 42%, transparent); }
+  .wm-active i { width:6px; height:6px; border-radius:50%; background:var(--green); display:block; }
+  .wm-h1 { margin:0; font-size:30px; line-height:1.03; font-weight:700; letter-spacing:-.02em; }
+  .wm-h1 span { display:block; }
+  .wm-bio { margin:0; font-size:11.5px; line-height:1.5; color:var(--muted); }
+  .wm-bio strong { font-weight:600; color:var(--ink2); }
+  .wm-open { margin:3px -3px 0; display:flex; flex-wrap:wrap; align-items:center; gap:5px; border-radius:12px; padding:5px 9px;
+    background: linear-gradient(180deg, color-mix(in oklab, var(--arc) 17%, transparent), color-mix(in oklab, var(--arc) 11%, transparent));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--arc) 42%, transparent), inset 0 1px 0 0 rgba(255,255,255,.6); }
+  .wm-open b { margin-right:2px; display:inline-flex; align-items:center; gap:6px; font:700 8.5px/1 "Space Mono",monospace; letter-spacing:.14em; text-transform:uppercase; color: color-mix(in oklab, var(--ink) 45%, var(--arc) 55%); }
+  .wm-open b::before { content:""; width:5px; height:5px; border-radius:50%; background:var(--arc); }
+  .wm-chip { font-size:9.5px; font-weight:600; padding:2px 8px; border-radius:999px; background: color-mix(in oklab, var(--arc) 15%, transparent); color:var(--ink); }
+
+  /* Skills */
+  .wm-skills { display:flex; flex-direction:column; gap:5px; padding:14px 16px; }
+  .wm-sk-row { display:flex; flex-direction:column; gap:4px; }
+  .wm-sk-h { margin-top:2px; font-size:8.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color: color-mix(in oklab, var(--ink) 62%, var(--arc) 38%); }
+  .wm-sk-g { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+  .wm-t { aspect-ratio:1; display:grid; place-items:center; border-radius:8px; background:var(--tile); box-shadow: inset 0 0 0 1px var(--line); font:700 8px/1 "Space Mono",monospace; color:var(--ink2); }
+
+  /* Location */
+  .wm-place { padding:13px 16px; text-align:center; display:flex; flex-direction:column; align-items:center; }
+  .wm-place::before { content:""; position:absolute; inset:0; background: radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--arc) 10%, transparent), transparent 60%); }
+  .wm-place > * { position:relative; }
+  .wm-where { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:600; }
+  .wm-where i { width:7px; height:7px; border-radius:50%; background:var(--arc); display:block; box-shadow:0 0 7px color-mix(in oklab, var(--arc) 60%, transparent); }
+  .wm-clock { margin:7px 0 6px; font:400 30px/1 "Space Mono",monospace; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+
+  /* Centre column */
+  .wm-sign { align-self:center; display:flex; align-items:center; justify-content:center; gap:12px; min-height:42px; padding:6px 26px; border-radius:12px; background:#08132f; color:#eaf6ff;
+    box-shadow: inset 0 0 0 1.5px rgba(94,200,255,.78), 0 0 14px -3px rgba(94,200,255,.5); }
+  .wm-sign .l { font:700 9px/1 "Space Mono",monospace; letter-spacing:.2em; text-transform:uppercase; color:#7fd4ff; }
+  .wm-sign .e { font-size:14px; font-weight:600; }
+  .wm-cvw { display:flex; justify-content:center; }
+  .wm-cv { display:inline-flex; align-items:center; gap:8px; padding:8px 18px; border-radius:999px; background:var(--ink); color:#f4f6ff; font-size:11.5px; font-weight:600; box-shadow:0 8px 20px -10px oklch(0.2 0.05 262 / .6); }
+  .wm-stage { position:relative; flex:1 1 0; min-height:0; border-radius:22px; overflow:hidden; border:1px solid oklch(0.4 0.08 250 / 0.2);
+    background: radial-gradient(60% 40% at 50% 34%, #fff, transparent 72%), linear-gradient(180deg, oklch(0.985 0.008 250), oklch(0.93 0.025 250)); box-shadow: var(--shadow); }
+  .wm-stage svg { position:absolute; inset:0 0 34px 0; width:100%; height:calc(100% - 34px); }
+  .wm-cap { position:absolute; left:0; right:0; bottom:12px; text-align:center; font:400 10px/1 "Space Mono",monospace; letter-spacing:.2em; text-transform:uppercase; color: oklch(0.28 0.05 262); }
+
+  /* Right column */
+  .wm-soc { padding:14px 16px 16px; }
+  .wm-hexes { display:flex; flex-direction:column; align-items:center; margin-top:10px; }
+  .wm-hexrow { display:flex; gap:6px; }
+  .wm-hexrow + .wm-hexrow { margin-top:-12px; }
+  .wm-hex { width:54px; height:60px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: color-mix(in oklab, var(--arc) 40%, transparent); display:grid; place-items:center; }
+  .wm-hex i { width:51px; height:57px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background:var(--tile); display:grid; place-items:center; font:700 9px/1 "Space Mono",monospace; font-style:normal; color:var(--ink2); }
+  .wm-proj { padding:14px 12px 12px 16px; display:flex; flex-direction:column; gap:10px; }
+  .wm-prow { display:flex; align-items:center; gap:10px; padding:6px; border-radius:12px; }
+  .wm-prow:nth-child(odd) { background: color-mix(in oklab, var(--ink) 3%, transparent); }
+  .wm-th { width:36px; height:36px; border-radius:9px; flex:none; box-shadow: inset 0 0 0 1px var(--line); }
+  .wm-pt { display:flex; flex-direction:column; min-width:0; flex:1; }
+  .wm-pt b { font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wm-pt s { text-decoration:none; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wm-st { font-size:8px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); flex:none; }
+  .wm-cert { padding:16px; }
+  .wm-empty { margin-top:10px; display:flex; align-items:center; gap:12px; border:1px dashed var(--line); border-radius:16px; padding:12px 14px; }
+  .wm-empty p { margin:0; }
+  .wm-empty .a { font-size:12.5px; font-weight:600; color:var(--ink2); }
+  .wm-empty .b { font-size:10px; line-height:1.35; color:var(--muted); }
+</style>
+
+<div class="wm" id="wm" data-fx="ink" data-mo="still">
+  <div class="wm-bar">
+    <div class="wm-grp"><span>Effect</span><button class="on" data-k="fx" data-v="ink">Faint ink</button><button data-k="fx" data-v="almost">Almost nothing</button><button data-k="fx" data-v="none">None</button></div>
+    <div class="wm-grp"><span>Motion</span><button class="on" data-k="mo" data-v="still">Still</button><button data-k="mo" data-v="anim">Animated</button></div>
+  </div>
+
+  <div class="wm-host" id="wm-host" data-choice="white-theme-full">
+    <div class="wm-l wm-dust"></div><div class="wm-l wm-wash"></div><div class="wm-l wm-line"></div>
+
+    <div class="wm-win" id="wm-win">
+      <div class="wm-bento">
+        <!-- Left: identity rail -->
+        <div class="wm-col">
+          <div class="wm-card wm-intro">
+            <div class="wm-rowb">
+              <span class="wm-eyebrow nodot" style="gap:7px"><span class="wm-mark"></span>@McLector</span>
+              <span class="wm-active"><i></i>Currently Active</span>
+            </div>
+            <p class="wm-h1"><span>Hello!</span><span>I'm Myre Lector</span></p>
+            <p class="wm-bio"><strong>4th-year CS student at De La Salle Lipa University, Software Developer — building modern web and mobile applications.</strong> Most of what I build starts as a project given, a problem I actually had, or sometimes just for the fun of it.</p>
+            <div class="wm-open"><b>Open to</b><span class="wm-chip">Internships</span><span class="wm-chip">Freelance</span><span class="wm-chip">Entry-level</span><span class="wm-chip">Remote</span></div>
+          </div>
+
+          <div class="wm-card wm-skills wm-grow">
+            <span class="wm-eyebrow">Skills &amp; Tools</span>
+            <div class="wm-sk-row"><div class="wm-sk-h">Languages · Mobile</div><div class="wm-sk-g">
+              <div class="wm-t">TS</div><div class="wm-t">JS</div><div class="wm-t">RN</div><div class="wm-t">Ex</div><div class="wm-t">Py</div><div class="wm-t">C++</div><div class="wm-t">Nav</div></div></div>
+            <div class="wm-sk-row"><div class="wm-sk-h">Web · Data</div><div class="wm-sk-g">
+              <div class="wm-t">Tw</div><div class="wm-t">Nx</div><div class="wm-t">Zu</div><div class="wm-t">sh</div><div class="wm-t">Sb</div><div class="wm-t">PG</div><div class="wm-t">GIS</div></div></div>
+            <div class="wm-sk-row"><div class="wm-sk-h">Hardware · Design · PM</div><div class="wm-sk-g">
+              <div class="wm-t">ESP</div><div class="wm-t">Ard</div><div class="wm-t">Bl</div><div class="wm-t">Fg</div><div class="wm-t">Az</div></div></div>
+            <div class="wm-sk-row"><div class="wm-sk-h">Tools · APIs</div><div class="wm-sk-g">
+              <div class="wm-t">Git</div><div class="wm-t">Vc</div><div class="wm-t">Rn</div><div class="wm-t">CC</div><div class="wm-t">Cdx</div><div class="wm-t">AG</div><div class="wm-t">OC</div>
+              <div class="wm-t">Cl</div><div class="wm-t">Gq</div><div class="wm-t">Win</div></div></div>
+          </div>
+
+          <div class="wm-card wm-place">
+            <div class="wm-where"><i></i>Batangas, Philippines</div>
+            <div class="wm-clock" id="wm-clock">00:00:00</div>
+            <span class="wm-eyebrow nodot" style="margin-right:-.2em">GMT+8 · Manila</span>
+          </div>
+        </div>
+
+        <!-- Centre: sign, CV, hologram stage -->
+        <div class="wm-col">
+          <div class="wm-sign"><span class="l">Let's Connect</span><span class="e">moradamyre@gmail.com</span></div>
+          <div class="wm-cvw"><span class="wm-cv"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>Download CV</span></div>
+          <div class="wm-stage">
+            <svg viewBox="0 0 540 596" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="wmBeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#1a86f5" stop-opacity=".28"/><stop offset="1" stop-color="#1a86f5" stop-opacity="0"/></linearGradient>
+                <linearGradient id="wmCard" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e3edf9"/></linearGradient>
+              </defs>
+              <!-- shafts of projected light -->
+              <polygon points="222,500 318,500 352,300 188,300" fill="url(#wmBeam)"/>
+              <polygon points="250,500 290,500 306,330 234,330" fill="url(#wmBeam)" opacity=".7"/>
+              <!-- pedestal -->
+              <ellipse cx="270" cy="528" rx="150" ry="30" fill="none" stroke="#1560c8" stroke-opacity=".5" stroke-width="1.4"/>
+              <ellipse cx="270" cy="524" rx="112" ry="22" fill="none" stroke="#1a86f5" stroke-opacity=".75" stroke-width="1.6"/>
+              <ellipse cx="270" cy="520" rx="78" ry="14" fill="#fff" stroke="#1560c8" stroke-opacity=".6" stroke-width="1.2"/>
+              <ellipse cx="270" cy="520" rx="52" ry="9" fill="none" stroke="#1a86f5" stroke-width="1.6" stroke-dasharray="5 4"/>
+              <!-- the card -->
+              <g transform="translate(270 290) rotate(-3)">
+                <rect x="-98" y="-150" width="196" height="268" rx="12" fill="url(#wmCard)" stroke="#1a86f5" stroke-opacity=".45"/>
+                <path d="M-98 -122 V-138 a12 12 0 0 1 12 -12 H-70 M70 -150 H86 a12 12 0 0 1 12 12 V-122 M98 106 V106 M-98 106 V118 M98 106 V118" fill="none" stroke="#1a86f5" stroke-width="2"/>
+                <path d="M-98 94 V106 a12 12 0 0 0 12 12 H-70 M70 118 H86 a12 12 0 0 0 12 -12 V94" fill="none" stroke="#1a86f5" stroke-width="2"/>
+                <rect x="-72" y="-124" width="144" height="150" rx="8" fill="#cfe0f5"/>
+                <circle cx="0" cy="-70" r="26" fill="#9fbbe0"/><path d="M-50 22 a50 44 0 0 1 100 0 z" fill="#9fbbe0"/>
+                <text x="0" y="52" text-anchor="middle" font-family="Sora Variable,Sora,sans-serif" font-size="16" font-weight="700" fill="#0e182b">Myre Lector</text>
+                <text x="0" y="70" text-anchor="middle" font-family="Sora Variable,Sora,sans-serif" font-size="9" fill="#2d384d">CS Student · Full-Stack Mobile Dev</text>
+                <text x="0" y="100" text-anchor="middle" font-family="Space Mono,monospace" font-size="8" letter-spacing="2" fill="#1560c8">DLSL-2026</text>
+              </g>
+            </svg>
+            <div class="wm-cap">Digital Pass</div>
+          </div>
+        </div>
+
+        <!-- Right: feed rail -->
+        <div class="wm-col">
+          <div class="wm-card wm-soc">
+            <span class="wm-eyebrow">Find me online</span>
+            <div class="wm-hexes">
+              <div class="wm-hexrow"><div class="wm-hex"><i>GH</i></div><div class="wm-hex"><i>in</i></div><div class="wm-hex"><i>@</i></div><div class="wm-hex"><i>X</i></div></div>
+              <div class="wm-hexrow"><div class="wm-hex"><i>IG</i></div><div class="wm-hex"><i>Up</i></div><div class="wm-hex"><i>Tk</i></div></div>
+            </div>
+          </div>
+
+          <div class="wm-card wm-proj wm-grow">
+            <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="wm-eyebrow">Latest projects</span><span class="wm-count wm-mono">4 featured</span></div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div class="wm-prow"><span class="wm-th" style="background:linear-gradient(135deg,#ff5f7e,#b34fff)"></span><span class="wm-pt"><b>Eiyu-System</b><s>Habit tracker as RPG progression</s></span><span class="wm-st">In progress</span></div>
+              <div class="wm-prow"><span class="wm-th" style="background:linear-gradient(135deg,#4f7cff,#3ddc97)"></span><span class="wm-pt"><b>TaskBuddy</b><s>PH home-services marketplace</s></span><span class="wm-st">In progress</span></div>
+              <div class="wm-prow"><span class="wm-th" style="background:linear-gradient(135deg,#f5a623,#ff5f7e)"></span><span class="wm-pt"><b>StarkRent</b><s>Construction equipment rental</s></span><span class="wm-st">In progress</span></div>
+              <div class="wm-prow"><span class="wm-th" style="background:linear-gradient(135deg,#3ddc97,#4f7cff)"></span><span class="wm-pt"><b>ESP32 Study Monitor</b><s>Desk-mounted IoT ergonomics monitor</s></span><span class="wm-st">Complete</span></div>
+            </div>
+          </div>
+
+          <div class="wm-card wm-cert">
+            <span class="wm-eyebrow">Certifications</span>
+            <div class="wm-empty">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="oklch(0.43 0.04 262)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5"/><path d="M8.5 13.2 7 21l5-2.4L17 21l-1.5-7.8"/></svg>
+              <div><p class="a">Coming soon</p><p class="b">Reserved for the credentials I'm working toward — planned, not missing.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var host = document.getElementById('wm-host'), win = document.getElementById('wm-win');
+    function fit() {
+      var s = (host.clientWidth * 0.9) / 1200;
+      win.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+    }
+    fit(); window.addEventListener('resize', fit);
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(host);
+
+    var clock = document.getElementById('wm-clock');
+    var fmt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    function tick() { clock.textContent = fmt.format(new Date()); }
+    tick(); setInterval(tick, 1000);
+
+    document.querySelectorAll('#wm .wm-grp button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.getElementById('wm').setAttribute('data-' + b.dataset.k, b.dataset.v);
+        b.parentNode.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+      });
+    });
+  })();
+</script>
+
+<p class="subtitle">The neon "Let's Connect" sign stays a dark navy plate, as it is in the real site in both themes (neon doesn't read on pale). It is the one dark object on the page and anchors the white.</p>
+
+</body></html>
