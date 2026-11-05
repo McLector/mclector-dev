@@ -90,9 +90,9 @@ test.describe("the Animations toggle, switched on", () => {
 
     // ON: the star layers drift slowly and the galaxy glow breathes (too slow for a pixel diff, so read computed styles).
     const expectOn = async () => {
+      await expect.poll(() => galaxyGlow(page)).toBe("30s");
       await expect.poll(() => stars(page).then(longest)).toBeGreaterThan(100); // 160s drift
       await expect.poll(() => starsNear(page).then(longest)).toBeGreaterThan(60);
-      await expect.poll(() => galaxyGlow(page)).toBe("30s");
     };
     await expectOn();
 
