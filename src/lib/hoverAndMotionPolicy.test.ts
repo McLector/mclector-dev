@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
  *     `@media (hover: hover) and (pointer: fine)`, which a touchscreen laptop fails while a real mouse is
  *     attached; hover is now keyed to the input the visitor ACTUALLY uses (`html[data-input="mouse"]`).
  *  2. THE OS reduced-motion SETTING IS NEVER READ. Ambient motion is governed only by the visible
- *     Animations toggle (`html[data-motion]`), which defaults to on.
+ *     Animations toggle (`html[data-motion]`), which defaults to off.
  *
  * Comments are stripped first, so explaining the policy does not trip it.
  */

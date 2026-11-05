@@ -18,18 +18,25 @@ test.describe("boot script — animations", () => {
   test.describe("a first-time visitor", () => {
     test.use({ storageState: NO_STORAGE });
 
-    test("gets animations ON", async ({ page }) => {
+    test("gets animations OFF (calm by default)", async ({ page }) => {
+      await blockScripts(page);
+      await page.goto("/");
+      await expect(html(page)).toHaveAttribute("data-motion", "off");
+    });
+
+    test("keeps an explicit stored 'on', the only way to get animations", async ({ page }) => {
+      await page.addInitScript(() => localStorage.setItem("mclector-motion", "on"));
       await blockScripts(page);
       await page.goto("/");
       await expect(html(page)).toHaveAttribute("data-motion", "on");
     });
 
-    test("gets animations ON even when their OS asks for reduced motion (the OS setting is not an input)", async ({ browser }) => {
+    test("gets animations OFF whatever their OS asks for (the OS setting is not an input)", async ({ browser }) => {
       const context = await browser.newContext({ reducedMotion: "reduce", storageState: NO_STORAGE });
       const page = await context.newPage();
       await blockScripts(page);
       await page.goto("/");
-      await expect(html(page)).toHaveAttribute("data-motion", "on");
+      await expect(html(page)).toHaveAttribute("data-motion", "off");
       await context.close();
     });
 
@@ -40,11 +47,11 @@ test.describe("boot script — animations", () => {
       await expect(html(page)).toHaveAttribute("data-motion", "off");
     });
 
-    test("ignores a garbage stored value and stays ON, so a corrupt entry cannot silently freeze the site", async ({ page }) => {
+    test("ignores a garbage stored value and stays OFF, so a corrupt entry can never switch motion on", async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem("mclector-motion", "banana"));
       await blockScripts(page);
       await page.goto("/");
-      await expect(html(page)).toHaveAttribute("data-motion", "on");
+      await expect(html(page)).toHaveAttribute("data-motion", "off");
     });
   });
 });

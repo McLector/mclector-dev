@@ -29,7 +29,7 @@ const ORIGIN = `http://localhost:${PORT}`;
  * `reducedMotion: "reduce"`, but the site no longer reads the OS setting (owner decision), so that lever is gone.
  *
  * It never affects hover: hover and focus transitions are locked on in both states of the toggle. A spec that
- * needs the real, animated site opts out with `test.use({ storageState: ANIMATIONS_ON })` (see e2e/hover.spec.ts).
+ * needs the real, animated site opts in with `animationsOnState(baseURL)` from e2e/support/motion.ts (see e2e/hover.spec.ts).
  */
 const ANIMATIONS_OFF = {
   cookies: [],

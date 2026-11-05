@@ -500,8 +500,8 @@
      so shortening only the duration would leave every card blank and offset until its delay elapsed (up to a third
      of a second) before snapping into place. Off means the page is in its final state immediately.
 
-     The OS `prefers-reduced-motion` setting is NOT read anywhere (owner decision): this toggle, on by default,
-     is the visitor's only way to switch ambient motion off. This used to be a
+     The OS `prefers-reduced-motion` setting is NOT read anywhere (owner decision): this toggle, off by default,
+     is the visitor's only way to switch ambient motion on. This used to be a
      `@media (prefers-reduced-motion: reduce)` rule that also forced `transition-duration: 0.001ms`, which
      made every hover snap instead of animate for anyone with the OS setting on. */
   :root[data-motion="off"] *,

@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
+import { animationsOnState } from "./support/motion";
 import {
   HEX,
-  NO_STORAGE,
   PROJECT_ROW,
   SKILL,
   allNonZero,
@@ -23,7 +23,7 @@ import {
  * at the top level of a spec file.
  *
  * The whole suite runs with the Animations toggle OFF (playwright.config.ts), so these tests double as the proof
- * that hover survives it. Blocks that need the animated site opt out with NO_STORAGE.
+ * that hover survives it. Blocks that need the animated site opt in with animationsOnState.
  */
 const desktopOnly = () => test.info().project.name !== "chromium";
 const mobileOnly = () => test.info().project.name !== "mobile-chrome";
@@ -117,8 +117,8 @@ test.describe("with the OS reduced-motion setting ON", () => {
     });
   });
 
-  test.describe("and the Animations toggle ON (the default)", () => {
-    test.use({ reducedMotion: "reduce", storageState: NO_STORAGE });
+  test.describe("and the Animations toggle switched ON by the visitor", () => {
+    test.use({ reducedMotion: "reduce", storageState: async ({ baseURL }, provide) => provide(animationsOnState(baseURL!)) });
     test("hover animates AND ambient motion still runs: the OS setting is ignored", async ({ page }) => {
       await open(page);
       expect(await page.locator("html").getAttribute("data-motion")).toBe("on");

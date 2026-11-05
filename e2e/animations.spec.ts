@@ -1,11 +1,12 @@
 import { test, expect, type Page } from "@playwright/test";
+import { animationsOnState } from "./support/motion";
 
 /**
- * The Animations toggle. On by default for everyone (the OS reduced-motion setting is never read); switching it off
- * freezes AMBIENT motion only. Hover and focus transitions are locked on in both states (see hover.spec.ts).
+ * The Animations toggle. Off by default for everyone (the OS reduced-motion setting is never read); switching it on
+ * runs AMBIENT motion only. Hover and focus transitions are locked on in both states (see hover.spec.ts).
  *
- * The suite itself runs with the toggle OFF (playwright.config.ts), so every block here that needs the real,
- * animated site opts out with NO_STORAGE.
+ * The suite itself runs with the toggle stored OFF (playwright.config.ts). A block that tests the first-visit default
+ * opts out with NO_STORAGE; a block that needs the real, animated site opts in with animationsOnState.
  */
 const NO_STORAGE = { cookies: [], origins: [] };
 const TOGGLE = '[data-testid="motion-toggle"]';
@@ -25,12 +26,12 @@ async function galaxyStrip(page: Page) {
 test.describe("the Animations toggle", () => {
   test.use({ storageState: NO_STORAGE });
 
-  test("is visible, named 'Animations', pressed by default, and does not depend on the OS setting", async ({ page }) => {
+  test("is visible, named 'Animations', NOT pressed by default, and does not depend on the OS setting", async ({ page }) => {
     await page.goto("/");
     const toggle = page.locator(TOGGLE);
     await expect(toggle).toBeVisible();
-    await expect(page.getByRole("button", { name: "Animations" })).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+    await expect(page.getByRole("button", { name: "Animations" })).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
   });
 
   test("sits directly next to the day/night toggle, on one axis, not overlapping it", async ({ page }) => {
@@ -52,6 +53,31 @@ test.describe("the Animations toggle", () => {
       expect(Math.abs(motion.x + motion.width / 2 - (theme.x + theme.width / 2))).toBeLessThan(1); // one axis
     }
   });
+
+  test("switching it on sticks across a reload", async ({ page }) => {
+    await page.goto("/");
+    await page.locator(TOGGLE).click();
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+    expect(await page.evaluate(() => localStorage.getItem("mclector-motion"))).toBe("on");
+
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
+    await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "true");
+    expect(await stars(page).then(longest)).toBeGreaterThan(1);
+  });
+
+  test("is keyboard operable", async ({ page }) => {
+    await page.goto("/");
+    await page.locator(TOGGLE).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "true");
+    await page.keyboard.press("Space");
+    await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+test.describe("the Animations toggle, switched on", () => {
+  test.use({ storageState: async ({ baseURL }, provide) => provide(animationsOnState(baseURL!)) });
 
   test("off freezes the ambient layer; on brings it back — live, no reload", async ({ page }) => {
     test.skip(desktopOnly(), "the galaxy strip is only free of content at desktop widths");
@@ -85,7 +111,7 @@ test.describe("the Animations toggle", () => {
     expect(e.equals(f), "the galaxy did not resume after switching back on").toBe(false);
   });
 
-  test("remembers the choice across a reload", async ({ page }) => {
+  test("remembers switching it off across a reload", async ({ page }) => {
     await page.goto("/");
     await page.locator(TOGGLE).click();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
@@ -95,15 +121,6 @@ test.describe("the Animations toggle", () => {
     await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
     await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "false");
     expect(await stars(page).then(longest)).toBeLessThan(0.01);
-  });
-
-  test("is keyboard operable", async ({ page }) => {
-    await page.goto("/");
-    await page.locator(TOGGLE).focus();
-    await page.keyboard.press("Enter");
-    await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "false");
-    await page.keyboard.press("Space");
-    await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "true");
   });
 
   test("switching off never zeroes a hover transition", async ({ page }) => {

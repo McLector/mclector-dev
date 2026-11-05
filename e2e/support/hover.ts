@@ -1,7 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
 /** Shared selectors and assertions for the hover specs. Not a spec: Playwright only runs `*.spec.ts`. */
-export const NO_STORAGE = { cookies: [], origins: [] };
 
 export const HEX = '[data-bento-area="social"] a.hexgrid__link';
 export const SKILL = '[data-bento-area="skills"] li';
