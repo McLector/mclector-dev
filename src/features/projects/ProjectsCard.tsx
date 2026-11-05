@@ -56,7 +56,7 @@ export function ProjectsCard({ projects }: { projects: Project[] }) {
                     data-testid={`project-thumb-${project.id}`}
                     aria-hidden="true"
                     style={thumbnailStyle(project.thumbnail)}
-                    className="size-9 shrink-0 rounded-[9px] ring-1 ring-[var(--glass-border)] transition-shadow group-hover:ring-[var(--glass-highlight)]"
+                    className="size-9 shrink-0 rounded-[9px] ring-1 ring-[var(--glass-border)] transition-shadow group-hover:ring-[var(--hover-ring)]"
                   />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[12px] font-semibold text-[var(--color-text-primary)]">
