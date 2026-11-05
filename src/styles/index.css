@@ -91,6 +91,8 @@
     /* Approved revamp mockup: a lit arc-blue top edge on every card, tile
        surfaces, the hologram stage bay, and the Download CV placeholder. */
     --card-accent: 0.28;
+    /* The ring a hovered row draws. Dark: the glass highlight. Light overrides it (that highlight is transparent). */
+    --hover-ring: var(--glass-highlight);
     --tile-bg: color-mix(in oklab, var(--color-text-primary) 7%, transparent);
     --tile-ring: var(--glass-border);
     --btn-bg: var(--color-text-primary);
@@ -125,8 +127,8 @@
     --color-text-secondary: oklch(0.34 0.04 262);
     --color-text-muted: oklch(0.43 0.04 262);
 
-    /* Cards: opaque white on a hairline and a soft shadow. No lit top edge (--card-accent: 0) and no inner
-       highlight, as in the mock-up's .wm-card. */
+    /* Cards: opaque white on a hairline and a soft shadow. The lit arc-blue top edge is back (--card-accent below,
+       the portfolio's signature); there is no inner highlight, as in the mock-up's .wm-card. */
     --glass-bg: #fff;
     --glass-border: oklch(0.4 0.05 250 / 0.14);
     --glass-highlight: rgba(255, 255, 255, 0);
@@ -141,7 +143,8 @@
     --green: #0f9a63;
     --green-ink: #0b6b46;
 
-    --card-accent: 0;
+    --card-accent: 0.6;
+    --hover-ring: color-mix(in oklab, var(--arc) 45%, transparent);
     --tile-bg: oklch(0.97 0.008 250);
     --tile-ring: oklch(0.4 0.05 250 / 0.14);
     --btn-bg: oklch(0.21 0.04 262);

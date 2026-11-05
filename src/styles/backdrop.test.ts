@@ -243,4 +243,14 @@ describe("the quiet backdrop CSS", () => {
       for (const s of r.selectors) expect(s).toMatch(/^:root\[data-motion="off"\] \*(::before|::after)?$/);
     }
   });
+
+  it("keeps the lit card top edge in both themes (dark 0.28, light 0.6)", () => {
+    expect(decl(rules(":root"), "--card-accent")).toBe("0.28");
+    expect(decl(rules(LIGHT), "--card-accent")).toBe("0.6");
+  });
+
+  it("defines --hover-ring in both themes: dark keeps the glass highlight, light is an arc tint", () => {
+    expect(decl(rules(":root"), "--hover-ring")).toBe("var(--glass-highlight)");
+    expect(decl(rules(LIGHT), "--hover-ring")).toBe("color-mix(in oklab, var(--arc) 45%, transparent)");
+  });
 });
