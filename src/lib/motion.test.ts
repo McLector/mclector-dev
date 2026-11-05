@@ -5,7 +5,6 @@ import {
   getMotion,
   initMotion,
   isMotion,
-  motionOn,
   nextMotion,
   resolveInitialMotion,
   setMotion,
@@ -121,12 +120,6 @@ describe("the live setting (the <html data-motion> attribute is the single sourc
     setMotion("off");
     expect(a).toEqual(["on"]);
     expect(b).toEqual(["on", "off"]);
-  });
-
-  it("motionOn is true exactly while the setting is on", () => {
-    expect(motionOn()).toBe(false);
-    root.setAttribute("data-motion", "on");
-    expect(motionOn()).toBe(true);
   });
 
   it("initMotion seeds the attribute from the stored choice when the boot script did not", () => {

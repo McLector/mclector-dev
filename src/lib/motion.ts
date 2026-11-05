@@ -2,8 +2,8 @@
  * The visitor's Animations setting (the toggle top-right). Same shape as `theme.ts`: pure decision logic
  * here, unit-tested directly; the toggle and the components that react to it live elsewhere.
  *
- * WHAT IT GOVERNS: ambient, decorative motion only: the galaxy backdrop (starfield, falling code, drifting rocks,
- * comet, pointer parallax), the status ripple, entrance staggers and the project overlay's large open/close motion.
+ * WHAT IT GOVERNS: ambient, decorative motion only: the backdrop's horizon-glow breathing and star drift,
+ * the status ripple, entrance staggers and the project overlay's large open/close motion.
  * The hologram scene is independent of it (see `useSceneCapability`), so this one never touches it.
  *
  * WHAT IT NEVER TOUCHES: hover, focus and active transitions. They are locked on, in both states, for every
@@ -44,7 +44,7 @@ export function nextMotion(motion: Motion): Motion {
 /* ---------------------------------------------------------------------------------------------------------
  * The live setting. The `<html data-motion>` attribute is the single source of truth: the inline boot script
  * sets it before first paint, CSS keys off it, and everything else reads it. Reading it is a plain property
- * access, cheap enough for a per-frame check in the galaxy's draw loop.
+ * access.
  * ------------------------------------------------------------------------------------------------------- */
 
 const listeners = new Set<(motion: Motion) => void>();
@@ -60,11 +60,6 @@ function readStored(): string | null {
 /** The current setting. An absent or unrecognised attribute means off. */
 export function getMotion(root: HTMLElement = document.documentElement): Motion {
   return root.dataset.motion === "on" ? "on" : "off";
-}
-
-/** True while ambient motion should run. */
-export function motionOn(root: HTMLElement = document.documentElement): boolean {
-  return getMotion(root) === "on";
 }
 
 /**

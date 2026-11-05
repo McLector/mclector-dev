@@ -24,7 +24,7 @@ const ORIGIN = `http://localhost:${PORT}`;
 
 /**
  * The suite runs with the site's own Animations toggle switched OFF (`localStorage["mclector-motion"] = "off"`).
- * That freezes AMBIENT motion (keyframes, the falling-code canvas, parallax, the hologram spin), which is what
+ * That freezes AMBIENT motion (keyframes: the horizon glow and star drift, the hologram spin), which is what
  * keeps the visual baselines and the hologram picture guards deterministic. It used to be done with Playwright's
  * `reducedMotion: "reduce"`, but the site no longer reads the OS setting (owner decision), so that lever is gone.
  *

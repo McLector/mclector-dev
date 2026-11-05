@@ -44,7 +44,7 @@ export function PassCard({ profile }: { profile: Profile }) {
 
   return (
     // The stage: a token-driven background (deep navy bay at dusk, soft glows at
-    // night) instead of the old fixed-height wrapper + local nebula + .holo-stage.
+    // night) instead of the old fixed-height wrapper and .holo-stage.
     <BentoCard
       area="pass"
       padded={false}

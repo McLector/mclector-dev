@@ -6,7 +6,7 @@ import chipSrc from "./ui/Chip.tsx?raw";
 /**
  * The project overlay and its small parts render through a
  * portal, outside the themed card surfaces, so they were authored dark-only
- * (`white/8`, `neutral-950/95`, …) and looked jarring in the twilight theme.
+ * (`white/8`, `neutral-950/95`, …) and looked jarring in the light theme.
  * Surfaces must come from tokens so both themes stay correct.
  */
 const LITERALS: [RegExp, string][] = [

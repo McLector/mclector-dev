@@ -45,7 +45,7 @@ export function BentoCard({
   as: Component = "div",
 }: BentoCardProps) {
   // The badge cell is not a solid card: it stays transparent so the galaxy's
-  // nebula glow, stars and dot-grid read behind the hanging badge — the open
+  // horizon glow and stars read behind the hanging badge — the open
   // centre stage. Other cells can opt in via the `bare` prop.
   const isBare = bare ?? area === "pass";
 

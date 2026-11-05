@@ -19,7 +19,7 @@ import { test, expect } from "@playwright/test";
  *
  * THEME: each baseline pins `data-theme` explicitly (stored choice) so the
  * snapshot never depends on the OS colour-scheme fallback. Dark is the default
- * look; a light (twilight) desktop baseline covers the second theme.
+ * look; a light (white) desktop baseline covers the second theme.
  *
  * Baselines are captured on the desktop chromium project only; the
  * mobile-chrome project emulates a different DPR/device, which would double
@@ -59,7 +59,7 @@ test.describe("visual baselines", () => {
     });
   });
 
-  test("desktop 1440x900 — twilight (light)", async ({ page }) => {
+  test("desktop 1440x900 — light", async ({ page }) => {
     await pinTheme(page, "light");
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
