@@ -98,6 +98,13 @@
   outline: none;
 }
 
+/* Light theme: an arc-blue tint over the white card instead of the neutral grey above, so the hexagons read as the
+   portfolio's one colour. `:where()` keeps this at the base rule's specificity (later wins the tie), so the hover and
+   focus-visible rules below, which are more specific, still override the background. */
+:where(:root[data-theme="light"]) .hexgrid__link {
+  background: color-mix(in oklab, var(--arc) 12%, var(--glass-bg));
+}
+
 /* Keyboard focus: a solid arc-tinted fill (the crisp ring is the sibling above). */
 .hexgrid__link:focus-visible {
   background: color-mix(in oklab, var(--arc) 40%, var(--color-surface-raised));
