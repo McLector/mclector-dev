@@ -122,7 +122,7 @@ test.describe("with the OS reduced-motion setting ON", () => {
     test("hover animates AND ambient motion still runs: the OS setting is ignored", async ({ page }) => {
       await open(page);
       expect(await page.locator("html").getAttribute("data-motion")).toBe("on");
-      // Ambient keyframes run at their authored speed (5.5s twinkle, 140s drift), not frozen to ~0.
+      // Ambient keyframes run at their authored speed (160s drift), not frozen to ~0.
       expect(longest(await style(page, ".stars", "animation-duration"))).toBeGreaterThan(1);
       await expectHoverWorks(page);
     });

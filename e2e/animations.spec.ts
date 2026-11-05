@@ -18,7 +18,12 @@ const longest = (durations: string) => Math.max(...durations.split(",").map((d) 
 const stars = (page: Page) =>
   page.locator(".stars").evaluate((el) => getComputedStyle(el).animationDuration);
 
-/** A tall strip down the left edge: only the galaxy paints there (the window is centred), so it shows rain, stars and rocks. */
+const starsNear = (page: Page) =>
+  page.locator(".stars-near").evaluate((el) => getComputedStyle(el).animationDuration);
+const galaxyGlow = (page: Page) =>
+  page.evaluate(() => getComputedStyle(document.querySelector(".galaxy")!, "::before").animationDuration);
+
+/** A tall strip down the left edge: only the backdrop paints there (the window is centred); used to prove it is frozen when off. */
 async function galaxyStrip(page: Page) {
   return page.screenshot({ clip: { x: 0, y: 0, width: 110, height: 700 } });
 }
@@ -82,33 +87,55 @@ test.describe("the Animations toggle, switched on", () => {
   test("off freezes the ambient layer; on brings it back — live, no reload", async ({ page }) => {
     test.skip(desktopOnly(), "the galaxy strip is only free of content at desktop widths");
     await page.goto("/");
-    await expect.poll(() => stars(page).then(longest)).toBeGreaterThan(1); // twinkle 5.5s, drift 140s
 
-    // ON: the falling code / stars / rocks are moving, so two frames apart differ.
-    const a = await galaxyStrip(page);
-    await page.waitForTimeout(700);
-    const b = await galaxyStrip(page);
-    expect(a.equals(b), "the galaxy did not animate while animations were on").toBe(false);
+    // ON: the star layers drift slowly and the galaxy glow breathes (too slow for a pixel diff, so read computed styles).
+    const expectOn = async () => {
+      await expect.poll(() => stars(page).then(longest)).toBeGreaterThan(100); // 160s drift
+      await expect.poll(() => starsNear(page).then(longest)).toBeGreaterThan(60);
+      await expect.poll(() => galaxyGlow(page)).toBe("30s");
+    };
+    await expectOn();
 
     // OFF
     await page.locator(TOGGLE).click();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "off");
     await expect(page.locator(TOGGLE)).toHaveAttribute("aria-pressed", "false");
     expect(await stars(page).then(longest)).toBeLessThan(0.01);
+    expect(await starsNear(page).then(longest)).toBeLessThan(0.01);
+    expect(longest(await galaxyGlow(page))).toBeLessThan(0.01);
     await page.waitForTimeout(300); // let the last in-flight frame land
     const c = await galaxyStrip(page);
     await page.waitForTimeout(700);
     const d = await galaxyStrip(page);
-    expect(c.equals(d), "the galaxy kept moving with animations off").toBe(true);
+    expect(c.equals(d), "the backdrop kept moving with animations off").toBe(true);
 
     // ON again
     await page.locator(TOGGLE).click();
     await expect(page.locator("html")).toHaveAttribute("data-motion", "on");
-    await expect.poll(() => stars(page).then(longest)).toBeGreaterThan(1);
-    const e = await galaxyStrip(page);
-    await page.waitForTimeout(700);
-    const f = await galaxyStrip(page);
-    expect(e.equals(f), "the galaxy did not resume after switching back on").toBe(false);
+    await expectOn();
+  });
+
+  test("the horizon hairline stays 4% above the bottom edge", async ({ page }) => {
+    test.skip(desktopOnly(), "desktop project only");
+    for (const height of [600, 1200]) {
+      await page.setViewportSize({ width: 1440, height });
+      await page.goto("/");
+      const box = await page.locator(".horizon-line").evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { y: r.y, height: r.height };
+      });
+      const bottom = box.y + box.height;
+      expect(Math.abs(bottom - 0.96 * height), `hairline bottom at viewport height ${height}`).toBeLessThanOrEqual(2);
+      expect(bottom).toBeLessThanOrEqual(height);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  test("the fixed layers do not create a horizontal scrollbar", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const widths = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, inner: window.innerWidth }));
+    expect(widths.scroll).toBeLessThanOrEqual(widths.inner);
   });
 
   test("remembers switching it off across a reload", async ({ page }) => {
